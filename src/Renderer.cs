@@ -14,7 +14,7 @@ namespace Project {
 		}
 
 		protected override void OnRenderFrame(FrameEventArgs args) {
-			Console.WriteLine("Render thread running");
+
 		}
 
 		protected override void OnUpdateFrame(FrameEventArgs args) {
