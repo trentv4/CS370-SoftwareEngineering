@@ -1,13 +1,24 @@
 using System;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project {
-	public class Renderer {
-		public static void Initialize() {
+	public class Renderer : GameWindow {
+		public Renderer(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
+
+		protected override void OnRenderThreadStarted() {
 
 		}
 
-		public static void Update() {
+		protected override void OnRenderFrame(FrameEventArgs args) {
+			Console.WriteLine("Render thread running");
+		}
 
+		protected override void OnUpdateFrame(FrameEventArgs args) {
+			Program.Update();
 		}
 	}
 }
