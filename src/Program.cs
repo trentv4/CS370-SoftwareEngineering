@@ -7,6 +7,8 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project {
 	public class Program {
+		public static readonly GameLogic LogicThread = new GameLogic();
+
 		public static void Main(string[] args) {
 			Console.WriteLine("Initializing");
 			GameWindowSettings gameSettings = new GameWindowSettings() {
@@ -20,13 +22,11 @@ namespace Project {
 				WindowBorder = WindowBorder.Fixed
 			};
 
+			LogicThread.Initialize();
+
 			using (Renderer g = new Renderer(gameSettings, windowSettings)) {
 				g.Run();
 			}
-		}
-
-		public static void Update() {
-			Console.WriteLine("Update thread running");
 		}
 	}
 }
