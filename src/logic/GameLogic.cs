@@ -4,6 +4,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Project.Items;
 
 namespace Project {
 	/// <summary> Struct storing all data required to execute the game. By storing this 
@@ -21,7 +22,9 @@ namespace Project {
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public void Initialize() {
-
+			ItemManager.LoadDefinitions();
+            foreach (var def in ItemManager.Definitions)
+            	Console.WriteLine(def.ToString());
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
