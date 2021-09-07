@@ -13,6 +13,8 @@ namespace Project.Render {
 	public class Renderer : GameWindow {
 		public Renderer(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
 
+		private RenderableNode Scene;
+
 		// Debug
 		private static DebugProc debugCallback = DebugCallback;
 		private static GCHandle debugCallbackHandle;
@@ -31,8 +33,8 @@ namespace Project.Render {
 			ShaderProgram t = new ShaderProgram("src/render/shaders/ForwardShader_vertex.glsl",
 												"src/render/shaders/ForwardShader_fragment.glsl");
 
+			Scene = new RenderableNode();
 
-			// Create scene demo
 			// Create camera
 			// Create AttribPointers
 		}
