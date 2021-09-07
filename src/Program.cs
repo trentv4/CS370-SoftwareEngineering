@@ -26,6 +26,7 @@ namespace Project {
 			LogicThread.Initialize();
 
 			using (Renderer g = new Renderer(gameSettings, windowSettings)) {
+				Renderer.INSTANCE = g;
 				g.Run();
 			}
 		}
