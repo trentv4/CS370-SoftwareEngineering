@@ -6,8 +6,7 @@ using System.Xml;
 namespace Project.Items {
     /// <summary>Loads <see cref="ItemDefinition"/>s from xml files. Automatically reloads them if the file changes.</summary>
     public static class ItemManager {
-        //Todo: De-hardcode this path
-        public static string DefinitionsFolderPath = @"C:\Users\moneyl\source\repos\_CS370\CS370-SoftwareEngineering\assets\definitions\";
+        public static string DefinitionsFolderPath = @".\assets\definitions\";
         public static List<ItemDefinition> Definitions = new List<ItemDefinition>();
 
         public static void LoadDefinitions() {
