@@ -3,6 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Runtime.InteropServices;
 
 namespace Project.Render {
@@ -16,9 +17,11 @@ namespace Project.Render {
 
 		// Render
 		private RenderableNode Scene;
+		private Model spinny; // debug only
 		public ShaderProgram ForwardProgram { get; private set; } // Forward rendering technique
-		private Vector3 CameraPosition = Vector3.Zero;
-		private Vector3 CameraTarget = -Vector3.UnitZ;
+		private Vector3 CameraPosition = new Vector3(0, 0, -2);
+		private Vector3 CameraTarget = new Vector3(0, 0, -1);
+		private float CameraAngle = 90;
 
 		// Debug
 		private static DebugProc debugCallback = DebugCallback;
@@ -38,9 +41,17 @@ namespace Project.Render {
 
 			ForwardProgram = new ShaderProgram("src/render/shaders/ForwardShader_vertex.glsl",
 												"src/render/shaders/ForwardShader_fragment.glsl");
-			ForwardProgram.use();
+			ForwardProgram.Use();
 
-			Scene = Model.GetUnitRectangle().SetPosition(Vector3.UnitZ * -2);
+
+			Scene = new RenderableNode();
+			spinny = Model.GetRoom().SetPosition(new Vector3(0, 0, 1)).SetRotation(new Vector3(135, 0, 0));
+			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1, 0)).SetRotation(new Vector3(90, 0, 0)).SetScale(5);
+			Scene.children.AddRange(new RenderableNode[] {
+				spinny, plane
+			});
+
+			ForwardProgram.SetVertexAttribPointers();
 		}
 
 		/// <summary> Core render loop. Be careful to not reference anything on the logic thread from here! </summary>
@@ -53,6 +64,8 @@ namespace Project.Render {
 			Matrix4 View = Matrix4.LookAt(CameraPosition, CameraPosition + CameraTarget, Vector3.UnitY);
 			float aspectRatio = (float)Size.X / (float)Size.Y;
 			Matrix4 Perspective = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, aspectRatio, 0.01f, 100.0f);
+			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
+
 			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "model"), true, ref Model);
 			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "view"), true, ref View);
 			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "perspective"), true, ref Perspective);
@@ -65,7 +78,7 @@ namespace Project.Render {
 		/// <summary> Handles all debug callbacks from OpenGL and throws exceptions if unhandled. </summary>
 		private static void DebugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {
 			string messageString = Marshal.PtrToStringAnsi(message, length);
-			if (type < DebugType.DebugTypeOther)
+			if (type < DebugType.DebugTypeOther && type < DebugType.DebugTypeError)
 				Console.WriteLine($"{severity} {type} | {messageString}");
 			if (type == DebugType.DebugTypeError)
 				throw new Exception(messageString);
@@ -73,6 +86,17 @@ namespace Project.Render {
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
+			// All of the following are in the set [-1, 0, 1] which is used to calculate movement.
+			int ws = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.W)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.S));
+			int ad = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.A)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.D));
+			int qe = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.Q)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.E));
+			int sl = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.Space)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.LeftShift));
+			CameraPosition += 0.05f // speed
+							* ((CameraTarget * ws) // Forward-back
+							+ (Vector3.UnitY * sl) // Up-down
+							+ (ad * Vector3.Cross(Vector3.UnitY, CameraTarget))); // Strafing
+			CameraAngle -= qe * 1f; // qe * speed
+			CameraTarget = new Vector3((float)Math.Cos(CameraAngle * RCF), CameraTarget.Y, (float)Math.Sin(CameraAngle * RCF));
 			Program.LogicThread.Update();
 		}
 	}
