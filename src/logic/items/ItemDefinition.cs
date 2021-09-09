@@ -27,9 +27,13 @@ namespace Project.Items {
         public int Weight;
         public int Damage;
         public int Armor;
+        public uint NumUses;
         public ItemUseFlags Uses;
         public ConsumeEffects OnConsume;
         public string KeyType;
+
+        public bool Consumeable => (Uses & ItemUseFlags.Consume) == ItemUseFlags.Consume;
+        public bool IsKey => (Uses & ItemUseFlags.Key) == ItemUseFlags.Key;
 
         public override string ToString()
         {
@@ -39,6 +43,7 @@ namespace Project.Items {
             result += $"    Damage: {Damage}\n";
             result += $"    Armor: {Armor}\n";
             result += $"    Uses: \n";
+            result += $"        NumUses: {NumUses}\n";
             if((Uses & ItemUseFlags.Consume) == ItemUseFlags.Consume) {
                 result += $"        Consumable:\n";
                 result += $"            Health: {OnConsume.Health}\n";

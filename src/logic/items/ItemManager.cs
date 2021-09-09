@@ -50,11 +50,14 @@ namespace Project.Items {
                     definition.Weight = int.Parse(armor.InnerText);
 
                 //Use effects
-                var uses = item.SelectSingleNode("Uses");
+                var uses = item.SelectSingleNode("Uses") as XmlElement;
                 if (uses != null) {
                     var consume = uses.SelectSingleNode("Consume");
                     var key = uses.SelectSingleNode("Key");
-                    
+                    var numUses = uses.GetAttribute("NumUses");
+                    if(numUses != null && numUses != "")
+                        definition.NumUses = UInt32.Parse(numUses);
+
                     if (consume != null) {
                         definition.Uses |= ItemUseFlags.Consume;
                         var healthChange = consume.SelectSingleNode("Health");

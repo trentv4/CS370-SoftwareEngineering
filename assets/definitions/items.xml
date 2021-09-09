@@ -76,7 +76,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <Uses NumUses="0">
+    <Uses NumUses="1">
       <Key>
         <Type>Blue</Type>
       </Key>
@@ -87,7 +87,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <Uses NumUses="0">
+    <Uses NumUses="1">
       <Key>
         <Type>Red</Type>
       </Key>
@@ -98,7 +98,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <Uses NumUses="0">
+    <Uses NumUses="1">
       <Key>
         <Type>Yellow</Type>
       </Key>
