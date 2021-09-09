@@ -63,9 +63,10 @@ namespace Project.Render {
 							  true, ref tempModelMatrix);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-			int stride = 3 * sizeof(float);
-			GL.BindVertexBuffer(0, VertexBufferObject_ID, IntPtr.Zero, stride);
-			// Bind textures
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
 
 			return 1;
@@ -117,10 +118,10 @@ namespace Project.Render {
 		public static Model GetUnitRectangle() {
 			if (UNIT_RECTANGLE == null) {
 				float[] vertices = new float[] {
-					-0.5f, -0.5f, 0.0f,
-					 0.5f, -0.5f, 0.0f,
-					-0.5f,  0.5f, 0.0f,
-					 0.5f,  0.5f, 0.0f,
+					-0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+					 0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 1.0f, 0.0f,
+					-0.5f,  0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 0.0f, 1.0f,
+					 0.5f,  0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 1.0f, 1.0f,
 				};
 				uint[] indices = new uint[] {
 					0, 1, 2, 1, 2, 3
@@ -129,6 +130,53 @@ namespace Project.Render {
 				UNIT_RECTANGLE = new Model(vertices, indices);
 			}
 			return new Model(UNIT_RECTANGLE);
+		}
+
+		public static Model GetRoom() {
+			List<float> vertices = new List<float>();
+			vertices.AddRange(new float[] { 0f, 0f, 0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f, 1.0f, 0.0f, 0.0f, });
+
+			uint density = 360;
+			for (int i = 1; i <= density; i++) {
+				float angle = Renderer.RCF * i * (360.0f / (float)density);
+				vertices.AddRange(new List<float>{
+					(float) Math.Cos(angle), (float) Math.Sin(angle), 0f, //XYZ
+					((float) Math.Cos(angle) + 1)/2.0f, ((float) Math.Sin(angle) + 1)/2.0f, 1f, // NORMALS
+					0.8f, 0.2f, 0.4f, 0.0f, // RGBA
+					0.0f, 0.0f, // UV
+				});
+			}
+			for (int i = 1; i <= density; i++) {
+				float angle = Renderer.RCF * i * (360.0f / (float)density);
+				vertices.AddRange(new List<float>{
+					(float) Math.Cos(angle), (float) Math.Sin(angle), 1, //XYZ
+					((float) Math.Cos(angle) + 1)/2.0f, ((float) Math.Sin(angle) + 1)/2.0f, 1f, // NORMALS
+					1f, 0f, 0f, 0.0f, // RGBA
+					0.0f, 0.0f, // UV
+				});
+			}
+
+
+			List<uint> indexList = new List<uint>();
+			// "Floor"
+			for (uint i = 0; i < density; i++) {
+				indexList.AddRange(new uint[] { 0, i, i + 1 });
+			}
+			indexList.AddRange(new uint[] { 0, 1, (uint)density });
+			for (uint i = 1; i < density; i++) {
+				indexList.AddRange(new uint[] {
+					i, i + density, i + density + 1,
+					i, i+1, i + density + 1,
+				});
+			}
+			indexList.AddRange(new uint[] {
+					1, density, density + 1,
+					density + 1, density, density * 2
+				});
+			// "Walls"
+
+
+			return new Model(vertices.ToArray(), indexList.ToArray());
 		}
 	}
 }
