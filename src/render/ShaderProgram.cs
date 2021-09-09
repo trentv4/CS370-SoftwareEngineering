@@ -26,15 +26,24 @@ namespace Project.Render {
 			GL.DeleteShader(fragmentShaderID);
 
 			VertexArrayObject_ID = GL.GenVertexArray();
-			GL.BindVertexArray(VertexArrayObject_ID);
-			GL.EnableVertexAttribArray(0);
-			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0 * sizeof(float)); /* xy */
-
 		}
 
 		/// <summary> Chainable method to change state to this program, and bind appropriate state or uniforms. </summary>
-		public ShaderProgram use() {
+		public ShaderProgram Use() {
 			GL.UseProgram(ShaderProgramID);
+			return this;
+		}
+
+		public ShaderProgram SetVertexAttribPointers() {
+			GL.BindVertexArray(VertexArrayObject_ID);
+			GL.EnableVertexAttribArray(0);
+			GL.EnableVertexAttribArray(1);
+			GL.EnableVertexAttribArray(2);
+			GL.EnableVertexAttribArray(3);
+			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 12 * sizeof(float), 0 * sizeof(float)); /* xyz */
+			GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 12 * sizeof(float), 3 * sizeof(float)); /* normals */
+			GL.VertexAttribPointer(2, 4, VertexAttribPointerType.Float, false, 12 * sizeof(float), 6 * sizeof(float)); /* rgba */
+			GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, 12 * sizeof(float), 10 * sizeof(float)); /* uv */
 			return this;
 		}
 

@@ -23,13 +23,12 @@ namespace Project {
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public void Initialize() {
 			ItemManager.LoadDefinitions();
-            foreach (var def in ItemManager.Definitions)
-            	Console.WriteLine(def.ToString());
+			foreach (var def in ItemManager.Definitions)
+				Console.WriteLine(def.ToString());
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
 		public void Update() {
-			Console.WriteLine("Update thread running");
 			StateBuffer = State;
 		}
 
