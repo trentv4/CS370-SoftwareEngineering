@@ -11,6 +11,8 @@ namespace Project {
         public int MaxMana = 10;
         public int Armor = 0;
         public int CarryWeight = 10;
+        public int xPos;
+        public int yPos;
 
         public Player()
         {

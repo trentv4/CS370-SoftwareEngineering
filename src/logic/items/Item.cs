@@ -6,6 +6,8 @@ namespace Project.Items {
     public class Item {
         public ItemDefinition Definition;
         public uint UsesRemaining;
+        public int xPos;
+        public int yPos;
 
         public Item(ItemDefinition definition) {
             Definition = definition;
