@@ -16,7 +16,7 @@ namespace Project {
 
         public Player()
         {
-            Inventory = new Inventory(CarryWeight);
+            Inventory = new Inventory(this);
         }
     }
 }

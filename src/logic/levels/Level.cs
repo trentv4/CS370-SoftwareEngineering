@@ -20,6 +20,7 @@ namespace Project.Levels {
             Console.WriteLine("Level created.");
             Console.WriteLine("Door is at coordinate " + door_xPos + ", " + door_yPos + ".");
             Console.WriteLine("Player is at coordinate " + player.xPos + ", " + player.yPos + ".");
+            player.Inventory.PrintInventoryControls();
         }
 
         // door across the room from player
@@ -33,6 +34,11 @@ namespace Project.Levels {
             player = new Player();
             player.xPos = Convert.ToInt32(xAxis / 2);
             player.yPos = 0;
+        }
+
+        ///<summary>Update function that's ran each frame. Updates the level and its contents
+        public void Update() {
+            player.Inventory.UpdateUI();
         }
 
      /* public void spawnEnemy() {

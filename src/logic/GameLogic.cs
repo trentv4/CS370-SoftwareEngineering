@@ -20,17 +20,18 @@ namespace Project {
 		/// <summary> "Backbuffer" of the game state, which is only ever changed in one go. This will be the state sent to the renderer. </summary>
 		private GameState StateBuffer = new GameState();
 
+		Level firstLevel = null;
+
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public void Initialize() {
 			ItemManager.LoadDefinitions();
-			foreach (var def in ItemManager.Definitions)
-				Console.WriteLine(def.ToString());
-			Level firstLevel = new Level(500,500); //placeholder to test level class
+			firstLevel = new Level(500,500); //placeholder to test level class
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
 		public void Update() {
 			StateBuffer = State;
+			firstLevel.Update();
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>
