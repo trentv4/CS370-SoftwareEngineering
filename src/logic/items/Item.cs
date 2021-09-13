@@ -17,6 +17,9 @@ namespace Project.Items {
         ///<summary>Consome the item if it's consumeable and apply the OnConsume effects to the provided target.</summary>
         public void Consume(Player target)
         {
+            if(UsesRemaining == 0)
+                return;
+
             if(Definition.Consumeable) {
                 target.Health += Definition.OnConsume.Health;
                 target.Health = MathUtil.MinMax(target.Health, 0, target.MaxHealth);
@@ -35,6 +38,8 @@ namespace Project.Items {
 
                 target.Armor += Definition.OnConsume.Armor;
                 target.Armor = MathUtil.MinMax(target.Armor, 0, 100);
+
+                UsesRemaining--;
             }
         }
     }
