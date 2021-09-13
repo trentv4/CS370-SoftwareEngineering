@@ -45,9 +45,9 @@ namespace Project.Items {
                 if (weight != null)
                     definition.Weight = int.Parse(weight.InnerText);
                 if (damage != null)
-                    definition.Weight = int.Parse(damage.InnerText);
+                    definition.Damage = int.Parse(damage.InnerText);
                 if (armor != null)
-                    definition.Weight = int.Parse(armor.InnerText);
+                    definition.Armor = int.Parse(armor.InnerText);
 
                 //Use effects
                 var uses = item.SelectSingleNode("Uses") as XmlElement;
