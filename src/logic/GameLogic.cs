@@ -1,6 +1,7 @@
-using Project.Items;
-using Project.Levels;
 using System.Collections.Generic;
+using Project.Networking;
+using Project.Levels;
+using Project.Items;
 using System;
 
 namespace Project {
@@ -21,6 +22,8 @@ namespace Project {
 		private GameState StateBuffer = new GameState();
 
 		public Level Level;
+
+		public Server Server;
 
 		public GameLogic() {
 			StateBuffer.PlayerX = 0.0f;
@@ -45,6 +48,7 @@ namespace Project {
 			}
 
 			Level = new Level(roomConstruction.ToArray());
+			Server = new Server(Level);
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>

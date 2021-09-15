@@ -82,21 +82,7 @@ namespace Project {
                 /*Todo: Come up with a better way of stopping repeat presses. 
                         KeyboardState.IsKeyPressed seems like it'd do it but it isn't working in this function. May be related to how the game is threaded.*/
                 FramesSinceKeyPressed = 0;
-
-                //Print inventory state
-                Console.WriteLine("\n\n*****Inventory*****");
-                Console.WriteLine($"Total weight: {Weight}/{Owner.CarryWeight}");
-
-                Console.WriteLine("Items:");
-                uint index = 0;
-                foreach (var item in Items) {
-                    string itemUses = item.Definition.IsKey ? "key " : "";
-                    itemUses += item.Definition.Consumeable ? "consumeable" : "";
-                    Console.WriteLine($"{index}: {item.Definition.Name}");
-                    Console.WriteLine($"\tUses: {itemUses}");
-                    Console.WriteLine($"\tWeight: {item.Definition.Weight}");
-                    index++;
-                }
+                PrintInventoryState();
             }
             else if(numKeyPressed > -1 && numKeyPressed < Items.Count && FramesSinceKeyPressed > 5) {
                 FramesSinceKeyPressed = 0;
@@ -139,22 +125,7 @@ namespace Project {
             else if (keyState.IsKeyDown(Keys.R) && FramesSinceKeyPressed > 5) { //Add random items to the inventory
                 FramesSinceKeyPressed = 0;
 
-                //Attempt to 5 randomly selected items to the inventory
-                uint numItemsAdded = 0;
-                for(uint i = 0; i < 5; i++) {
-                    //Get random item definition
-                    var rand = new Random();
-                    var def = ItemManager.Definitions[rand.Next() % ItemManager.Definitions.Count];
-                    
-                    //Create item and add it to the inventory
-                    var item = new Item(def);
-                    bool result = AddItem(item);
-                    if(result)
-                        numItemsAdded++;
-                    else
-                        break; //Stop adding items if one fails to be added
-                }
-
+                uint numItemsAdded = AddRandomItems(5);
                 Console.WriteLine($"Added {numItemsAdded} to the inventory.");
             }
             else if (keyState.IsKeyDown(Keys.P) && FramesSinceKeyPressed > 5) { //Print player stats
@@ -170,6 +141,43 @@ namespace Project {
             else {
                 FramesSinceKeyPressed++;
             }
+        }
+
+        public void PrintInventoryState() {
+            //Print inventory state
+            Console.WriteLine("\n\n*****Inventory*****");
+            Console.WriteLine($"Total weight: {Weight}/{Owner.CarryWeight}");
+            Console.WriteLine("Items:");
+            
+            uint index = 0;
+            foreach (var item in Items) {
+                string itemUses = item.Definition.IsKey ? "key " : "";
+                itemUses += item.Definition.Consumeable ? "consumeable" : "";
+                Console.WriteLine($"{index}: {item.Definition.Name}");
+                Console.WriteLine($"\tUses: {itemUses}");
+                Console.WriteLine($"\tWeight: {item.Definition.Weight}");
+                index++;
+            }
+        }
+
+        public uint AddRandomItems(uint numToAdd) {
+            //Attempt to 5 randomly selected items to the inventory
+            uint numItemsAdded = 0;
+            for(uint i = 0; i < numToAdd; i++) {
+                //Get random item definition
+                var rand = new Random();
+                var def = ItemManager.Definitions[rand.Next() % ItemManager.Definitions.Count];
+                
+                //Create item and add it to the inventory
+                var item = new Item(def);
+                bool result = AddItem(item);
+                if(result)
+                    numItemsAdded++;
+                else
+                    break; //Stop adding items if one fails to be added
+            }
+
+            return numItemsAdded;
         }
     }
 }
