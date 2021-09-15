@@ -58,7 +58,7 @@ namespace Project {
 			State.PlayerX = Level.Player.xPos;
 			State.PlayerY = Level.Player.yPos;
 			State.Level = Level;
-			State.IsViewingMap = true;
+			State.IsViewingMap = Level.IsViewingMap;
 
 			StateBuffer = State;
 		}
