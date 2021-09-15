@@ -26,6 +26,7 @@ namespace Project.Render {
 
 		// Debug
 		private Model spinny;
+		private Model PlayerModel;
 
 		// OpenGL error callback
 		private static DebugProc debugCallback = DebugCallback;
@@ -52,8 +53,23 @@ namespace Project.Render {
 			Scene = new RenderableNode();
 			spinny = Model.GetRoom().SetPosition(new Vector3(0, 0, 1)).SetRotation(new Vector3(135, 0, 0));
 			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1, 0)).SetRotation(new Vector3(90, 0, 0)).SetScale(5);
+
+			float[] vData = new float[] {
+				0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,   0.4f, 0.8f, 0.3f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f, 1.0f,   1.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+				-0.5f, 0.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
+				0.5f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, 1.0f,   1.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+			};
+			uint[] iData = new uint[] {
+				1, 2, 3, // bottom face
+				0, 2, 3, // rear face
+				0, 1, 2,
+				0, 1, 3
+			};
+			PlayerModel = new Model(vData, iData).SetPosition(new Vector3(0, -1, 0));
+
 			Scene.children.AddRange(new RenderableNode[] {
-				spinny, plane
+				spinny, plane, PlayerModel
 			});
 
 			ForwardProgram.SetVertexAttribPointers();
@@ -64,12 +80,17 @@ namespace Project.Render {
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
 
+			Vector3 playerPosition = new Vector3(state.PlayerX, -1, state.PlayerY);
+			PlayerModel.SetPosition(playerPosition);
+			CameraTarget = playerPosition;
+			CameraPosition = playerPosition + new Vector3(0, 2, -1);
+
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 			ForwardProgram.Use();
 
 			Matrix4 Model = Matrix4.Identity;
-			Matrix4 View = Matrix4.LookAt(CameraPosition, CameraPosition + CameraTarget, Vector3.UnitY);
+			Matrix4 View = Matrix4.LookAt(CameraPosition, CameraTarget, Vector3.UnitY);
 			float aspectRatio = (float)Size.X / (float)Size.Y;
 			Matrix4 Perspective = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, aspectRatio, 0.01f, 100.0f);
 			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
@@ -97,17 +118,6 @@ namespace Project.Render {
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
-			// All of the following are in the set [-1, 0, 1] which is used to calculate movement.
-			int ws = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.W)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.S));
-			int ad = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.A)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.D));
-			int qe = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.Q)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.E));
-			int sl = Convert.ToInt32(KeyboardState.IsKeyDown(Keys.Space)) - Convert.ToInt32(KeyboardState.IsKeyDown(Keys.LeftShift));
-			CameraPosition += 0.05f // speed
-							* ((CameraTarget * ws) // Forward-back
-							+ (Vector3.UnitY * sl) // Up-down
-							+ (ad * Vector3.Cross(Vector3.UnitY, CameraTarget))); // Strafing
-			CameraAngle -= qe * 1f; // qe * speed
-			CameraTarget = new Vector3((float)Math.Cos(CameraAngle * RCF), CameraTarget.Y, (float)Math.Sin(CameraAngle * RCF));
 			Program.LogicThread.Update();
 		}
 	}
