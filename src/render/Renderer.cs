@@ -25,7 +25,6 @@ namespace Project.Render {
 		private float CameraAngle = 90;
 
 		// Debug
-		private Model spinny;
 		private Model PlayerModel;
 
 		// OpenGL error callback
@@ -50,31 +49,10 @@ namespace Project.Render {
 												"src/render/shaders/InterfaceShader_fragment.glsl");
 			ForwardProgram.Use();
 
-			Scene = new RenderableNode();
-			spinny = Model.GetRoom().SetPosition(new Vector3(0, 0, 1)).SetRotation(new Vector3(135, 0, 0));
-			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1, 0)).SetRotation(new Vector3(90, 0, 0)).SetScale(10);
-
-			PlayerModel = new Model(new float[] {
-				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.0f,  -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   0.8f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-			}, new uint[] {
-				0, 1, 2,
-				0, 2, 3,
-				0, 3, 4,
-				0, 4, 1,
-				5, 1, 2,
-				5, 2, 3,
-				5, 3, 4,
-				5, 4, 1
-			}).SetScale(new Vector3(0.5f, 2f, 0.5f));
-
-			Scene.children.AddRange(new RenderableNode[] {
-				spinny, plane, PlayerModel
-			});
+			Scene = SceneBuilder.CreateDemoScene();
+			// don't look at the following lines.. extremely gross, but works
+			PlayerModel = (Model)Scene.children[0];
+			// end gross
 
 			ForwardProgram.SetVertexAttribPointers();
 			InterfaceProgram.SetVertexAttribPointers();
@@ -89,7 +67,6 @@ namespace Project.Render {
 			CameraTarget = playerPosition;
 			CameraPosition = playerPosition + new Vector3(0, 2, -3);
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
-			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
 
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			ForwardProgram.Use();
