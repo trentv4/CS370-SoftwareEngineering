@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.Items;
 using OpenTK.Mathematics;
 
@@ -7,7 +8,6 @@ namespace Project.Levels {
 		private readonly Random Random = new System.Random();
 		public Player Player;
 		public Room[] Rooms;
-		private Item[] items;
 
 		public Level(Room[] rooms) {
 			this.Rooms = rooms;
@@ -32,8 +32,10 @@ namespace Project.Levels {
 		public Vector3 Position;
 		public Room[] ConnectedRooms;
 
+		public List<Item> Items = new List<Item>();
+
 		public Room(float X, float Y) {
-			this.Position = new Vector3((float)X, 0.0f, (float)Y);
+			this.Position = new Vector3(X, 0.0f, Y);
 		}
 
 		public double DistanceToRoom(Room otherRoom) {
