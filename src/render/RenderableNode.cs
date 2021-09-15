@@ -59,7 +59,7 @@ namespace Project.Render {
 
 		protected override int RenderSelf() {
 			Matrix4 tempModelMatrix = ModelMatrix;
-			GL.UniformMatrix4(GL.GetUniformLocation(Renderer.INSTANCE.ForwardProgram.ShaderProgramID, "model"),
+			GL.UniformMatrix4(GL.GetUniformLocation(Renderer.INSTANCE.ForwardProgram.ShaderProgram_ID, "model"),
 							  true, ref tempModelMatrix);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);

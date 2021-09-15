@@ -16,14 +16,18 @@ namespace Project.Render {
 		internal const float RCF = 0.017453293f;
 
 		// Render
+		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
+		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
+
 		private RenderableNode Scene;
-		private Model spinny; // debug only
-		public ShaderProgram ForwardProgram { get; private set; } // Forward rendering technique
 		private Vector3 CameraPosition = new Vector3(0, 0, -2);
 		private Vector3 CameraTarget = new Vector3(0, 0, -1);
 		private float CameraAngle = 90;
 
 		// Debug
+		private Model spinny;
+
+		// OpenGL error callback
 		private static DebugProc debugCallback = DebugCallback;
 		private static GCHandle debugCallbackHandle;
 
@@ -39,10 +43,11 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DepthTest);
 			GL.Viewport(0, 0, Size.X, Size.Y);
 
-			ForwardProgram = new ShaderProgram("src/render/shaders/ForwardShader_vertex.glsl",
+			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader_vertex.glsl",
 												"src/render/shaders/ForwardShader_fragment.glsl");
+			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader_vertex.glsl",
+												"src/render/shaders/InterfaceShader_fragment.glsl");
 			ForwardProgram.Use();
-
 
 			Scene = new RenderableNode();
 			spinny = Model.GetRoom().SetPosition(new Vector3(0, 0, 1)).SetRotation(new Vector3(135, 0, 0));
@@ -52,13 +57,16 @@ namespace Project.Render {
 			});
 
 			ForwardProgram.SetVertexAttribPointers();
+			InterfaceProgram.SetVertexAttribPointers();
 		}
 
 		/// <summary> Core render loop. Be careful to not reference anything on the logic thread from here! </summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
-			//GameState state = Program.LogicThread.GetGameState();
+			GameState state = Program.LogicThread.GetGameState();
 
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+			ForwardProgram.Use();
 
 			Matrix4 Model = Matrix4.Identity;
 			Matrix4 View = Matrix4.LookAt(CameraPosition, CameraPosition + CameraTarget, Vector3.UnitY);
@@ -66,11 +74,14 @@ namespace Project.Render {
 			Matrix4 Perspective = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, aspectRatio, 0.01f, 100.0f);
 			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
 
-			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "model"), true, ref Model);
-			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "view"), true, ref View);
-			GL.UniformMatrix4(GL.GetUniformLocation(ForwardProgram.ShaderProgramID, "perspective"), true, ref Perspective);
+			GL.UniformMatrix4(ForwardProgram.UniformModel_ID, true, ref Model);
+			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
+			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
 
 			int drawCalls = Scene.Render();
+
+			InterfaceProgram.Use();
+			// Draw interface: unimplemented. TODO
 
 			Context.SwapBuffers();
 		}
