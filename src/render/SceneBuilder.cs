@@ -25,7 +25,7 @@ namespace Project.Render {
 				});
 				allRooms.children.Add(currentRoom);
 			}
-			return allRooms;
+			return new RenderableNode();
 		}
 
 		public static RenderableNode CreateDemoScene() {
@@ -49,6 +49,7 @@ namespace Project.Render {
 				5, 4, 1
 			}).SetScale(new Vector3(0.5f, 2f, 0.5f));
 
+			Model circle = Model.GetUnitCircle().SetPosition(new Vector3(0, 1, 0)).SetScale(3f);
 			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			Model door1 = Model.GetUnitRectangle().SetPosition(new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
@@ -56,7 +57,7 @@ namespace Project.Render {
 			Model door3 = Model.GetUnitRectangle().SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			RenderableNode room = new RenderableNode();
 			room.children.AddRange(new RenderableNode[] {
-				plane, door1, door2, door3
+				plane, door1, door2, door3, circle
 			});
 
 			// Order matters! [0] must always be PlayerModel

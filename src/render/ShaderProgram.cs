@@ -92,7 +92,6 @@ namespace Project.Render {
 
 		public override ShaderProgram SetVertexAttribPointers() {
 			Use();
-			GL.BindVertexArray(VertexArrayObject_ID);
 			GL.EnableVertexAttribArray(0);
 			GL.EnableVertexAttribArray(1);
 			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0 * sizeof(float)); /* xyz */

@@ -39,6 +39,7 @@ namespace Project.Render {
 		private readonly int IndexLength;
 
 		private static Model UNIT_RECTANGLE;
+		private static Model UNIT_CIRCLE;
 
 		public Model(float[] vertexData, uint[] indices) {
 			IndexLength = indices.Length;
@@ -136,6 +137,36 @@ namespace Project.Render {
 				UNIT_RECTANGLE = new Model(vertices, indices);
 			}
 			return new Model(UNIT_RECTANGLE);
+		}
+
+		public static Model GetUnitCircle() {
+			if (UNIT_CIRCLE == null) {
+				uint density = 180;
+
+				List<float> v = new List<float>();
+				v.AddRange(new float[] { 0, 0, 0, 0, 1, 0, 0.2f, 0.4f, 0.6f, 1.0f, 0.5f, 0.5f });
+				for (uint g = 0; g < density; g++) {
+					float angle = Renderer.RCF * g * (360.0f / (float)density);
+					v.AddRange(new float[] {
+					(float)Math.Cos(angle), 0, (float)Math.Sin(angle),
+					0, 1, 0,
+					0.6f, 0.4f, 0.2f, 1.0f,
+					(float)Math.Cos(angle), (float)Math.Sin(angle)});
+				}
+
+				List<uint> i = new List<uint>();
+				for (uint g = 1; g < density; g++) {
+					i.AddRange(new uint[] {
+						0, g, g+1
+					});
+				}
+				i.AddRange(new uint[] { 0, density, 1 });
+
+				float[] vertices = v.ToArray();
+				uint[] indices = i.ToArray();
+				UNIT_CIRCLE = new Model(vertices, indices);
+			}
+			return new Model(UNIT_CIRCLE);
 		}
 
 		public static Model GetRoom() {
