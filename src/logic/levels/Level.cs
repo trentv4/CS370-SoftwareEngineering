@@ -2,12 +2,18 @@ using System;
 using System.Collections.Generic;
 using Project.Items;
 using OpenTK.Mathematics;
+using Project.Render;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project.Levels {
 	public class Level {
 		private readonly Random Random = new System.Random();
 		public Player Player;
 		public Room[] Rooms;
+
+		public bool IsViewingMap = false;
+
+		private uint framesSinceKeyPressed = 0;
 
 		public Level(Room[] rooms) {
 			this.Rooms = rooms;
@@ -25,6 +31,15 @@ namespace Project.Levels {
 
 		public void Update() {
 			Player.Update();
+
+			var KeyboardState = Renderer.INSTANCE.KeyboardState;
+			if(KeyboardState.IsKeyDown(Keys.M) && framesSinceKeyPressed > 5) {
+				framesSinceKeyPressed = 0;
+				IsViewingMap = !IsViewingMap;
+			}
+			else {
+				framesSinceKeyPressed++;
+			}
 		}
 	}
 
@@ -39,9 +54,7 @@ namespace Project.Levels {
 		}
 
 		public double DistanceToRoom(Room otherRoom) {
-			double yDist = Position.Y - otherRoom.Position.Y;
-			double xDist = Position.X - otherRoom.Position.X;
-			return Math.Sqrt((yDist * yDist) + (xDist * xDist));
+			return (otherRoom.Position - Position).Length;
 		}
 	}
 }
