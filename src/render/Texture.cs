@@ -30,6 +30,8 @@ namespace Project.Render {
 				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
 							  image.Width, image.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 				GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
+				LOADED_TEXTURES.Add(location, TextureID);
 			}
 		}
 	}

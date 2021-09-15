@@ -32,13 +32,13 @@ namespace Project {
 		public void Initialize() {
 			ItemManager.LoadDefinitions();
 			Random r = new Random();
-			int roomsPerRow = 2;
-			int rowsPerLevel = 3;
+			int roomsPerRow = 6;
+			int rowsPerLevel = 10;
 			List<Room> roomConstruction = new List<Room>();
 			roomConstruction.Add(new Room(0, roomsPerRow / 2)); // Creates the starting room at index zero
 			for (int i = 1; i < rowsPerLevel; i++) {
 				for (int g = 0; g < roomsPerRow; g++) {
-					if (r.NextDouble() > 0.5) {
+					if (r.NextDouble() > 0.3) {
 						roomConstruction.Add(new Room(i, g));
 					}
 				}
