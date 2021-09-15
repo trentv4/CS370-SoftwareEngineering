@@ -50,6 +50,7 @@ namespace Project.Render {
 												"src/render/shaders/InterfaceShader_fragment.glsl");
 			ForwardProgram.Use();
 
+			SceneBuilder.Initialize();
 			Scene = SceneBuilder.CreateDemoScene();
 			// don't look at the following lines.. extremely gross, but works
 			PlayerModel = (Model)Scene.children[0];
@@ -59,9 +60,15 @@ namespace Project.Render {
 			InterfaceProgram.SetVertexAttribPointers();
 		}
 
+		private RenderableNode rooms = null;
+
 		/// <summary> Core render loop. Be careful to not reference anything on the logic thread from here! </summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
+
+			if (rooms == null) {
+				rooms = SceneBuilder.BuildRoomScene(state.Level.Rooms);
+			}
 
 			Vector3 playerPosition = new Vector3(state.PlayerX, 0f, state.PlayerY);
 			PlayerModel.SetPosition(playerPosition);
@@ -82,6 +89,7 @@ namespace Project.Render {
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
 
 			int drawCalls = Scene.Render();
+			drawCalls += rooms.Render();
 
 			InterfaceProgram.Use();
 			// Draw interface: unimplemented. TODO

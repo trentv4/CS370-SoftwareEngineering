@@ -1,7 +1,32 @@
 using OpenTK.Mathematics;
+using Project.Levels;
 
 namespace Project.Render {
 	public class SceneBuilder {
+
+		public static void Initialize() {
+
+		}
+
+		public static RenderableNode BuildRoomScene(Room[] rooms) {
+			RenderableNode allRooms = new RenderableNode();
+			foreach (Room r in rooms) {
+				Vector3 positionOffset = new Vector3(r.X * 30, 0, r.Y * 10);
+				RenderableNode currentRoom = new RenderableNode();
+
+				Model plane = Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(0, -1f, 0))
+								   .SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
+				plane.AlbedoTexture = new Texture("assets/textures/plane.png");
+				currentRoom.children.AddRange(new RenderableNode[] {
+					plane,
+					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
+					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
+					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
+				});
+				allRooms.children.Add(currentRoom);
+			}
+			return allRooms;
+		}
 
 		public static RenderableNode CreateDemoScene() {
 			RenderableNode Scene = new RenderableNode();

@@ -3,57 +3,43 @@ using Project.Items;
 
 namespace Project.Levels {
 	public class Level {
-		private Random randomInt = new System.Random();
-		private int xAxis, yAxis; // dimensions of room
-		private int door_xPos, door_yPos;
-		// private Enemy enemy;
-		public Player player;
+		private readonly Random Random = new System.Random();
+		public Player Player;
+		public Room[] Rooms;
 		private Item[] items;
 
-		public Level(int new_xAxis, int new_yAxis) {
-			xAxis = new_xAxis;
-			yAxis = new_yAxis;
-			setDoorPos();
-			spawnPlayer();
-			// spawnEnemy();
-			// spawnItems();
+		public Level(Room[] rooms) {
+			this.Rooms = rooms;
+			SpawnPlayer();
 			Console.WriteLine("Level created.");
-			Console.WriteLine("Door is at coordinate " + door_xPos + ", " + door_yPos + ".");
-			Console.WriteLine("Player is at coordinate " + player.xPos + ", " + player.yPos + ".");
-			player.Inventory.PrintInventoryControls();
+			Console.WriteLine("Player is at coordinate " + Player.xPos + ", " + Player.yPos + ".");
+			Player.Inventory.PrintInventoryControls();
 		}
 
-		// door across the room from player
-		public void setDoorPos() {
-			door_xPos = Convert.ToInt32(xAxis / 2);
-			door_yPos = yAxis;
+		public void SpawnPlayer() {
+			Player = new Player();
+			Player.xPos = Rooms[0].X;
+			Player.yPos = Rooms[0].Y;
 		}
 
-		// player across the room from door
-		public void spawnPlayer() {
-			player = new Player();
-		}
-
-		///<summary>Update function that's ran each frame. Updates the level and its contents
 		public void Update() {
-			player.Update();
+			Player.Update();
+		}
+	}
+
+	public class Room {
+		public readonly int X, Y;
+		public Room[] ConnectedRooms;
+
+		public Room(int X, int Y) {
+			this.X = X;
+			this.Y = Y;
 		}
 
-		/* public void spawnEnemy() {
-			   create random enemy?
-			   enemy.xPos = random.Next(0, xAxis);
-			   enemy.yPos = random.Next(0, yAxis);
-		   } */
-
-		/* public void spawnItems() {
-			   int numItems = random.Next(1, 5);
-
-			   for (int i = 0; i < numItems; i++)
-			   {
-				   create random items?
-				   items[i].xPos = random.Next(0, xAxis);
-				   items[i].yPos = random.Next(0, yAxis);
-			   }
-		   } */
+		public double DistanceToRoom(Room otherRoom) {
+			double yDist = Y - otherRoom.Y;
+			double xDist = X - otherRoom.X;
+			return Math.Sqrt((yDist * yDist) + (xDist * xDist));
+		}
 	}
 }
