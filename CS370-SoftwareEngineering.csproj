@@ -4,6 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="OpenTK" Version="4.4.0" />
     <PackageReference Include="StbImageSharp" Version="2.22.4" />
   </ItemGroup>
