@@ -52,21 +52,25 @@ namespace Project.Render {
 
 			Scene = new RenderableNode();
 			spinny = Model.GetRoom().SetPosition(new Vector3(0, 0, 1)).SetRotation(new Vector3(135, 0, 0));
-			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1, 0)).SetRotation(new Vector3(90, 0, 0)).SetScale(5);
+			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1, 0)).SetRotation(new Vector3(90, 0, 0)).SetScale(10);
 
-			float[] vData = new float[] {
-				0.0f, 0.0f, 1.0f,    1.0f, 0.0f, 0.0f, 1.0f,   0.4f, 0.8f, 0.3f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f, 1.0f,   1.0f, 0.5f, 1.0f, 0.0f, 0.0f,
-				-0.5f, 0.0f, 0.0f,   1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.5f, 1.0f, 0.0f, 0.0f,
-				0.5f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f, 1.0f,   1.0f, 0.5f, 0.0f, 0.0f, 0.0f,
-			};
-			uint[] iData = new uint[] {
-				1, 2, 3, // bottom face
-				0, 2, 3, // rear face
+			PlayerModel = new Model(new float[] {
+				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 0.0f,  0.0f, 0.0f,
+				 0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+				 0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+				-0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+				-0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+				 0.0f,  -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   0.8f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+			}, new uint[] {
 				0, 1, 2,
-				0, 1, 3
-			};
-			PlayerModel = new Model(vData, iData).SetPosition(new Vector3(0, -1, 0));
+				0, 2, 3,
+				0, 3, 4,
+				0, 4, 1,
+				5, 1, 2,
+				5, 2, 3,
+				5, 3, 4,
+				5, 4, 1
+			}).SetScale(new Vector3(0.5f, 2f, 0.5f));
 
 			Scene.children.AddRange(new RenderableNode[] {
 				spinny, plane, PlayerModel
@@ -80,21 +84,21 @@ namespace Project.Render {
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
 
-			Vector3 playerPosition = new Vector3(state.PlayerX, -1, state.PlayerY);
+			Vector3 playerPosition = new Vector3(state.PlayerX, 0f, state.PlayerY);
 			PlayerModel.SetPosition(playerPosition);
 			CameraTarget = playerPosition;
-			CameraPosition = playerPosition + new Vector3(0, 2, -1);
+			CameraPosition = playerPosition + new Vector3(0, 2, -3);
+			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
+			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
 
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
 			ForwardProgram.Use();
-
 			Matrix4 Model = Matrix4.Identity;
 			Matrix4 View = Matrix4.LookAt(CameraPosition, CameraTarget, Vector3.UnitY);
 			float aspectRatio = (float)Size.X / (float)Size.Y;
 			Matrix4 Perspective = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, aspectRatio, 0.01f, 100.0f);
-			spinny.SetRotation(spinny.Rotation + new Vector3(0, 1, 0));
 
+			// Defaults, in case a model for some reason doesn't have this defined
 			GL.UniformMatrix4(ForwardProgram.UniformModel_ID, true, ref Model);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
