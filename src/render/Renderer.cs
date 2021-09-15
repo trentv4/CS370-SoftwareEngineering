@@ -42,6 +42,7 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DebugOutputSynchronous);
 			GL.Enable(EnableCap.DepthTest);
 			GL.Viewport(0, 0, Size.X, Size.Y);
+			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader_vertex.glsl",
 												"src/render/shaders/ForwardShader_fragment.glsl");

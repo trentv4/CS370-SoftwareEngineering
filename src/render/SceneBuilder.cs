@@ -25,6 +25,7 @@ namespace Project.Render {
 			}).SetScale(new Vector3(0.5f, 2f, 0.5f));
 
 			Model plane = Model.GetUnitRectangle().SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
+			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			Model door1 = Model.GetUnitRectangle().SetPosition(new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			Model door2 = Model.GetUnitRectangle().SetPosition(new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			Model door3 = Model.GetUnitRectangle().SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));

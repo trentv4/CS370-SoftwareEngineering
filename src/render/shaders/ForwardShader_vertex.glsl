@@ -16,6 +16,6 @@ void main() {
 	gl_Position = vec4(_position, 1.0) * model * view * perspective;
 	
 	normal = _normal;
-	albedo = vec4(_albedo.x, _albedo.y, gl_VertexID/2, _albedo.w);
+	albedo = _albedo;
 	uv = _uv;
 }

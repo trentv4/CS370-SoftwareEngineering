@@ -34,6 +34,7 @@ namespace Project.Render {
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public Matrix4 ModelMatrix { get; private set; } = Matrix4.Identity;
+		public Texture AlbedoTexture = new Texture();
 
 		private readonly int IndexLength;
 
@@ -67,6 +68,11 @@ namespace Project.Render {
 			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
 			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
 			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
+
+			GL.ActiveTexture(TextureUnit.Texture0);
+			GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			GL.Uniform1(Renderer.INSTANCE.ForwardProgram.UniformTextureAlbedo_ID, 0);
+
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
 
 			return 1;
