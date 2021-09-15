@@ -36,7 +36,7 @@ namespace Project.Render {
 		public Matrix4 ModelMatrix { get; private set; } = Matrix4.Identity;
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
-		private readonly int IndexLength;
+		protected readonly int IndexLength;
 
 		private static Model UNIT_RECTANGLE;
 		private static Model UNIT_CIRCLE;
@@ -214,6 +214,60 @@ namespace Project.Render {
 
 
 			return new Model(vertices.ToArray(), indexList.ToArray());
+		}
+
+
+	}
+	public class InterfaceModel : Model {
+		public InterfaceModel(float[] vertices, uint[] indices) : base(vertices, indices) { }
+		public InterfaceModel(InterfaceModel template) : base(template) { }
+
+		private static InterfaceModel UNIT_CIRCLE;
+
+		protected override int RenderSelf() {
+			Matrix4 tempModelMatrix = ModelMatrix;
+			GL.UniformMatrix4(GL.GetUniformLocation(Renderer.INSTANCE.ForwardProgram.ShaderProgram_ID, "model"),
+							  true, ref tempModelMatrix);
+
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 5 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 5 * sizeof(float));
+
+			GL.ActiveTexture(TextureUnit.Texture0);
+			GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformTextureAlbedo_ID, 0);
+
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+
+			return 1;
+		}
+
+		public static new InterfaceModel GetUnitCircle() {
+			if (UNIT_CIRCLE == null) {
+				uint density = 180;
+
+				List<float> v = new List<float>();
+				v.AddRange(new float[] { 0, 0, 0.5f, 0.5f });
+				for (uint g = 0; g < density; g++) {
+					float angle = Renderer.RCF * g * (360.0f / (float)density);
+					v.AddRange(new float[] {
+					(float)Math.Cos(angle), 0, (float)Math.Sin(angle),
+					(float)Math.Cos(angle), (float)Math.Sin(angle)});
+				}
+
+				List<uint> i = new List<uint>();
+				for (uint g = 1; g < density; g++) {
+					i.AddRange(new uint[] {
+						0, g, g+1
+					});
+				}
+				i.AddRange(new uint[] { 0, density, 1 });
+
+				float[] vertices = v.ToArray();
+				uint[] indices = i.ToArray();
+				UNIT_CIRCLE = new InterfaceModel(vertices, indices);
+			}
+			return new InterfaceModel(UNIT_CIRCLE);
 		}
 	}
 }

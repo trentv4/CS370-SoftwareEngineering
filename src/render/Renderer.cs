@@ -40,7 +40,6 @@ namespace Project.Render {
 			GL.DebugMessageCallback(debugCallback, IntPtr.Zero);
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
-			GL.Enable(EnableCap.DepthTest);
 			GL.Viewport(0, 0, Size.X, Size.Y);
 			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -50,8 +49,8 @@ namespace Project.Render {
 												"src/render/shaders/InterfaceShader_fragment.glsl");
 			ForwardProgram.Use();
 
-			SceneBuilder.Initialize();
 			Scene = SceneBuilder.CreateDemoScene();
+
 			// don't look at the following lines.. extremely gross, but works
 			PlayerModel = (Model)Scene.children[0];
 			// end gross
@@ -69,12 +68,14 @@ namespace Project.Render {
 			if (rooms == null) {
 				rooms = SceneBuilder.BuildRoomScene(state.Level.Rooms);
 			}
-			
+
 			Vector3 playerPosition = new Vector3(state.PlayerX, 0f, state.PlayerY);
 			PlayerModel.SetPosition(playerPosition);
 			CameraTarget = playerPosition;
 			CameraPosition = playerPosition + new Vector3(0, 2, -3);
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
+
+			GL.Enable(EnableCap.DepthTest);
 
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			ForwardProgram.Use();
@@ -88,10 +89,14 @@ namespace Project.Render {
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
 
-			int drawCalls = Scene.Render();
-			drawCalls += rooms.Render();
+			int drawCalls = Scene.Render() + rooms.Render();
+
+			GL.Disable(EnableCap.DepthTest);
 
 			InterfaceProgram.Use();
+			GL.UniformMatrix4(InterfaceProgram.UniformView_ID, true, ref Model);
+			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective);
+
 			if (state.IsViewingMap) {
 				// Draw map
 			}

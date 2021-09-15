@@ -85,9 +85,15 @@ namespace Project.Render {
 
 	public class ShaderProgramInterface : ShaderProgram {
 		public readonly int UniformModel_ID;
+		public readonly int UniformView_ID;
+		public readonly int UniformPerspective_ID;
+		public readonly int UniformTextureAlbedo_ID;
 
 		public ShaderProgramInterface(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
+			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
+			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
+			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 		}
 
 		public override ShaderProgram SetVertexAttribPointers() {
