@@ -26,9 +26,5 @@ namespace Project.Render {
 						  image.Width, image.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 			GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 		}
-
-		public Texture() {
-			TextureID = 0;
-		}
 	}
 }

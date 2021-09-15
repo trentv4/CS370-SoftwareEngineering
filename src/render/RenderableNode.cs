@@ -34,7 +34,7 @@ namespace Project.Render {
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public Matrix4 ModelMatrix { get; private set; } = Matrix4.Identity;
-		public Texture AlbedoTexture = new Texture();
+		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
 		private readonly int IndexLength;
 
