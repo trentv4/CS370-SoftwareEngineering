@@ -32,6 +32,8 @@ namespace Project.Items {
         public ConsumeEffects OnConsume;
         public string KeyType;
 
+        public string TextureName;
+
         public bool Consumeable => (Uses & ItemUseFlags.Consume) == ItemUseFlags.Consume;
         public bool IsKey => (Uses & ItemUseFlags.Key) == ItemUseFlags.Key;
 

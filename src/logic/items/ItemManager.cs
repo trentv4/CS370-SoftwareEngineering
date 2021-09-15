@@ -39,6 +39,7 @@ namespace Project.Items {
                 var weight = item.SelectSingleNode("Weight");
                 var damage = item.SelectSingleNode("Damage");
                 var armor = item.SelectSingleNode("Armor");
+                var textureName = item.SelectSingleNode("TextureName");
 
                 if (name != null)
                     definition.Name = name.InnerText;
@@ -48,6 +49,8 @@ namespace Project.Items {
                     definition.Damage = int.Parse(damage.InnerText);
                 if (armor != null)
                     definition.Armor = int.Parse(armor.InnerText);
+                if (textureName != null)
+                    definition.TextureName = textureName.InnerText;
 
                 //Use effects
                 var uses = item.SelectSingleNode("Uses") as XmlElement;
