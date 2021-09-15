@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Runtime.InteropServices;
+using Project.Levels;
 
 namespace Project.Render {
 	/// <summary> Primary rendering class, instantiated in Program and continuously executed. OpenGL is only referenced from here and related classes. </summary>
@@ -98,7 +99,20 @@ namespace Project.Render {
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective);
 
 			if (state.IsViewingMap) {
-				// Draw map
+				RenderableNode interfaceNode = new RenderableNode();
+
+				foreach (Room r in state.Level.Rooms) {
+					InterfaceModel c = InterfaceModel.GetUnitCircle();
+					float scaling = 0.3f;
+					Vector3 newPos = new Vector3(r.Position.X * scaling, r.Position.Z * scaling, -1);
+					newPos = newPos + new Vector3(-1.5f, -0.75f, 0);
+					c.SetPosition(newPos);
+					c.SetScale(0.1f);
+					c.SetRotation(new Vector3(0f, 90f, 0f));
+					interfaceNode.children.Add(c);
+				}
+
+				interfaceNode.Render();
 			}
 
 			Context.SwapBuffers();
