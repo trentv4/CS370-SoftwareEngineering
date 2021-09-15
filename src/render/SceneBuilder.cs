@@ -11,7 +11,7 @@ namespace Project.Render {
 		public static RenderableNode BuildRoomScene(Room[] rooms) {
 			RenderableNode allRooms = new RenderableNode();
 			foreach (Room r in rooms) {
-				Vector3 positionOffset = new Vector3(r.Y * 10, 0, r.X * 30);
+				Vector3 positionOffset = new Vector3(r.Position.Y * 10.0f, 0, r.Position.X * 30.0f);
 				RenderableNode currentRoom = new RenderableNode();
 
 				Model plane = Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(0, -1f, 0))

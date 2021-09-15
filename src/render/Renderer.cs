@@ -69,7 +69,7 @@ namespace Project.Render {
 			if (rooms == null) {
 				rooms = SceneBuilder.BuildRoomScene(state.Level.Rooms);
 			}
-
+			
 			Vector3 playerPosition = new Vector3(state.PlayerX, 0f, state.PlayerY);
 			PlayerModel.SetPosition(playerPosition);
 			CameraTarget = playerPosition;

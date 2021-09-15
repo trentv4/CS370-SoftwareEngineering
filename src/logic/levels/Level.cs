@@ -1,5 +1,6 @@
 using System;
 using Project.Items;
+using OpenTK.Mathematics;
 
 namespace Project.Levels {
 	public class Level {
@@ -18,8 +19,8 @@ namespace Project.Levels {
 
 		public void SpawnPlayer() {
 			Player = new Player();
-			Player.xPos = Rooms[0].X;
-			Player.yPos = Rooms[0].Y;
+			Player.xPos = Rooms[0].Position.X;
+			Player.yPos = Rooms[0].Position.Y;
 		}
 
 		public void Update() {
@@ -28,17 +29,16 @@ namespace Project.Levels {
 	}
 
 	public class Room {
-		public readonly int X, Y;
+		public Vector3 Position;
 		public Room[] ConnectedRooms;
 
-		public Room(int X, int Y) {
-			this.X = X;
-			this.Y = Y;
+		public Room(float X, float Y) {
+			this.Position = new Vector3((float)X, 0.0f, (float)Y);
 		}
 
 		public double DistanceToRoom(Room otherRoom) {
-			double yDist = Y - otherRoom.Y;
-			double xDist = X - otherRoom.X;
+			double yDist = Position.Y - otherRoom.Position.Y;
+			double xDist = Position.X - otherRoom.Position.X;
 			return Math.Sqrt((yDist * yDist) + (xDist * xDist));
 		}
 	}
