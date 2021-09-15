@@ -12,6 +12,8 @@ namespace Project {
 	/// in a struct, it allows it to be easily copied to a new object that can be sent
 	/// to the renderer without violating thread safety. </summary>
 	public struct GameState {
+		public float PlayerX;
+		public float PlayerY;
 	}
 
 	public class GameLogic {
@@ -32,6 +34,9 @@ namespace Project {
 		public void Update() {
 			StateBuffer = State;
 			firstLevel.Update();
+
+			State.PlayerX = firstLevel.player.xPos;
+			State.PlayerY = firstLevel.player.yPos;
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>

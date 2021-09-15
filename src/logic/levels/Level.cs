@@ -7,7 +7,7 @@ namespace Project.Levels {
         private int xAxis, yAxis; // dimensions of room
         private int door_xPos, door_yPos;
      // private Enemy enemy;
-        private Player player;
+        public Player player;
         private Item[] items;
 
         public Level(int new_xAxis, int new_yAxis) {
