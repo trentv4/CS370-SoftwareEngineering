@@ -24,6 +24,13 @@ namespace Project {
 
 		Level firstLevel = null;
 
+		public GameLogic() {
+			State.PlayerX = 0.0f;
+			State.PlayerY = 0.0f;
+			StateBuffer.PlayerX = 0.0f;
+			StateBuffer.PlayerY = 0.0f;
+		}
+
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public void Initialize() {
 			ItemManager.LoadDefinitions();

@@ -38,7 +38,7 @@ namespace Project.Levels {
 
         ///<summary>Update function that's ran each frame. Updates the level and its contents
         public void Update() {
-            player.Inventory.UpdateUI();
+            player.Update();
         }
 
      /* public void spawnEnemy() {
