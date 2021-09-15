@@ -92,7 +92,9 @@ namespace Project.Render {
 			drawCalls += rooms.Render();
 
 			InterfaceProgram.Use();
-			// Draw interface: unimplemented. TODO
+			if (state.IsViewingMap) {
+				// Draw map
+			}
 
 			Context.SwapBuffers();
 		}

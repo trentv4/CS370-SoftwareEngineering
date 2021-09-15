@@ -11,6 +11,7 @@ namespace Project {
 		public float PlayerX;
 		public float PlayerY;
 		public Level Level;
+		public bool IsViewingMap;
 	}
 
 	public class GameLogic {
@@ -22,10 +23,9 @@ namespace Project {
 		public Level Level;
 
 		public GameLogic() {
-			State.PlayerX = 0.0f;
-			State.PlayerY = 0.0f;
 			StateBuffer.PlayerX = 0.0f;
 			StateBuffer.PlayerY = 0.0f;
+			StateBuffer.IsViewingMap = false;
 		}
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
@@ -49,12 +49,14 @@ namespace Project {
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
 		public void Update() {
-			StateBuffer = State;
 			Level.Update();
 
 			State.PlayerX = Level.Player.xPos;
 			State.PlayerY = Level.Player.yPos;
 			State.Level = Level;
+			State.IsViewingMap = true;
+
+			StateBuffer = State;
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>
