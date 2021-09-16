@@ -6,6 +6,8 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project.Render;
+using Project.Util;
+
 namespace Project {
     ///<summary>Manages item instances carried by an entity</summary>
     public class Inventory {
@@ -13,7 +15,6 @@ namespace Project {
         public Player Owner = null;
         public List<Item> Items = new List<Item>();
         public int Weight => Items.Sum(item => item.Definition.Weight);
-        private uint FramesSinceKeyPressed = 0;
 
         ///<summary>Last item selected in the inventory UI</summary>
         private Item LastItemSelected = null;
@@ -56,37 +57,32 @@ namespace Project {
             var keyState = Renderer.INSTANCE.KeyboardState;
 
             int numKeyPressed = -1;
-            if (keyState.IsKeyDown(Keys.D0))
+            if (Input.IsKeyPressed(Keys.D0))
                 numKeyPressed = 0;
-            if (keyState.IsKeyDown(Keys.D1))
+            if (Input.IsKeyPressed(Keys.D1))
                 numKeyPressed = 1;
-            if (keyState.IsKeyDown(Keys.D2))
+            if (Input.IsKeyPressed(Keys.D2))
                 numKeyPressed = 2;
-            if (keyState.IsKeyDown(Keys.D3))
+            if (Input.IsKeyPressed(Keys.D3))
                 numKeyPressed = 3;
-            if (keyState.IsKeyDown(Keys.D4))
+            if (Input.IsKeyPressed(Keys.D4))
                 numKeyPressed = 4;
-            if (keyState.IsKeyDown(Keys.D5))
+            if (Input.IsKeyPressed(Keys.D5))
                 numKeyPressed = 5;
-            if (keyState.IsKeyDown(Keys.D6))
+            if (Input.IsKeyPressed(Keys.D6))
                 numKeyPressed = 6;
-            if (keyState.IsKeyDown(Keys.D7))
+            if (Input.IsKeyPressed(Keys.D7))
                 numKeyPressed = 7;
-            if (keyState.IsKeyDown(Keys.D8))
+            if (Input.IsKeyPressed(Keys.D8))
                 numKeyPressed = 8;
-            if (keyState.IsKeyDown(Keys.D9))
+            if (Input.IsKeyPressed(Keys.D9))
                 numKeyPressed = 9;
                 
             //Press I to print inventory
-            if(keyState.IsKeyDown(Keys.I) && FramesSinceKeyPressed > 5) {
-                /*Todo: Come up with a better way of stopping repeat presses. 
-                        KeyboardState.IsKeyPressed seems like it'd do it but it isn't working in this function. May be related to how the game is threaded.*/
-                FramesSinceKeyPressed = 0;
+            if(Input.IsKeyPressed(Keys.I)) {
                 PrintInventoryState();
             }
-            else if(numKeyPressed > -1 && numKeyPressed < Items.Count && FramesSinceKeyPressed > 5) {
-                FramesSinceKeyPressed = 0;
-                
+            else if(numKeyPressed > -1 && numKeyPressed < Items.Count) {
                 //Get selected item
                 Item item = Items[numKeyPressed];
                 LastItemSelected = item;
@@ -102,9 +98,7 @@ namespace Project {
                         Console.WriteLine("\t- Key");
                 }
             }
-            else if(keyState.IsKeyDown(Keys.U) && LastItemSelected != null && FramesSinceKeyPressed > 5) {
-                FramesSinceKeyPressed = 0;
-
+            else if(Input.IsKeyPressed(Keys.U) && LastItemSelected != null) {
                 if (LastItemSelected.Definition.Consumeable) {
                     LastItemSelected.Consume(Owner);
                     Console.WriteLine($"Consumed {LastItemSelected.Definition.Name}! {LastItemSelected.UsesRemaining} uses remaining.");
@@ -122,24 +116,9 @@ namespace Project {
                     Items.Remove(LastItemSelected);
                 }
             }
-            else if (keyState.IsKeyDown(Keys.R) && FramesSinceKeyPressed > 5) { //Add random items to the inventory
-                FramesSinceKeyPressed = 0;
-
+            else if (Input.IsKeyPressed(Keys.R)) { //Add random items to the inventory
                 uint numItemsAdded = AddRandomItems(5);
                 Console.WriteLine($"Added {numItemsAdded} to the inventory.");
-            }
-            else if (keyState.IsKeyDown(Keys.P) && FramesSinceKeyPressed > 5) { //Print player stats
-                FramesSinceKeyPressed = 0;
-
-                //Todo: This should be moved into the Player class
-                Console.WriteLine("\n\n*****Player stats*****");
-                Console.WriteLine($"Health: {Owner.Health}/{Owner.MaxHealth}");
-                Console.WriteLine($"Mana: {Owner.Mana}/{Owner.MaxMana}");
-                Console.WriteLine($"Armor: {Owner.Armor}");
-                Console.WriteLine($"Carry weight: {Owner.CarryWeight}");
-            }
-            else {
-                FramesSinceKeyPressed++;
             }
         }
 

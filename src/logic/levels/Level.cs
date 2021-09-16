@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Items;
 using OpenTK.Mathematics;
 using Project.Render;
+using Project.Util;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Project.Levels {
@@ -32,14 +33,8 @@ namespace Project.Levels {
 		public void Update() {
 			Player.Update();
 
-			var KeyboardState = Renderer.INSTANCE.KeyboardState;
-			if(KeyboardState.IsKeyDown(Keys.M) && framesSinceKeyPressed > 5) {
-				framesSinceKeyPressed = 0;
+			if(Input.IsKeyPressed(Keys.M))
 				IsViewingMap = !IsViewingMap;
-			}
-			else {
-				framesSinceKeyPressed++;
-			}
 		}
 	}
 

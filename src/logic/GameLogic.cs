@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Project.Networking;
 using Project.Levels;
 using Project.Items;
+using Project.Util;
 using System;
 
 namespace Project {
@@ -53,6 +54,7 @@ namespace Project {
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
 		public void Update() {
+			Input.Update();
 			Level.Update();
 
 			State.PlayerX = Level.Player.xPos;
