@@ -3,6 +3,7 @@ using Project.Items;
 using Project.Render;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project.Util;
+using OpenTK.Mathematics;
 
 namespace Project {
 	///<summary>All state of the player character.</summary>
@@ -14,10 +15,10 @@ namespace Project {
 		public int MaxMana = 10;
 		public int Armor = 0;
 		public int CarryWeight = 10;
-		public float xPos = 0.0f;
-		public float yPos = 0.0f;
+		public Vector3 Position;
 
-		public Player() {
+		public Player(Vector3 initialPosition) {
+			Position = initialPosition;
 			Inventory = new Inventory(this);
 		}
 
@@ -33,8 +34,8 @@ namespace Project {
 			int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
 			int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
 			float speed = 0.1f;
-			xPos += ad * speed;
-			yPos += ws * speed;
+			Position.X += ad * speed;
+			Position.Y += ws * speed;
 
 			//Print player stats
 			if (Input.IsKeyPressed(Keys.P)) {

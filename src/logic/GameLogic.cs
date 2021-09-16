@@ -35,20 +35,7 @@ namespace Project {
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public void Initialize() {
 			ItemManager.LoadDefinitions();
-			Random r = new Random();
-			int roomsPerRow = 6;
-			int rowsPerLevel = 10;
-			List<Room> roomConstruction = new List<Room>();
-			roomConstruction.Add(new Room(0, roomsPerRow / 2)); // Creates the starting room at index zero
-			for (int i = 1; i < rowsPerLevel; i++) {
-				for (int g = 0; g < roomsPerRow; g++) {
-					if (r.NextDouble() > 0.3) {
-						roomConstruction.Add(new Room(i, g));
-					}
-				}
-			}
-
-			Level = new Level(roomConstruction.ToArray());
+			Level = new Level();
 			Server = new Server(Level);
 		}
 
@@ -57,8 +44,8 @@ namespace Project {
 			Input.Update();
 			Level.Update();
 
-			State.PlayerX = Level.Player.xPos;
-			State.PlayerY = Level.Player.yPos;
+			State.PlayerX = Level.Player.Position.X;
+			State.PlayerY = Level.Player.Position.Y;
 			State.Level = Level;
 			State.IsViewingMap = Level.IsViewingMap;
 

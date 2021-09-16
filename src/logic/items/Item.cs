@@ -1,13 +1,14 @@
 using System;
 using Project.Util;
+using OpenTK.Mathematics;
 
 namespace Project.Items {
     ///<summary>An instance of an item in the game world. Uses ItemDefinition to determine its behavior.</summary>
     public class Item {
         public ItemDefinition Definition;
         public uint UsesRemaining;
-        public int xPos;
-        public int yPos;
+        
+        public Vector3 Position;
 
         public Item(ItemDefinition definition) {
             Definition = definition;
