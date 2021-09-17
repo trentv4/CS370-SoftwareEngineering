@@ -29,7 +29,7 @@ namespace Project.Levels {
 		///			Returns true if it succeeds and false if it fails.
 		///</summary>
 		bool GenerateNewLevel() {
-			Console.WriteLine("Generating new level...");
+			Console.WriteLine("\nGenerating new level...");
 
 			//Temporary room list for generation
 			var roomsGen = new List<Room>();
@@ -127,7 +127,6 @@ namespace Project.Levels {
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
 				if (roomConnections.Count < 2) {
-
 					Console.WriteLine($"Room at {room.Position} has {roomConnections.Count} connections. 2 is the minimum. Retrying level generation.");
 					return false;
 				}
@@ -150,10 +149,6 @@ namespace Project.Levels {
 					if (roomConnections2.Count > 2) {
 						roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
 						roomConnections2.Remove(room);
-						Console.WriteLine($"Disconnected room {room.Id} from room {connectedRoom.Id}");
-						Console.WriteLine($"New connection counts:");
-						Console.WriteLine($"\tRoom {room.Id}: {roomConnections.Count}");
-						Console.WriteLine($"\tRoom {connectedRoom.Id}: {roomConnections2.Count}");
 						break;
 					}
 				}
