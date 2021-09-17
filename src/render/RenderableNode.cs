@@ -2,45 +2,40 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Project.Render {
+	/// <summary> Superclass for all renderable objects. This node is essentially a "container" and does nothing when rendered,
+	/// but will still render children. </summary>
 	public class RenderableNode {
-		public List<RenderableNode> children = new List<RenderableNode>();
+		public List<RenderableNode> Children = new List<RenderableNode>();
 		public bool Enabled = true;
 
 		/// <summary> Renders this object and all children, and returns the number of GL draw calls issued. </summary>
-		public int Render() {
-			if (!Enabled) return 0;
+		public void Render() {
+			if (!Enabled) return;
 
-			int runningTotal = 0;
-			foreach (RenderableNode r in children) {
-				runningTotal += r.Render();
+			foreach (RenderableNode r in Children) {
+				r.Render();
 			}
-			return runningTotal + Convert.ToByte(RenderSelf());
+			RenderSelf();
 		}
 
-		/// <summary> Overriden method for rendering a subclass. Return the number of draw calls this issues
-		/// in order to retain drawcall statistic authenticity. </summary>
-		protected virtual int RenderSelf() {
-			return 0;
-		}
+		protected virtual void RenderSelf() { }
 	}
 
 	public class Model : RenderableNode {
-		public readonly int ElementBufferArray_ID;
-		public readonly int VertexBufferObject_ID;
+		public int ElementBufferArray_ID;
+		public int VertexBufferObject_ID;
 		public Vector3 Scale { get; private set; } = Vector3.One;
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
-		public Matrix4 ModelMatrix { get; private set; } = Matrix4.Identity;
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
-		protected readonly int IndexLength;
+		protected int IndexLength;
 
-		private static Model UNIT_RECTANGLE;
-		private static Model UNIT_CIRCLE;
+		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
 
+		/// <summary> Creates a Model given data and indices. </summary>
 		public Model(float[] vertexData, uint[] indices) {
 			IndexLength = indices.Length;
 
@@ -53,16 +48,35 @@ namespace Project.Render {
 			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
 		}
 
-		public Model(Model template) {
-			IndexLength = template.IndexLength;
-			ElementBufferArray_ID = template.ElementBufferArray_ID;
-			VertexBufferObject_ID = template.VertexBufferObject_ID;
+		/// <summary> Creates a Model given data and indices, and stores it in cached models. </summary>
+		public Model(float[] vertexData, uint[] indices, string modelName) : this(vertexData, indices) {
+			_cachedModels.Add(modelName, this);
 		}
 
-		protected override int RenderSelf() {
-			Matrix4 tempModelMatrix = ModelMatrix;
-			GL.UniformMatrix4(GL.GetUniformLocation(Renderer.INSTANCE.ForwardProgram.ShaderProgram_ID, "model"),
-							  true, ref tempModelMatrix);
+		protected Model() { }
+
+		private Model(int IndexLength, int ElementBufferArray, int VertexBufferObject) {
+			this.IndexLength = IndexLength;
+			this.ElementBufferArray_ID = ElementBufferArray;
+			this.VertexBufferObject_ID = VertexBufferObject;
+		}
+
+		/// <summary> Creates a copy of an existing model that was cached with a name. <br/>Nullable!</summary>
+		public static Model GetCachedModel(string modelName) {
+			Model cached = _cachedModels.GetValueOrDefault(modelName);
+			if (cached != null) {
+				return new Model(cached.IndexLength, cached.ElementBufferArray_ID, cached.VertexBufferObject_ID);
+			}
+			return cached;
+		}
+
+		protected override void RenderSelf() {
+			Matrix4 modelMatrix = Matrix4.CreateScale(Scale);
+			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateTranslation(Position);
+			GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
@@ -75,8 +89,6 @@ namespace Project.Render {
 			GL.Uniform1(Renderer.INSTANCE.ForwardProgram.UniformTextureAlbedo_ID, 0);
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
-
-			return 1;
 		}
 
 		/// <summary> Deletes buffers in OpenGL. This is automatically done by object garbage collection OR program close.
@@ -86,20 +98,9 @@ namespace Project.Render {
 			GL.DeleteBuffer(ElementBufferArray_ID);
 		}
 
-		/// <summary> Regenerates the model matrix after an update to scale, translation, or rotation. </summary>
-		private void UpdateModelMatrix() {
-			Matrix4 m = Matrix4.CreateScale(Scale);
-			m *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF);
-			m *= Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF);
-			m *= Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
-			m *= Matrix4.CreateTranslation(Position);
-			ModelMatrix = m;
-		}
-
 		/// <summary> Chainable method to set the scale of this object. </summary>
 		public Model SetScale(Vector3 scale) {
 			this.Scale = scale;
-			UpdateModelMatrix();
 			return this;
 		}
 
@@ -111,36 +112,35 @@ namespace Project.Render {
 		/// <summary> Chainable method to set the rotation of this object. </summary>
 		public Model SetRotation(Vector3 rotation) {
 			this.Rotation = rotation;
-			UpdateModelMatrix();
 			return this;
 		}
 
 		/// <summary> Chainable method to set the position of this object. </summary>
 		public Model SetPosition(Vector3 position) {
 			this.Position = position;
-			UpdateModelMatrix();
 			return this;
 		}
 
+		/// <summary> Creates (or loads) a unit rectangle that is then further manipulated with model manipulations. </summary>
 		public static Model GetUnitRectangle() {
-			if (UNIT_RECTANGLE == null) {
-				float[] vertices = new float[] {
+			Model unitRectangle = GetCachedModel("unit_rectangle");
+			if (unitRectangle == null) {
+				return new Model(new float[] {
 					-0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 0.0f, 0.0f,
 					 0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 1.0f, 0.0f,
 					-0.5f,  0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 0.0f, 1.0f,
 					 0.5f,  0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 0.5f, 1.0f, 1.0f, 1.0f,
-				};
-				uint[] indices = new uint[] {
+				}, new uint[] {
 					0, 1, 2, 1, 2, 3
-				};
-
-				UNIT_RECTANGLE = new Model(vertices, indices);
+				}, "unit_rectangle");
+			} else {
+				return unitRectangle;
 			}
-			return new Model(UNIT_RECTANGLE);
 		}
 
 		public static Model GetUnitCircle() {
-			if (UNIT_CIRCLE == null) {
+			Model unitCircle = GetCachedModel("unit_circle");
+			if (unitCircle == null) {
 				uint density = 180;
 
 				List<float> v = new List<float>();
@@ -164,70 +164,31 @@ namespace Project.Render {
 
 				float[] vertices = v.ToArray();
 				uint[] indices = i.ToArray();
-				UNIT_CIRCLE = new Model(vertices, indices);
+				return new Model(vertices, indices, "unit_circle");
+			} else {
+				return unitCircle;
 			}
-			return new Model(UNIT_CIRCLE);
 		}
-
-		public static Model GetRoom() {
-			List<float> vertices = new List<float>();
-			vertices.AddRange(new float[] { 0f, 0f, 0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1f, 1.0f, 0.0f, 0.0f, });
-
-			uint density = 360;
-			for (int i = 1; i <= density; i++) {
-				float angle = Renderer.RCF * i * (360.0f / (float)density);
-				vertices.AddRange(new List<float>{
-					(float) Math.Cos(angle), (float) Math.Sin(angle), 0f, //XYZ
-					((float) Math.Cos(angle) + 1)/2.0f, ((float) Math.Sin(angle) + 1)/2.0f, 1f, // NORMALS
-					0.8f, 0.2f, 0.4f, 0.0f, // RGBA
-					0.0f, 0.0f, // UV
-				});
-			}
-			for (int i = 1; i <= density; i++) {
-				float angle = Renderer.RCF * i * (360.0f / (float)density);
-				vertices.AddRange(new List<float>{
-					(float) Math.Cos(angle), (float) Math.Sin(angle), 1, //XYZ
-					((float) Math.Cos(angle) + 1)/2.0f, ((float) Math.Sin(angle) + 1)/2.0f, 1f, // NORMALS
-					1f, 0f, 0f, 0.0f, // RGBA
-					0.0f, 0.0f, // UV
-				});
-			}
-
-
-			List<uint> indexList = new List<uint>();
-			// "Floor"
-			for (uint i = 0; i < density; i++) {
-				indexList.AddRange(new uint[] { 0, i, i + 1 });
-			}
-			indexList.AddRange(new uint[] { 0, 1, (uint)density });
-			for (uint i = 1; i < density; i++) {
-				indexList.AddRange(new uint[] {
-					i, i + density, i + density + 1,
-					i, i+1, i + density + 1,
-				});
-			}
-			indexList.AddRange(new uint[] {
-					1, density, density + 1,
-					density + 1, density, density * 2
-				});
-			// "Walls"
-
-
-			return new Model(vertices.ToArray(), indexList.ToArray());
-		}
-
-
 	}
+
 	public class InterfaceModel : Model {
 		public InterfaceModel(float[] vertices, uint[] indices) : base(vertices, indices) { }
-		public InterfaceModel(InterfaceModel template) : base(template) { }
 
 		private static InterfaceModel UNIT_CIRCLE;
 
-		protected override int RenderSelf() {
-			Matrix4 tempModelMatrix = ModelMatrix;
-			GL.UniformMatrix4(GL.GetUniformLocation(Renderer.INSTANCE.ForwardProgram.ShaderProgram_ID, "model"),
-							  true, ref tempModelMatrix);
+		public InterfaceModel(InterfaceModel template) {
+			IndexLength = template.IndexLength;
+			ElementBufferArray_ID = template.ElementBufferArray_ID;
+			VertexBufferObject_ID = template.VertexBufferObject_ID;
+		}
+
+		protected override void RenderSelf() {
+			Matrix4 modelMatrix = Matrix4.CreateScale(Scale);
+			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateTranslation(Position);
+			GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 5 * sizeof(float));
@@ -238,8 +199,6 @@ namespace Project.Render {
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformTextureAlbedo_ID, 0);
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
-
-			return 1;
 		}
 
 		public static new InterfaceModel GetUnitCircle() {

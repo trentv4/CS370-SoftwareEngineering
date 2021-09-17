@@ -2,12 +2,12 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Project.Render {
 	/// <summary> Wrapper class for the concept of an OpenGL program. Internally, this
 	/// will handle setting vertex attribs and program-wide uniforms.</summary>
 	public class ShaderProgram {
-		/// <summary> OpenGL-assigned ID for this program </summary>
 		public readonly int ShaderProgram_ID;
 		public readonly int VertexArrayObject_ID;
 
@@ -37,8 +37,17 @@ namespace Project.Render {
 		}
 
 		/// <summary> Assigns the pre-determined vertex attrib information to attrib pointers. This is called once after
-		/// creating at least one VBO in this format. </summary>
-		public virtual ShaderProgram SetVertexAttribPointers() {
+		/// creating at least one VBO in this format. Provide the attribs as a series of ints specifying attrib size.
+		/// For example, [vec3, vec4, vec3, vec2] would be int[] { 3, 4, 3, 2 }.</summary>
+		public virtual ShaderProgram SetVertexAttribPointers(int[] attribs) {
+			Use();
+			int stride = attribs.Sum() * sizeof(float);
+			int runningTotal = 0;
+			for (int i = 0; i < attribs.Length; i++) {
+				GL.EnableVertexAttribArray(i);
+				GL.VertexAttribPointer(i, attribs[i], VertexAttribPointerType.Float, false, stride, runningTotal);
+				runningTotal += attribs[i] * sizeof(float);
+			}
 			return this;
 		}
 
@@ -55,54 +64,41 @@ namespace Project.Render {
 		}
 	}
 
+	/// <summary> ShaderProgram for foward geometry rendering.<br/>
+	/// Uniforms:  mat4 model, mat4 view, mat4 perspective, sampler2D albedoTexture<br/>
+	/// Attribs: vec3 _position, vec3 _normal, vec4 _albedo, vec2 _uv</summary>
 	public class ShaderProgramForwardRenderer : ShaderProgram {
 		public readonly int UniformModel_ID;
 		public readonly int UniformView_ID;
 		public readonly int UniformPerspective_ID;
 		public readonly int UniformTextureAlbedo_ID;
 
+		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/ForwardShader.
+		/// The purpose of this shader is a simpistic forward-renderer (as opposed to a deferred). </summary>
 		public ShaderProgramForwardRenderer(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 		}
-
-		public override ShaderProgram SetVertexAttribPointers() {
-			Use();
-			GL.BindVertexArray(VertexArrayObject_ID);
-			GL.EnableVertexAttribArray(0);
-			GL.EnableVertexAttribArray(1);
-			GL.EnableVertexAttribArray(2);
-			GL.EnableVertexAttribArray(3);
-			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 12 * sizeof(float), 0 * sizeof(float)); /* xyz */
-			GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 12 * sizeof(float), 3 * sizeof(float)); /* normals */
-			GL.VertexAttribPointer(2, 4, VertexAttribPointerType.Float, false, 12 * sizeof(float), 6 * sizeof(float)); /* rgba */
-			GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, 12 * sizeof(float), 10 * sizeof(float)); /* uv */
-			return this;
-		}
 	}
 
+	/// <summary> ShaderProgram for interface rendering.<br/>
+	/// Uniforms:  mat4 model, mat4 view, mat4 perspective, sampler2D albedoTexture<br/>
+	/// Attribs: vec3 _position, vec2 _uv</summary>
 	public class ShaderProgramInterface : ShaderProgram {
 		public readonly int UniformModel_ID;
 		public readonly int UniformView_ID;
 		public readonly int UniformPerspective_ID;
 		public readonly int UniformTextureAlbedo_ID;
 
+		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
+		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
 		public ShaderProgramInterface(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
-		}
-
-		public override ShaderProgram SetVertexAttribPointers() {
-			Use();
-			GL.EnableVertexAttribArray(0);
-			GL.EnableVertexAttribArray(1);
-			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0 * sizeof(float)); /* xyz */
-			GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float)); /* uv */
-			return this;
 		}
 	}
 }

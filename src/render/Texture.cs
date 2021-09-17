@@ -7,19 +7,19 @@ using System.Collections.Generic;
 namespace Project.Render {
 	public class Texture {
 		public readonly int TextureID;
-		private readonly float MaxAnisotrophy = GL.GetFloat((GetPName)All.MaxTextureMaxAnisotropy);
-		private static readonly Dictionary<string, int> LOADED_TEXTURES = new Dictionary<string, int>();
+		private readonly float _maxAnisotrophy = GL.GetFloat((GetPName)All.MaxTextureMaxAnisotropy);
+		private static readonly Dictionary<string, int> _loadedTextures = new Dictionary<string, int>();
 
 		public Texture(string location) {
-			if (LOADED_TEXTURES.ContainsKey(location)) {
-				this.TextureID = LOADED_TEXTURES[location];
+			if (_loadedTextures.ContainsKey(location)) {
+				this.TextureID = _loadedTextures[location];
 			} else {
 				ImageResult image;
 				using (FileStream stream = File.OpenRead(location)) {
 					image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 				}
 
-				float anisotropicLevel = MathHelper.Clamp(16, 1f, MaxAnisotrophy);
+				float anisotropicLevel = MathHelper.Clamp(16, 1f, _maxAnisotrophy);
 
 				TextureID = GL.GenTexture();
 				GL.BindTexture(TextureTarget.Texture2D, TextureID);
@@ -31,7 +31,7 @@ namespace Project.Render {
 							  image.Width, image.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 				GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
-				LOADED_TEXTURES.Add(location, TextureID);
+				_loadedTextures.Add(location, TextureID);
 			}
 		}
 	}

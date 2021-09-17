@@ -17,13 +17,13 @@ namespace Project.Render {
 				Model plane = Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(0, -1f, 0))
 								   .SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
 				plane.AlbedoTexture = new Texture("assets/textures/plane.png");
-				currentRoom.children.AddRange(new RenderableNode[] {
+				currentRoom.Children.AddRange(new RenderableNode[] {
 					plane,
 					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
 					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
 					Model.GetUnitRectangle().SetPosition(positionOffset + new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f)),
 				});
-				allRooms.children.Add(currentRoom);
+				allRooms.Children.Add(currentRoom);
 			}
 			return new RenderableNode();
 		}
@@ -56,12 +56,12 @@ namespace Project.Render {
 			Model door2 = Model.GetUnitRectangle().SetPosition(new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			Model door3 = Model.GetUnitRectangle().SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			RenderableNode room = new RenderableNode();
-			room.children.AddRange(new RenderableNode[] {
+			room.Children.AddRange(new RenderableNode[] {
 				plane, door1, door2, door3, circle
 			});
 
 			// Order matters! [0] must always be PlayerModel
-			Scene.children.AddRange(new RenderableNode[] {
+			Scene.Children.AddRange(new RenderableNode[] {
 				PlayerModel, room
 			});
 

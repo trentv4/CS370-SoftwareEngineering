@@ -23,7 +23,6 @@ namespace Project.Render {
 		private RenderableNode Scene;
 		private Vector3 CameraPosition = new Vector3(0, 0, -2);
 		private Vector3 CameraTarget = new Vector3(0, 0, -1);
-		private float CameraAngle = 90;
 
 		// Debug
 		private Model PlayerModel;
@@ -53,11 +52,11 @@ namespace Project.Render {
 			Scene = SceneBuilder.CreateDemoScene();
 
 			// don't look at the following lines.. extremely gross, but works
-			PlayerModel = (Model)Scene.children[0];
+			PlayerModel = (Model)Scene.Children[0];
 			// end gross
 
-			ForwardProgram.SetVertexAttribPointers();
-			InterfaceProgram.SetVertexAttribPointers();
+			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
+			InterfaceProgram.SetVertexAttribPointers(new[] { 3, 2 });
 		}
 
 		private RenderableNode rooms = null;
@@ -90,7 +89,8 @@ namespace Project.Render {
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
 
-			int drawCalls = Scene.Render() + rooms.Render();
+			Scene.Render();
+			rooms.Render();
 
 			GL.Disable(EnableCap.DepthTest);
 
@@ -109,7 +109,7 @@ namespace Project.Render {
 					c.SetPosition(newPos);
 					c.SetScale(0.1f);
 					c.SetRotation(new Vector3(0f, 90f, 0f));
-					interfaceNode.children.Add(c);
+					interfaceNode.Children.Add(c);
 				}
 
 				interfaceNode.Render();
