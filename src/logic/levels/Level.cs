@@ -39,7 +39,7 @@ namespace Project.Levels {
 			Console.WriteLine($"Level generation seed: {randSeed}");
 
 			//Room generation config
-			int numRows = 6; //Num rows excluding start and end room
+			int numRows = 5; //Num rows excluding start and end room
 			int minRoomsPerRow = 2;
 			int maxRoomsPerRow = 5;
 			float centerY = (float)maxRoomsPerRow / 2.0f;
@@ -132,29 +132,33 @@ namespace Project.Levels {
 				}
 			}
 
-			//Prune connections from rooms with >= 3 connections
+			//Prune connections from some rooms with > 2 connections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				if (roomConnections.Count == 2)
-					continue;
-
 				double chance = rand.NextDouble();
-				if (chance < 0.5) //50% chance of pruning connections
+				const double pruneChance = 0.6; //Chance that connections will be pruned
+				//If room has < 5 connections there's a chance of removing connections
+				//If room has >= 5 connections then some connections are always removed to avoid an overly connected map 
+				if (chance > pruneChance && roomConnections.Count < 5)
 					continue;
 
-				//Prune a connection if that's possible without giving another room < 2 connections
-				Room roomToRemove = null;
-				foreach (var connectedRoom in roomConnections) {
-					var roomConnections2 = connections[connectedRoom];
-					if (roomConnections2.Count > 2) {
-						roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
-						roomConnections2.Remove(room);
-						break;
+				while(roomConnections.Count > 2) {
+					//Prune a connection if that's possible without giving another room < 2 connections
+					Room roomToRemove = null;
+					foreach (var connectedRoom in roomConnections) {
+						var roomConnections2 = connections[connectedRoom];
+						if (roomConnections2.Count > 2) {
+							roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
+							roomConnections2.Remove(room);
+							break;
+						}
 					}
+					//Remove connection
+					if (roomToRemove != null)
+						roomConnections.Remove(roomToRemove);
+					else
+						break;
 				}
-				//Remove connection
-				if (roomToRemove != null)
-					roomConnections.Remove(roomToRemove);
 			}
 
 			//Do floodfill from initial room to see if final room can be reached
@@ -185,18 +189,24 @@ namespace Project.Levels {
 					return false;
 				}
 
-				//Prune rooms that aren't connected to the start room. There's no way to reach them
+				//Get a list of rooms that aren't connected to the start room
+				var strandedRooms = new List<Room>(); //Rooms that don't have a path to the start room
 				foreach (var room in roomsGen)
-					if (!checkedRooms.Contains(room)) {
-						roomsGen.Remove(room); //Remove room
+					if (!checkedRooms.Contains(room))
+						strandedRooms.Add(room);
 
-						//Iterate all other rooms and remove their connections to this one if present
-						foreach (var room2 in roomsGen) {
-							var room2Connections = connections[room2];
-							if (room2Connections.Contains(room))
-								room2Connections.Remove(room);
-						}
+				//Remove rooms that aren't connected to the start room.
+				//Done in two steps since you should enumerate a list (roomsGen) while removing items from it
+				foreach (var room in strandedRooms) {
+					roomsGen.Remove(room);
+					
+					//Iterate all other rooms and remove their connections to this one if present
+					foreach (var room2 in roomsGen) {
+						var room2Connections = connections[room2];
+						if (room2Connections.Contains(room))
+							room2Connections.Remove(room);
 					}
+				}
 			}
 
 			//Check again that all rooms have >= 2 connections
