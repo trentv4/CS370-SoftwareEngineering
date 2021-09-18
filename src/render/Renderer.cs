@@ -100,11 +100,10 @@ namespace Project.Render {
 
 			if (state.IsViewingMap) {
 				RenderableNode interfaceNode = new RenderableNode();
+				float levelToMapScaling = 0.3f;
+				Vector3 levelToMapTranslation = new Vector3(-1.5f, -0.75f, -1);
 
 				foreach (Room currentRoom in state.Level.Rooms) {
-					float levelToMapScaling = 0.3f;
-					Vector3 levelToMapTranslation = new Vector3(-1.5f, -0.75f, -1);
-
 					InterfaceModel roomCircleModel = InterfaceModel.GetUnitCircle();
 					roomCircleModel.SetPosition(new Vector3(currentRoom.Position.X * levelToMapScaling, currentRoom.Position.Z * levelToMapScaling, 0) + levelToMapTranslation);
 					roomCircleModel.SetScale(0.1f);
@@ -127,6 +126,15 @@ namespace Project.Render {
 						interfaceNode.Children.Add(connectorQuadModel);
 					}
 				}
+				Vector3 playerMapPos = state.Level.Player.Position;
+				Vector3 adjustedMapPos = new Vector3(-playerMapPos.X * 0.05f, playerMapPos.Y * 0.05f, 0) + levelToMapTranslation;
+				InterfaceModel playerCircleModel = InterfaceModel.GetUnitCircle();
+				playerCircleModel.SetPosition(adjustedMapPos);
+				playerCircleModel.SetScale(0.1f);
+				playerCircleModel.SetRotation(new Vector3(0f, 90f, 0f));
+				playerCircleModel.AlbedoTexture = new Texture("assets/textures/plane.png");
+				interfaceNode.Children.Add(playerCircleModel);
+
 				interfaceNode.Render();
 			}
 
