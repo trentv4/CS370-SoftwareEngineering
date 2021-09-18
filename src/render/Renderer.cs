@@ -101,22 +101,51 @@ namespace Project.Render {
 			if (state.IsViewingMap) {
 				RenderableNode interfaceNode = new RenderableNode();
 
-				foreach (Room r in state.Level.Rooms) {
+				Room r = new Room(3, 3);
+				Room r2 = new Room(1, 1);
+				Room r3 = new Room(3, 1);
+				r.ConnectedRooms = new[] { r2 };
+				r2.ConnectedRooms = new[] { r, r3 };
+				r3.ConnectedRooms = new Room[0];
+
+				Room[] testRooms = new[] { r, r2, r3 };//state.Level.Rooms
+				testRooms = state.Level.Rooms;
+				foreach (Room currentRoom in testRooms) {
 					InterfaceModel c = InterfaceModel.GetUnitCircle();
 					float scaling = 0.3f;
-					Vector3 newPos = new Vector3(r.Position.X * scaling, r.Position.Z * scaling, -1);
+					Vector3 newPos = new Vector3(currentRoom.Position.X * scaling, currentRoom.Position.Z * scaling, -1);
 					newPos = newPos + new Vector3(-1.5f, -0.75f, 0);
 					c.SetPosition(newPos);
 					c.SetScale(0.1f);
 					c.SetRotation(new Vector3(0f, 90f, 0f));
 					interfaceNode.Children.Add(c);
-				}
+					scaling = 1;
 
+					foreach (Room connection in currentRoom.ConnectedRooms) {
+						if (connection.Position.X < currentRoom.Position.X) continue;
+						Vector2 currentPos = new Vector2(currentRoom.Position.X * scaling, currentRoom.Position.Z * scaling);
+						Vector2 connectPos = new Vector2(connection.Position.X * scaling, connection.Position.Z * scaling);
+
+						Vector2 connectPosCorrected = connectPos - currentPos;
+						float magnitude = Vector2.Distance(Vector2.Zero, connectPosCorrected);
+						float angle = (float)Math.Atan2(connectPosCorrected.Y, connectPosCorrected.X);
+
+						Vector3 p = new Vector3(currentPos + (connectPosCorrected / 2)) * 0.3f;
+
+						InterfaceModel d = InterfaceModel.GetUnitRectangle();
+						d.SetPosition(p + new Vector3(-1.5f, -0.75f, -1f));
+						d.SetScale(new Vector3(magnitude * 0.3f, 0.02f, 1f));
+						d.SetRotation(new Vector3(0, 0, angle / RCF));
+						interfaceNode.Children.Add(d);
+
+					}
+				}
 				interfaceNode.Render();
 			}
 
 			Context.SwapBuffers();
 		}
+
 
 		/// <summary> Handles all debug callbacks from OpenGL and throws exceptions if unhandled. </summary>
 		private static void DebugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam) {

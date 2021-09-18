@@ -175,6 +175,7 @@ namespace Project.Render {
 		public InterfaceModel(float[] vertices, uint[] indices) : base(vertices, indices) { }
 
 		private static InterfaceModel UNIT_CIRCLE;
+		private static InterfaceModel UNIT_RECTANGLE;
 
 		public InterfaceModel(InterfaceModel template) {
 			IndexLength = template.IndexLength;
@@ -199,6 +200,20 @@ namespace Project.Render {
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformTextureAlbedo_ID, 0);
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+		}
+
+		public static new InterfaceModel GetUnitRectangle() {
+			if (UNIT_RECTANGLE == null) {
+				UNIT_RECTANGLE = new InterfaceModel(new float[] {
+					-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+					 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+					-0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+					 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+				}, new uint[] {
+					0, 1, 2, 1, 2, 3
+				});
+			}
+			return new InterfaceModel(UNIT_RECTANGLE);
 		}
 
 		public static new InterfaceModel GetUnitCircle() {
