@@ -17,10 +17,7 @@ namespace Project.Levels {
 
 		public bool IsViewingMap = false;
 		public Level() {
-			//Generate the level. Will attempt up to 10 times if it fails. Failure is rare at the moment
-			for(int i = 0; i < 10; i++)
-				if (GenerateNewLevel())
-					break;
+			while (!GenerateNewLevel()) { }
 
 			Player.Inventory.PrintInventoryControls();
 		}
@@ -42,9 +39,9 @@ namespace Project.Levels {
 			Console.WriteLine($"Level generation seed: {randSeed}");
 
 			//Room generation config
-			int numRows = 8; //Num rows excluding start and end room
+			int numRows = 6; //Num rows excluding start and end room
 			int minRoomsPerRow = 2;
-			int maxRoomsPerRow = 4;
+			int maxRoomsPerRow = 5;
 			float centerY = (float)maxRoomsPerRow / 2.0f;
 
 			//Create start room and its row
@@ -57,13 +54,13 @@ namespace Project.Levels {
 
 			//Generate rooms and set their positions
 			float rowX = 1.0f;
-			for(int i = 1; i < numRows + 1; i++) {
+			for (int i = 1; i < numRows + 1; i++) {
 				var row = new List<Room>();
 				int numRooms = rand.Next(minRoomsPerRow, maxRoomsPerRow + 1);
 				float roomDistY = 6.0f / (float)numRooms;
 				float roomY = (float)(rand.NextDouble() / 2.0); //Random initial Y pos
 
-				for(int j = 0; j < numRooms; j++) {
+				for (int j = 0; j < numRooms; j++) {
 					var room = new Room(rowX, roomY);
 					row.Add(room);
 					roomsGen.Add(room);
@@ -72,12 +69,12 @@ namespace Project.Levels {
 				}
 
 				//Adjust next row x pos with some random variation
-				rowX += 1.0f + ((float)(rand.NextDouble() / 4.0) - 0.125f);
+				rowX += 1.5f + ((float)(rand.NextDouble() / 2.0) - 0.125f);
 				rows.Add(row);
 			}
 
 			//Add end room and its row
-			var endRoom = new Room(numRows + 2, centerY);
+			var endRoom = new Room(rowX, centerY);
 			roomsGen.Add(endRoom);
 			connections[endRoom] = new List<Room>();
 			var endRow = new List<Room>();
@@ -87,7 +84,7 @@ namespace Project.Levels {
 			//Add random items to each room
 			foreach (var room in roomsGen) {
 				int numItemsToAdd = rand.Next(0, 5);
-				for(int i = 0; i < numItemsToAdd; i++) {
+				for (int i = 0; i < numItemsToAdd; i++) {
 					//Pick random item and add it to the room
 					var def = ItemManager.Definitions[rand.Next(ItemManager.Definitions.Count)];
 					var item = new Item(def);
@@ -103,20 +100,23 @@ namespace Project.Levels {
 			//Connect all rooms between adjacent rows
 			List<Room> lastRow = null;
 			foreach (var row in rows) { //Loop through rows
-				if(lastRow == null) {
+				if (lastRow == null) {
 					lastRow = row;
 					continue;
 				}
 
 				//Connect each room in this row to all rooms in the last row
-				foreach(var room in row) {
+				foreach (var room in row) {
 					var connectedRooms = connections[room];
-					foreach(var previousRoom in lastRow) {
+					foreach (var previousRoom in lastRow) {
 						var previousRoomConnections = connections[previousRoom];
 
-						//Connect rooms
-						connectedRooms.Add(previousRoom);
-						previousRoomConnections.Add(room);
+						float connectionMaximumThreshold = 3f;
+						if (Vector3.Distance(room.Position, previousRoom.Position) < connectionMaximumThreshold) {
+							//Connect rooms
+							connectedRooms.Add(previousRoom);
+							previousRoomConnections.Add(room);
+						}
 					}
 				}
 
@@ -135,11 +135,11 @@ namespace Project.Levels {
 			//Prune connections from rooms with >= 3 connections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				if(roomConnections.Count == 2)
+				if (roomConnections.Count == 2)
 					continue;
 
 				double chance = rand.NextDouble();
-				if(chance < 0.5) //50% chance of pruning connections
+				if (chance < 0.5) //50% chance of pruning connections
 					continue;
 
 				//Prune a connection if that's possible without giving another room < 2 connections
@@ -153,7 +153,7 @@ namespace Project.Levels {
 					}
 				}
 				//Remove connection
-				if(roomToRemove != null)
+				if (roomToRemove != null)
 					roomConnections.Remove(roomToRemove);
 			}
 
@@ -163,19 +163,19 @@ namespace Project.Levels {
 				var roomQueue = new Queue<Room>();
 				roomQueue.Enqueue(startRoom);
 				bool success = false;
-				while(roomQueue.Count > 0) {
+				while (roomQueue.Count > 0) {
 					//Get next room from queue
 					var room = roomQueue.Dequeue();
 					var connectedRooms = connections[room];
 					checkedRooms.Add(room);
 
 					//Check if we've reached the end room
-					if(room == endRoom)
+					if (room == endRoom)
 						success = true;
 
 					//Push connections onto queue if they haven't already been checked
 					foreach (var connection in connectedRooms)
-						if(!checkedRooms.Contains(connection))
+						if (!checkedRooms.Contains(connection))
 							roomQueue.Enqueue(connection);
 				}
 
@@ -193,7 +193,7 @@ namespace Project.Levels {
 						//Iterate all other rooms and remove their connections to this one if present
 						foreach (var room2 in roomsGen) {
 							var room2Connections = connections[room2];
-							if(room2Connections.Contains(room))
+							if (room2Connections.Contains(room))
 								room2Connections.Remove(room);
 						}
 					}
@@ -202,7 +202,7 @@ namespace Project.Levels {
 			//Check again that all rooms have >= 2 connections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				if(roomConnections.Count < 2) {
+				if (roomConnections.Count < 2) {
 					Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
 					return false;
 				}
@@ -234,7 +234,7 @@ namespace Project.Levels {
 
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G))
-				GenerateNewLevel();
+				while (!GenerateNewLevel()) { }
 		}
 	}
 

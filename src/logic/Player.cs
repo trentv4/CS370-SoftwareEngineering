@@ -39,12 +39,12 @@ namespace Project {
 
 			//Print player stats
 			if (Input.IsKeyPressed(Keys.P)) {
-                Console.WriteLine("\n\n*****Player stats*****");
-                Console.WriteLine($"Health: {Health}/{MaxHealth}");
-                Console.WriteLine($"Mana: {Mana}/{MaxMana}");
-                Console.WriteLine($"Armor: {Armor}");
-                Console.WriteLine($"Carry weight: {CarryWeight}");
-            }
+				Console.WriteLine("\n\n*****Player stats*****");
+				Console.WriteLine($"Health: {Health}/{MaxHealth}");
+				Console.WriteLine($"Mana: {Mana}/{MaxMana}");
+				Console.WriteLine($"Armor: {Armor}");
+				Console.WriteLine($"Carry weight: {CarryWeight}");
+			}
 		}
 	}
 }
