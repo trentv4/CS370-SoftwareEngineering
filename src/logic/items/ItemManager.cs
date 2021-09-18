@@ -22,13 +22,18 @@ namespace Project.Items {
             
         }
 
-        private static void LoadDefinitionsFromFile(string path) {
+        public static bool LoadDefinitionsFromFile(string path) {
+            string definitionXml = File.ReadAllText(path);
+            return LoadDefinitionsFromString(definitionXml);
+        }
+
+        public static bool LoadDefinitionsFromString(string definitionXml) {
             var doc = new XmlDocument();
-            doc.Load(path);
+            doc.LoadXml(definitionXml);
 
             var root = doc.SelectSingleNode("root");
             if(root == null)
-                return;
+                return false;
 
             var items = root.SelectNodes("Item");
             foreach(XmlElement item in items) {
@@ -94,6 +99,8 @@ namespace Project.Items {
 
                 Definitions.Add(definition);
             }
+            
+            return true;
         }
     }
 }
