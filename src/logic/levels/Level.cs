@@ -105,15 +105,15 @@ namespace Project.Levels {
 					continue;
 				}
 
-				//Connect each room in this row to all rooms in the last row
+				//Connect each room in this row to all rooms in the previous row
 				foreach (var room in row) {
 					var connectedRooms = connections[room];
 					foreach (var previousRoom in lastRow) {
 						var previousRoomConnections = connections[previousRoom];
 
+						//Connect rooms that are < 3 distance from each other
 						float connectionMaximumThreshold = 3f;
 						if (Vector3.Distance(room.Position, previousRoom.Position) < connectionMaximumThreshold) {
-							//Connect rooms
 							connectedRooms.Add(previousRoom);
 							previousRoomConnections.Add(room);
 						}
@@ -135,10 +135,10 @@ namespace Project.Levels {
 			//Prune connections from some rooms with > 2 connections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				double chance = rand.NextDouble();
-				const double pruneChance = 0.6; //Chance that connections will be pruned
 				//If room has < 5 connections there's a chance of removing connections
 				//If room has >= 5 connections then some connections are always removed to avoid an overly connected map 
+				double chance = rand.NextDouble();
+				const double pruneChance = 0.6; //Chance that connections will be pruned
 				if (chance > pruneChance && roomConnections.Count < 5)
 					continue;
 
