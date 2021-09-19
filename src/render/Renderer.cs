@@ -126,10 +126,12 @@ namespace Project.Render {
 						interfaceNode.Children.Add(connectorQuadModel);
 					}
 				}
-				Vector3 playerMapPos = state.Level.Player.Position;
-				Vector3 adjustedMapPos = new Vector3(-playerMapPos.X * 0.05f, playerMapPos.Y * 0.05f, 0) + levelToMapTranslation;
+
+				//Draw player sprite on map over the room they're in
+                Vector3 playerRoomPos = new Vector3(state.Level.CurrentRoom.Position.X, state.Level.CurrentRoom.Position.Z, 0.0f);
+                Vector3 playerRoomPosAdjusted = playerRoomPos * levelToMapScaling;
 				InterfaceModel playerCircleModel = InterfaceModel.GetUnitCircle();
-				playerCircleModel.SetPosition(adjustedMapPos);
+				playerCircleModel.SetPosition(playerRoomPosAdjusted + levelToMapTranslation);
 				playerCircleModel.SetScale(0.1f);
 				playerCircleModel.SetRotation(new Vector3(0f, 90f, 0f));
 				playerCircleModel.AlbedoTexture = new Texture("assets/textures/plane.png");

@@ -12,7 +12,12 @@ namespace Project.Levels {
 		public Player Player;
 		public Room[] Rooms;
 
-		public Room StartRoom = null;
+		///<summary>The room that the player is in.</summary>
+        public Room CurrentRoom = null;
+        ///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
+        public Room PreviousRoom = null;
+
+        public Room StartRoom = null;
 		public Room EndRoom = null;
 
 		public bool IsViewingMap = false;
@@ -231,7 +236,9 @@ namespace Project.Levels {
 
 			//Spawn the player
 			Player = new Player(Rooms[0].Position);
-			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
+            CurrentRoom = startRoom;
+            PreviousRoom = startRoom;
+            Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
 			return true;
 		}
 
@@ -245,6 +252,26 @@ namespace Project.Levels {
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G))
 				while (!GenerateNewLevel()) { }
+
+			//Player map movement
+			if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {
+                Room nextRoom = null;
+                if (Input.IsKeyPressed(Keys.D1) && CurrentRoom.ConnectedRooms.Length >= 1)
+					nextRoom = CurrentRoom.ConnectedRooms[0];
+                if (Input.IsKeyPressed(Keys.D2) && CurrentRoom.ConnectedRooms.Length >= 2)
+					nextRoom = CurrentRoom.ConnectedRooms[1];
+                if (Input.IsKeyPressed(Keys.D3) && CurrentRoom.ConnectedRooms.Length >= 3)
+					nextRoom = CurrentRoom.ConnectedRooms[2];
+
+                if (nextRoom != null) {
+                    if (nextRoom == PreviousRoom) {
+                        Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
+                    } else {
+                        PreviousRoom = CurrentRoom;
+                        CurrentRoom = nextRoom;
+                    }
+                }
+            }
 		}
 	}
 
