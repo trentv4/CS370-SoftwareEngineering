@@ -265,6 +265,8 @@ namespace Project.Levels {
 					nextRoom = CurrentRoom.ConnectedRooms[1];
                 if (Input.IsKeyPressed(Keys.D3) && CurrentRoom.ConnectedRooms.Length >= 3)
 					nextRoom = CurrentRoom.ConnectedRooms[2];
+				if (Input.IsKeyPressed(Keys.D4) && CurrentRoom.ConnectedRooms.Length >= 4)
+					nextRoom = CurrentRoom.ConnectedRooms[3];
 
                 if (nextRoom != null) {
                     if (nextRoom == PreviousRoom) {

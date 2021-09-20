@@ -6,6 +6,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Runtime.InteropServices;
 using Project.Levels;
+using System.Collections.Generic;
 
 namespace Project.Render {
 	/// <summary> Primary rendering class, instantiated in Program and continuously executed. OpenGL is only referenced from here and related classes. </summary>
@@ -103,16 +104,24 @@ namespace Project.Render {
 				float levelToMapScaling = 0.3f;
 				Vector3 levelToMapTranslation = new Vector3(-1.5f, -0.75f, -1);
 
-				foreach (Room currentRoom in state.Level.Rooms) {
+                var drawnConnections = new List<(Room, Room)>(); //Used to stop duplicate connection draws
+                foreach (Room currentRoom in state.Level.Rooms) {
 					InterfaceModel roomCircleModel = InterfaceModel.GetUnitCircle();
 					roomCircleModel.SetPosition(new Vector3(currentRoom.Position.X * levelToMapScaling, currentRoom.Position.Z * levelToMapScaling, 0) + levelToMapTranslation);
 					roomCircleModel.SetScale(0.1f);
 					roomCircleModel.SetRotation(new Vector3(0f, 90f, 0f));
+					if (currentRoom == state.Level.EndRoom)
+						roomCircleModel.AlbedoTexture = new Texture("assets/textures/gold.png");
 					interfaceNode.Children.Add(roomCircleModel);
 
-					foreach (Room connection in currentRoom.ConnectedRooms) {
-						if (connection.Position.X < currentRoom.Position.X) continue;
-						Vector2 currentPos = new Vector2(currentRoom.Position.X, currentRoom.Position.Z);
+                    uint index = 0;
+                    foreach (Room connection in currentRoom.ConnectedRooms) {
+						//Don't draw connections to current room, let current room draw color coded connections to the other rooms
+						//Also don't draw duplicate connections
+						if (connection == state.Level.CurrentRoom || drawnConnections.Contains((currentRoom, connection)))
+							continue;
+
+                        Vector2 currentPos = new Vector2(currentRoom.Position.X, currentRoom.Position.Z);
 						Vector2 connectPosCorrected = new Vector2(connection.Position.X, connection.Position.Z) - currentPos;
 						Vector3 connectedRoomPosition = new Vector3(currentPos + (connectPosCorrected / 2)) * levelToMapScaling;
 
@@ -123,8 +132,23 @@ namespace Project.Render {
 						connectorQuadModel.SetPosition(connectedRoomPosition + levelToMapTranslation);
 						connectorQuadModel.SetScale(new Vector3(magnitude * levelToMapScaling, 0.02f, 1f));
 						connectorQuadModel.SetRotation(new Vector3(0, 0, angle / RCF));
-						interfaceNode.Children.Add(connectorQuadModel);
-					}
+
+						//Color code connections from current room
+                        if (currentRoom == state.Level.CurrentRoom) {
+                            if (index == 0)
+                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/red.png");
+                            else if (index == 1)
+                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/green.png");
+                            else if (index == 2)
+                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/blue.png");
+                            else if (index == 3)
+                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/gold.png");
+                        }
+                        interfaceNode.Children.Add(connectorQuadModel);
+                        drawnConnections.Add((currentRoom, connection));
+                        drawnConnections.Add((connection, currentRoom));
+                        index++;
+                    }
 				}
 
 				//Draw player sprite on map over the room they're in
