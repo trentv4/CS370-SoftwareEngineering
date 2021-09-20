@@ -57,7 +57,7 @@ namespace Project.Render {
 			Model door3 = Model.GetUnitRectangle().SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			RenderableNode room = new RenderableNode();
 			room.Children.AddRange(new RenderableNode[] {
-				plane, door1, door2, door3, circle
+				plane, door1, door2, door3
 			});
 
 			// Order matters! [0] must always be PlayerModel
