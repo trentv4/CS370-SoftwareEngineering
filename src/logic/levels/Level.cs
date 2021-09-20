@@ -12,7 +12,10 @@ namespace Project.Levels {
 		public Player Player;
 		public Room[] Rooms;
 
-		///<summary>The room that the player is in.</summary>
+        ///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
+        public uint Score = 0;
+
+        ///<summary>The room that the player is in.</summary>
         public Room CurrentRoom = null;
         ///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
         public Room PreviousRoom = null;
@@ -269,8 +272,16 @@ namespace Project.Levels {
                     } else {
                         PreviousRoom = CurrentRoom;
                         CurrentRoom = nextRoom;
+                        Score += 100;
                     }
                 }
+            }
+
+			//Print out score and generate a new level if player completes this one
+			if(CurrentRoom == EndRoom) {
+                Console.WriteLine($"Level completed with a score of {Score}!");
+                Score = 0;
+				while(!GenerateNewLevel()) {}
             }
 		}
 	}
