@@ -287,7 +287,7 @@ namespace Project.Levels {
 
 			//Print out score and generate a new level if player completes this one
 			if(CurrentRoom == EndRoom) {
-                Console.WriteLine($"Level completed with a score of {Score}!");
+                Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
                 Score = 0;
 				while(!GenerateNewLevel()) {}
             }
