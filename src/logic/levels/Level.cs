@@ -217,11 +217,15 @@ namespace Project.Levels {
 				}
 			}
 
-			//Check again that all rooms have >= 2 connections
+			//Check again that all rooms have >= 2 && <= 5 connections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				if (roomConnections.Count < 2) {
+				if (roomConnections.Count < 2 || roomConnections.Count > 5) {
 					Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
+					return false;
+				}
+				if (roomConnections.Count > 5) { //Note: This is a temporary connection limit until door based room movement is added
+					Console.WriteLine($"Level generation error! Room {room.Id} has > 5 connections.");
 					return false;
 				}
 			}
@@ -267,6 +271,8 @@ namespace Project.Levels {
 					nextRoom = CurrentRoom.ConnectedRooms[2];
 				if (Input.IsKeyPressed(Keys.D4) && CurrentRoom.ConnectedRooms.Length >= 4)
 					nextRoom = CurrentRoom.ConnectedRooms[3];
+				if (Input.IsKeyPressed(Keys.D5) && CurrentRoom.ConnectedRooms.Length >= 5)
+					nextRoom = CurrentRoom.ConnectedRooms[4];
 
                 if (nextRoom != null) {
                     if (nextRoom == PreviousRoom) {

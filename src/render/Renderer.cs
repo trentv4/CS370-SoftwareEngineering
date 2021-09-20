@@ -110,13 +110,13 @@ namespace Project.Render {
 					roomCircleModel.SetPosition(new Vector3(currentRoom.Position.X * levelToMapScaling, currentRoom.Position.Z * levelToMapScaling, 0) + levelToMapTranslation);
 					roomCircleModel.SetScale(0.1f);
 					roomCircleModel.SetRotation(new Vector3(0f, 90f, 0f));
-					if (currentRoom == state.Level.EndRoom)
+					if (currentRoom == state.Level.EndRoom) //Color end room yellow
 						roomCircleModel.AlbedoTexture = new Texture("assets/textures/gold.png");
 					interfaceNode.Children.Add(roomCircleModel);
 
                     uint index = 0;
                     foreach (Room connection in currentRoom.ConnectedRooms) {
-						//Don't draw connections to current room, let current room draw color coded connections to the other rooms
+						//Don't draw connections to state.Level.CurrentRoom, let state.Level.CurrentRoom draw color coded connections to the other rooms
 						//Also don't draw duplicate connections
 						if (connection == state.Level.CurrentRoom || drawnConnections.Contains((currentRoom, connection)))
 							continue;
@@ -143,6 +143,8 @@ namespace Project.Render {
                                 connectorQuadModel.AlbedoTexture = new Texture("assets/textures/blue.png");
                             else if (index == 3)
                                 connectorQuadModel.AlbedoTexture = new Texture("assets/textures/gold.png");
+                            else if (index == 4)
+                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/cyan.png");
                         }
                         interfaceNode.Children.Add(connectorQuadModel);
                         drawnConnections.Add((currentRoom, connection));
