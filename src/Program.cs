@@ -15,7 +15,8 @@ namespace Project {
 
 	public class Program {
 		public static readonly GameLogic LogicThread = new GameLogic();
-		public static LaunchMode Mode = LaunchMode.SinglePlayer;
+		public static GameWindow INSTANCE;
+		public static LaunchMode Mode = LaunchMode.Server;
 
 		public static void Main(string[] args) {
 			foreach (String argument in args) {
@@ -40,11 +41,13 @@ namespace Project {
 			if (Mode == LaunchMode.Server) {
 				LogicThread.Initialize();
 				using (StubRenderer renderer = new StubRenderer(gameSettings, windowSettings)) {
+					INSTANCE = renderer;
 					renderer.Run();
 				}
 			} else {
 				using (Renderer renderer = new Renderer(gameSettings, windowSettings)) {
 					Renderer.INSTANCE = renderer;
+					INSTANCE = renderer;
 					renderer.Run();
 				}
 			}

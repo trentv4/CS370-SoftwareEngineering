@@ -21,19 +21,19 @@ namespace Project.Util {
 
 		///<summary>Returns true if the key is currently down</summary>
 		public static bool IsKeyDown(Keys key) {
-			var keyboardState = Renderer.INSTANCE.KeyboardState;
+			var keyboardState = Program.INSTANCE.KeyboardState;
 			return keyboardState.IsKeyDown(key);
 		}
 
 		///<summary>Returns true if the key isn't down</summary>
 		public static bool IsKeyReleased(Keys key) {
-			var keyboardState = Renderer.INSTANCE.KeyboardState;
+			var keyboardState = Program.INSTANCE.KeyboardState;
 			return keyboardState.IsKeyReleased(key);
 		}
 
 		///<summary>Updates key states</summary>
 		public static void Update() {
-			var keyboardState = Renderer.INSTANCE.KeyboardState;
+			var keyboardState = Program.INSTANCE.KeyboardState;
 			for (int i = 0; i < _keyDownStates.Length; i++)
 				if (keyboardState.IsKeyDown((Keys)i))
 					_keyDownStates[i]++;
