@@ -104,8 +104,8 @@ namespace Project.Render {
 				float levelToMapScaling = 0.3f;
 				Vector3 levelToMapTranslation = new Vector3(-1.5f, -0.75f, -1);
 
-                var drawnConnections = new List<(Room, Room)>(); //Used to stop duplicate connection draws
-                foreach (Room currentRoom in state.Level.Rooms) {
+				var drawnConnections = new List<(Room, Room)>(); //Used to stop duplicate connection draws
+				foreach (Room currentRoom in state.Level.Rooms) {
 					InterfaceModel roomCircleModel = InterfaceModel.GetUnitCircle();
 					roomCircleModel.SetPosition(new Vector3(currentRoom.Position.X * levelToMapScaling, currentRoom.Position.Z * levelToMapScaling, 0) + levelToMapTranslation);
 					roomCircleModel.SetScale(0.1f);
@@ -114,14 +114,14 @@ namespace Project.Render {
 						roomCircleModel.AlbedoTexture = new Texture("assets/textures/gold.png");
 					interfaceNode.Children.Add(roomCircleModel);
 
-                    uint index = 0;
-                    foreach (Room connection in currentRoom.ConnectedRooms) {
+					uint index = 0;
+					foreach (Room connection in currentRoom.ConnectedRooms) {
 						//Don't draw connections to state.Level.CurrentRoom, let state.Level.CurrentRoom draw color coded connections to the other rooms
 						//Also don't draw duplicate connections
 						if (connection == state.Level.CurrentRoom || drawnConnections.Contains((currentRoom, connection)))
 							continue;
 
-                        Vector2 currentPos = new Vector2(currentRoom.Position.X, currentRoom.Position.Z);
+						Vector2 currentPos = new Vector2(currentRoom.Position.X, currentRoom.Position.Z);
 						Vector2 connectPosCorrected = new Vector2(connection.Position.X, connection.Position.Z) - currentPos;
 						Vector3 connectedRoomPosition = new Vector3(currentPos + (connectPosCorrected / 2)) * levelToMapScaling;
 
@@ -134,28 +134,28 @@ namespace Project.Render {
 						connectorQuadModel.SetRotation(new Vector3(0, 0, angle / RCF));
 
 						//Color code connections from current room
-                        if (currentRoom == state.Level.CurrentRoom) {
-                            if (index == 0)
-                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/red.png");
-                            else if (index == 1)
-                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/green.png");
-                            else if (index == 2)
-                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/blue.png");
-                            else if (index == 3)
-                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/gold.png");
-                            else if (index == 4)
-                                connectorQuadModel.AlbedoTexture = new Texture("assets/textures/cyan.png");
-                        }
-                        interfaceNode.Children.Add(connectorQuadModel);
-                        drawnConnections.Add((currentRoom, connection));
-                        drawnConnections.Add((connection, currentRoom));
-                        index++;
-                    }
+						if (currentRoom == state.Level.CurrentRoom) {
+							if (index == 0)
+								connectorQuadModel.AlbedoTexture = new Texture("assets/textures/red.png");
+							else if (index == 1)
+								connectorQuadModel.AlbedoTexture = new Texture("assets/textures/green.png");
+							else if (index == 2)
+								connectorQuadModel.AlbedoTexture = new Texture("assets/textures/blue.png");
+							else if (index == 3)
+								connectorQuadModel.AlbedoTexture = new Texture("assets/textures/gold.png");
+							else if (index == 4)
+								connectorQuadModel.AlbedoTexture = new Texture("assets/textures/cyan.png");
+						}
+						interfaceNode.Children.Add(connectorQuadModel);
+						drawnConnections.Add((currentRoom, connection));
+						drawnConnections.Add((connection, currentRoom));
+						index++;
+					}
 				}
 
 				//Draw player sprite on map over the room they're in
-                Vector3 playerRoomPos = new Vector3(state.Level.CurrentRoom.Position.X, state.Level.CurrentRoom.Position.Z, 0.0f);
-                Vector3 playerRoomPosAdjusted = playerRoomPos * levelToMapScaling;
+				Vector3 playerRoomPos = new Vector3(state.Level.CurrentRoom.Position.X, state.Level.CurrentRoom.Position.Z, 0.0f);
+				Vector3 playerRoomPosAdjusted = playerRoomPos * levelToMapScaling;
 				InterfaceModel playerCircleModel = InterfaceModel.GetUnitCircle();
 				playerCircleModel.SetPosition(playerRoomPosAdjusted + levelToMapTranslation);
 				playerCircleModel.SetScale(0.1f);
@@ -181,7 +181,9 @@ namespace Project.Render {
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
-			Program.LogicThread.Update();
+			if (Program.Mode != LaunchMode.Client) {
+				Program.LogicThread.Update();
+			}
 		}
 	}
 }

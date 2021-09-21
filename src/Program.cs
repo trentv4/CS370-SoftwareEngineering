@@ -7,10 +7,21 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using Project.Render;
 
 namespace Project {
+	public enum LaunchMode {
+		SinglePlayer,
+		Server,
+		Client
+	};
+
 	public class Program {
 		public static readonly GameLogic LogicThread = new GameLogic();
+		public static LaunchMode Mode = LaunchMode.SinglePlayer;
 
 		public static void Main(string[] args) {
+			foreach (String argument in args) {
+				if (argument.Equals("-client")) Mode = LaunchMode.Client;
+				if (argument.Equals("-server")) Mode = LaunchMode.Server;
+			}
 			Console.WriteLine("Initializing");
 			GameWindowSettings gameSettings = new GameWindowSettings() {
 				IsMultiThreaded = true,
@@ -23,12 +34,28 @@ namespace Project {
 				WindowBorder = WindowBorder.Fixed
 			};
 
-			LogicThread.Initialize();
+			if (Mode != LaunchMode.Client)
+				LogicThread.Initialize();
 
-			using (Renderer g = new Renderer(gameSettings, windowSettings)) {
-				Renderer.INSTANCE = g;
-				g.Run();
+			if (Mode == LaunchMode.Server) {
+				LogicThread.Initialize();
+				using (StubRenderer renderer = new StubRenderer(gameSettings, windowSettings)) {
+					renderer.Run();
+				}
+			} else {
+				using (Renderer renderer = new Renderer(gameSettings, windowSettings)) {
+					Renderer.INSTANCE = renderer;
+					renderer.Run();
+				}
 			}
+		}
+	}
+
+	class StubRenderer : GameWindow {
+		public StubRenderer(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
+
+		protected override void OnUpdateFrame(FrameEventArgs args) {
+			Program.LogicThread.Update();
 		}
 	}
 }
