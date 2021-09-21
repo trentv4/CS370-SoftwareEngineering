@@ -33,14 +33,14 @@ namespace Project {
 		}
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
-		public void Initialize() {
+		public virtual void Initialize() {
 			ItemManager.LoadDefinitions();
 			Level = new Level();
 			Server = new Server(Level);
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
-		public void Update() {
+		public virtual void Update() {
 			Input.Update();
 			Level.Update();
 
@@ -53,8 +53,23 @@ namespace Project {
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>
-		public GameState GetGameState() {
+		public virtual GameState GetGameState() {
 			return StateBuffer;
+		}
+	}
+
+	public class RemoteGameLogic : GameLogic {
+		public override void Initialize() {
+
+		}
+
+		public override void Update() {
+			// every 16.6ms (60fps), retreive a new GameState from the server
+		}
+
+		public override GameState GetGameState() {
+			// retrieve the remote game state from buffer
+			return new GameState();
 		}
 	}
 }

@@ -66,8 +66,10 @@ namespace Project.Render {
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
 
-			if (rooms == null) {
+			if (rooms == null && state.Level != null) {
 				rooms = SceneBuilder.BuildRoomScene(state.Level.Rooms);
+			} else {
+				rooms = new RenderableNode();
 			}
 
 			Vector3 playerPosition = new Vector3(state.PlayerX, 0f, state.PlayerY);
@@ -181,9 +183,7 @@ namespace Project.Render {
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
-			if (Program.Mode != LaunchMode.Client) {
-				Program.LogicThread.Update();
-			}
+			Program.LogicThread.Update();
 		}
 	}
 }

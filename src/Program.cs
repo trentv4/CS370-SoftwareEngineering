@@ -14,9 +14,9 @@ namespace Project {
 	};
 
 	public class Program {
-		public static readonly GameLogic LogicThread = new GameLogic();
+		public static GameLogic LogicThread;
 		public static GameWindow INSTANCE;
-		public static LaunchMode Mode = LaunchMode.Server;
+		public static LaunchMode Mode = LaunchMode.SinglePlayer;
 
 		public static void Main(string[] args) {
 			foreach (String argument in args) {
@@ -35,8 +35,12 @@ namespace Project {
 				WindowBorder = WindowBorder.Fixed
 			};
 
-			if (Mode != LaunchMode.Client)
-				LogicThread.Initialize();
+			if (Mode == LaunchMode.Client) {
+				LogicThread = new RemoteGameLogic();
+			} else {
+				LogicThread = new GameLogic();
+			}
+			LogicThread.Initialize();
 
 			if (Mode == LaunchMode.Server) {
 				LogicThread.Initialize();
