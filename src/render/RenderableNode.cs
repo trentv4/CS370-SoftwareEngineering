@@ -166,7 +166,7 @@ namespace Project.Render {
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
 		public Vector2 Scale { get; private set; } = Vector2.One;
-		public Vector2 Rotation { get; private set; } = Vector2.Zero;
+		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
@@ -208,10 +208,10 @@ namespace Project.Render {
 
 		protected override void RenderSelf() {
 			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
-			Matrix3 modelMatrix = Matrix3.CreateScale(new Vector3(scaleRatio * Scale.X, Scale.Y, 1.0f)) * Matrix3.CreateScale(1.0f / 10f);
-			modelMatrix *= Matrix3.CreateRotationX(Rotation.X * Renderer.RCF);
-			modelMatrix *= Matrix3.CreateRotationY(Rotation.Y * Renderer.RCF);
-			// Translation matrix, implemented manually
+			Matrix3 modelMatrix = Matrix3.Identity;
+			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio * Scale.X, Scale.Y, 1.0f));
+			modelMatrix *= Matrix3.CreateScale(1.0f / 10f);
+			modelMatrix *= Matrix3.CreateRotationZ(Rotation * Renderer.RCF);
 			modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
 
 			GL.UniformMatrix3(Renderer.INSTANCE.InterfaceProgram.UniformMVP_ID, true, ref modelMatrix);
@@ -238,7 +238,7 @@ namespace Project.Render {
 		}
 
 		/// <summary> Chainable method to set the rotation of this object. </summary>
-		public InterfaceModel SetRotation(Vector2 rotation) {
+		public InterfaceModel SetRotation(float rotation) {
 			this.Rotation = rotation;
 			return this;
 		}
