@@ -21,8 +21,8 @@ namespace Project.Render {
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 
-        public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
-		private GameRoot SceneHierarchy = new GameRoot();
+		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
+		private static GameRoot SceneHierarchy = new GameRoot();
 
 		// OpenGL error callback
 		private static DebugProc debugCallback = DebugCallback;
@@ -62,17 +62,7 @@ namespace Project.Render {
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
 
-			// Process event queue
-			while(!EventQueue.IsEmpty) {
-                string eventString;
-                bool result = EventQueue.TryDequeue(out eventString);
-				switch(eventString) {
-					case "LevelRegenerated":
-                        break;
-					default:
-                        break;
-                }
-        	}
+			ProcessEventsFromQueue(state);
 
 			// Setting player model location according to logic thread player location
 			Model PlayerModel = SceneHierarchy.PlayerModel;
@@ -97,6 +87,22 @@ namespace Project.Render {
 			DebugGroupEnd();
 
 			Context.SwapBuffers();
+		}
+
+		private static void ProcessEventsFromQueue(GameState state) {
+			// Process event queue
+			while (!EventQueue.IsEmpty) {
+				string eventString;
+				bool result = EventQueue.TryDequeue(out eventString);
+				switch (eventString) {
+					case "LevelRegenerated":
+						SceneHierarchy.Interface.Map = SceneHierarchy.Interface.BuildMapInterface(state);
+						SceneHierarchy.Scene = SceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						break;
+					default:
+						break;
+				}
+			}
 		}
 
 		/// <summary> Handles all debug callbacks from OpenGL and throws exceptions if unhandled. </summary>

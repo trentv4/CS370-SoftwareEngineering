@@ -22,10 +22,6 @@ namespace Project.Render {
 
 			return Scene;
 		}
-
-		public static InterfaceModel CreateInterface() {
-			return InterfaceModel.GetCachedModel("unit_circle");
-		}
 	}
 
 	public struct GameRoot {
@@ -34,14 +30,16 @@ namespace Project.Render {
 		public InterfaceRoot Interface;
 
 		public void Build() {
-			Scene = SceneBuilder.CreateDemoScene();
 			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
-			Interface = new InterfaceRoot().Build();
 		}
 
 		public void Render() {
 			Scene.Render();
 			PlayerModel.Render();
+		}
+
+		public RenderableNode BuildRoom(Room currentRoom) {
+			return SceneBuilder.CreateDemoScene();
 		}
 	}
 
@@ -50,18 +48,17 @@ namespace Project.Render {
 		public InterfaceModel MainMenu;
 		public InterfaceModel InGameInterface;
 
-        public InterfaceRoot Build() {
+		public InterfaceRoot Build() {
 			return this;
 		}
 
 		public void Render(GameState state) {
 			if (state.IsViewingMap) {
-				if(Map == null) Map = CreateMapNode(state);
-                Map.Render();
+				Map.Render();
 			}
 		}
 
-		public RenderableNode CreateMapNode(GameState state) {
+		public RenderableNode BuildMapInterface(GameState state) {
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
 			Room[] rooms = state.Level.Rooms;
