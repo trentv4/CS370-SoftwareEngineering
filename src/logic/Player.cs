@@ -15,9 +15,9 @@ namespace Project {
 		public int MaxMana = 10;
 		public int Armor = 0;
 		public int CarryWeight = 10;
-		public Vector3 Position;
+		public Vector2 Position;
 
-		public Player(Vector3 initialPosition) {
+		public Player(Vector2 initialPosition) {
 			Position = initialPosition;
 			Inventory = new Inventory(this);
 		}

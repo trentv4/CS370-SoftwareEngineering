@@ -12,15 +12,15 @@ namespace Project.Levels {
 		public Player Player;
 		public Room[] Rooms;
 
-        ///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
-        public uint Score = 0;
+		///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
+		public uint Score = 0;
 
-        ///<summary>The room that the player is in.</summary>
-        public Room CurrentRoom = null;
-        ///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
-        public Room PreviousRoom = null;
+		///<summary>The room that the player is in.</summary>
+		public Room CurrentRoom = null;
+		///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
+		public Room PreviousRoom = null;
 
-        public Room StartRoom = null;
+		public Room StartRoom = null;
 		public Room EndRoom = null;
 
 		public bool IsViewingMap = false;
@@ -121,7 +121,7 @@ namespace Project.Levels {
 
 						//Connect rooms that are < 3 distance from each other
 						float connectionMaximumThreshold = 3f;
-						if (Vector3.Distance(room.Position, previousRoom.Position) < connectionMaximumThreshold) {
+						if (Vector2.Distance(room.Position, previousRoom.Position) < connectionMaximumThreshold) {
 							connectedRooms.Add(previousRoom);
 							previousRoomConnections.Add(room);
 						}
@@ -150,7 +150,7 @@ namespace Project.Levels {
 				if (chance > pruneChance && roomConnections.Count < 5)
 					continue;
 
-				while(roomConnections.Count > 2) {
+				while (roomConnections.Count > 2) {
 					//Prune a connection if that's possible without giving another room < 2 connections
 					Room roomToRemove = null;
 					foreach (var connectedRoom in roomConnections) {
@@ -207,7 +207,7 @@ namespace Project.Levels {
 				//Done in two steps since you should enumerate a list (roomsGen) while removing items from it
 				foreach (var room in strandedRooms) {
 					roomsGen.Remove(room);
-					
+
 					//Iterate all other rooms and remove their connections to this one if present
 					foreach (var room2 in roomsGen) {
 						var room2Connections = connections[room2];
@@ -242,10 +242,10 @@ namespace Project.Levels {
 			EndRoom = endRoom;
 
 			//Spawn the player
-			Player = new Player(Rooms[0].Position);
-            CurrentRoom = startRoom;
-            PreviousRoom = startRoom;
-            Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
+			Player = new Player(new Vector2(0.0f, 0.0f));
+			CurrentRoom = startRoom;
+			PreviousRoom = startRoom;
+			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
 			return true;
 		}
 
@@ -262,40 +262,40 @@ namespace Project.Levels {
 
 			//Player map movement
 			if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {
-                Room nextRoom = null;
-                if (Input.IsKeyPressed(Keys.D1) && CurrentRoom.ConnectedRooms.Length >= 1)
+				Room nextRoom = null;
+				if (Input.IsKeyPressed(Keys.D1) && CurrentRoom.ConnectedRooms.Length >= 1)
 					nextRoom = CurrentRoom.ConnectedRooms[0];
-                if (Input.IsKeyPressed(Keys.D2) && CurrentRoom.ConnectedRooms.Length >= 2)
+				if (Input.IsKeyPressed(Keys.D2) && CurrentRoom.ConnectedRooms.Length >= 2)
 					nextRoom = CurrentRoom.ConnectedRooms[1];
-                if (Input.IsKeyPressed(Keys.D3) && CurrentRoom.ConnectedRooms.Length >= 3)
+				if (Input.IsKeyPressed(Keys.D3) && CurrentRoom.ConnectedRooms.Length >= 3)
 					nextRoom = CurrentRoom.ConnectedRooms[2];
 				if (Input.IsKeyPressed(Keys.D4) && CurrentRoom.ConnectedRooms.Length >= 4)
 					nextRoom = CurrentRoom.ConnectedRooms[3];
 				if (Input.IsKeyPressed(Keys.D5) && CurrentRoom.ConnectedRooms.Length >= 5)
 					nextRoom = CurrentRoom.ConnectedRooms[4];
 
-                if (nextRoom != null) {
-                    if (nextRoom == PreviousRoom) {
-                        Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
-                    } else {
-                        PreviousRoom = CurrentRoom;
-                        CurrentRoom = nextRoom;
-                        Score += 100;
-                    }
-                }
-            }
+				if (nextRoom != null) {
+					if (nextRoom == PreviousRoom) {
+						Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
+					} else {
+						PreviousRoom = CurrentRoom;
+						CurrentRoom = nextRoom;
+						Score += 100;
+					}
+				}
+			}
 
 			//Print out score and generate a new level if player completes this one
-			if(CurrentRoom == EndRoom) {
-                Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
-                Score = 0;
-				while(!GenerateNewLevel()) {}
-            }
+			if (CurrentRoom == EndRoom) {
+				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
+				Score = 0;
+				while (!GenerateNewLevel()) { }
+			}
 		}
 	}
 
 	public class Room {
-		public Vector3 Position;
+		public Vector2 Position;
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();
 		private static int _currentId = 0;
@@ -304,7 +304,7 @@ namespace Project.Levels {
 		public int Id => _id;
 
 		public Room(float X, float Y) {
-			this.Position = new Vector3(X, 0.0f, Y);
+			this.Position = new Vector2(X, Y);
 			_id = _currentId++;
 		}
 

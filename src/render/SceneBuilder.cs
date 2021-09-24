@@ -52,13 +52,14 @@ namespace Project.Render {
 
 		public void Render(GameState state) {
 			if (state.IsViewingMap) {
-				// Recreate the map
 				RenderableNode interfaceNode = new RenderableNode();
 
-				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle");
-				circle.SetPosition(new Vector2(0, 0));
+				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2(0, 0));
 				circle.AlbedoTexture = new Texture("assets/textures/plane.png");
-				interfaceNode.Children.Add(circle);
+
+				interfaceNode.Children.AddRange(new[] {
+					circle
+				});
 				interfaceNode.Render();
 			}
 		}

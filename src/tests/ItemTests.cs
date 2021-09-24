@@ -4,10 +4,10 @@ using Project.Items;
 using OpenTK.Mathematics;
 
 namespace Project.Tests {
-    /// <summary>Test item loading and game logic</summary>
-    [TestFixture]
-    public class ItemTests {
-        string ArmorPotionItemDefinition = @"
+	/// <summary>Test item loading and game logic</summary>
+	[TestFixture]
+	public class ItemTests {
+		string ArmorPotionItemDefinition = @"
         <root>
             <Item>
               <Name>Armor potion</Name>
@@ -23,27 +23,27 @@ namespace Project.Tests {
             </Item>
         </root>";
 
-        [Test]
-        public void TestItemDefinitionLoading() {
-            Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
-        }
+		[Test]
+		public void TestItemDefinitionLoading() {
+			Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
+		}
 
-        [Test]
-        public void TestItemUsage() {
-            //Clear existing definition and load armor potion 
-            ItemManager.Definitions.Clear();
-            Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
+		[Test]
+		public void TestItemUsage() {
+			//Clear existing definition and load armor potion 
+			ItemManager.Definitions.Clear();
+			Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
 
-            //Create player and add armor potion to their inventory
-            var player = new Player(new Vector3(0.0f, 0.0f, 0.0f));
-            var inventory = new Inventory(player);
-            inventory.AddItem(ItemManager.Definitions[0]);
+			//Create player and add armor potion to their inventory
+			var player = new Player(new Vector2(0.0f, 0.0f));
+			var inventory = new Inventory(player);
+			inventory.AddItem(ItemManager.Definitions[0]);
 
-            //Use armor potion and check that it changed play stats correctly
-            int initialArmor = player.Armor;
-            int expectedFinalArmor = initialArmor + 2;
-            inventory.Items[0].Consume(player);
-            Assert.AreEqual(player.Armor, expectedFinalArmor);
-        }
-    }
+			//Use armor potion and check that it changed play stats correctly
+			int initialArmor = player.Armor;
+			int expectedFinalArmor = initialArmor + 2;
+			inventory.Items[0].Consume(player);
+			Assert.AreEqual(player.Armor, expectedFinalArmor);
+		}
+	}
 }
