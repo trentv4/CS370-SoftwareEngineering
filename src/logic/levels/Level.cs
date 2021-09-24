@@ -24,20 +24,24 @@ namespace Project.Levels {
 		public Room EndRoom = null;
 
 		public bool IsViewingMap = false;
-		public Level() {
+
+        public long LastMapRegenTick = 0;
+
+        public Level() {
 			while (!GenerateNewLevel()) { }
 
 			Player.Inventory.PrintInventoryControls();
-		}
+        }
 
 		///<summary>Generates new level. Can be called multiple times to regenerate the level. 
 		///			Returns true if it succeeds and false if it fails.
 		///</summary>
 		bool GenerateNewLevel() {
 			Console.WriteLine("\nGenerating new level...");
+            LastMapRegenTick = System.DateTime.Now.Ticks; //Used by renderer to trigger minimap scene regen
 
-			//Temporary room list for generation
-			var roomsGen = new List<Room>();
+            //Temporary room list for generation
+            var roomsGen = new List<Room>();
 			var connections = new Dictionary<Room, List<Room>>();
 			var rows = new List<List<Room>>();
 
