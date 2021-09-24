@@ -12,5 +12,7 @@
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="OpenTK" Version="4.4.0" />
     <PackageReference Include="StbImageSharp" Version="2.22.4" />
+    <!--Exclude FastNoiseLite gui manually because we don't want it and it uses dependencies we don't use.-->
+    <Compile Remove="dependencies/FastNoiseLite/PreviewApp/FastNoiseLiteGUI.cs"/>
   </ItemGroup>
 </Project>
