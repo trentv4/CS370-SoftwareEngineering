@@ -2,6 +2,7 @@ using OpenTK.Mathematics;
 using System.Collections.Generic;
 using Project.Levels;
 using System;
+using OpenTK.Graphics.OpenGL4;
 
 namespace Project.Render {
 	public class SceneBuilder {
@@ -45,7 +46,7 @@ namespace Project.Render {
 	}
 
 	public struct InterfaceRoot {
-		public InterfaceModel Map;
+		public RenderableNode Map;
 		public InterfaceModel MainMenu;
 		public InterfaceModel InGameInterface;
 
@@ -54,48 +55,58 @@ namespace Project.Render {
 		}
 
 		public void Render(GameState state) {
-			if (!state.IsViewingMap) {
-				List<InterfaceModel> roomNodes = new List<InterfaceModel>();
-				List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
-				Room[] rooms = state.Level.Rooms;
-
-				float xScaling = 18.0f / state.Level.EndRoom.Position.X;
-				Matrix3 adjust = new Matrix3(new Vector3(xScaling, 0, 0), new Vector3(0, 3, 0), new Vector3(-9.0f, -2.5f * 3, 1));
-
-				foreach (Room current in rooms) {
-					InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(Transform(current.Position, adjust));
-					if (current == state.Level.EndRoom) {
-						circle.AlbedoTexture = new Texture("assets/textures/green.png");
-					} else if (current == state.Level.StartRoom) {
-						circle.AlbedoTexture = new Texture("assets/textures/blue.png");
-					} else if (current == state.Level.CurrentRoom) {
-						circle.AlbedoTexture = new Texture("assets/textures/gold.png");
-					} else {
-						circle.AlbedoTexture = new Texture("assets/textures/red.png");
-					}
-					roomNodes.Add(circle);
-
-					foreach (Room connection in current.ConnectedRooms) {
-						if (current.Position.X < connection.Position.X) continue;
-						Vector2 positionA = Transform(current.Position, adjust);
-						Vector2 positionB = Transform(connection.Position, adjust);
-						Vector2 positionBNormalized = positionB - positionA;
-
-						float magnitude = Vector2.Distance(Vector2.Zero, positionBNormalized) * xScaling;
-						InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
-						connector.SetScale(new Vector2(magnitude, 0.5f));
-						float angle = (float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X);
-						connector.SetRotation(angle / Renderer.RCF);
-
-						connectorNodes.Add(connector);
-					}
-				}
-
-				RenderableNode interfaceNode = new RenderableNode();
-				interfaceNode.Children.AddRange(connectorNodes.ToArray());
-				interfaceNode.Children.AddRange(roomNodes.ToArray());
-				interfaceNode.Render();
+			if (state.IsViewingMap) {
+				if (Map == null) Map = CreateMapNode(state);
+				Map.Render();
 			}
+		}
+
+		public RenderableNode CreateMapNode(GameState state) {
+			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
+			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
+			Room[] rooms = state.Level.Rooms;
+
+			float bothScaling = 0.75f;
+			float xScaling = (18.0f / state.Level.EndRoom.Position.X) * bothScaling;
+			float yScaling = 3 * bothScaling;
+			Matrix3 adjust = new Matrix3(new Vector3(xScaling, 0, 0), new Vector3(0, yScaling, 0), new Vector3(-9.0f * bothScaling, -2.5f * yScaling, 1));
+
+			foreach (Room current in rooms) {
+				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(Transform(current.Position, adjust));
+				if (current == state.Level.EndRoom) {
+					circle.AlbedoTexture = new Texture("assets/textures/green.png");
+				} else if (current == state.Level.StartRoom) {
+					circle.AlbedoTexture = new Texture("assets/textures/blue.png");
+				} else if (current == state.Level.CurrentRoom) {
+					circle.AlbedoTexture = new Texture("assets/textures/gold.png");
+				} else {
+					circle.AlbedoTexture = new Texture("assets/textures/red.png");
+				}
+				roomNodes.Add(circle);
+
+				foreach (Room connection in current.ConnectedRooms) {
+					if (current.Position.X < connection.Position.X) continue;
+					Vector2 positionA = Transform(current.Position, adjust);
+					Vector2 positionB = Transform(connection.Position, adjust);
+					Vector2 positionBNormalized = positionB - positionA;
+
+					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
+					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized) * xScaling, 0.5f));
+					connector.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
+
+					connectorNodes.Add(connector);
+				}
+			}
+
+			InterfaceModel mapBackground = InterfaceModel.GetCachedModel("unit_rectangle");
+			mapBackground.AlbedoTexture = new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest);
+			mapBackground.SetScale(new Vector2(30, 16));
+
+			RenderableNode interfaceNode = new RenderableNode();
+			interfaceNode.Children.Add(mapBackground);
+			interfaceNode.Children.AddRange(connectorNodes.ToArray());
+			interfaceNode.Children.AddRange(roomNodes.ToArray());
+			return interfaceNode;
 		}
 
 		private Vector2 Transform(Vector2 start, Matrix3 adjustmentMatrix) {

@@ -257,8 +257,9 @@ namespace Project.Levels {
 				IsViewingMap = !IsViewingMap;
 
 			//Regenerate level
-			if (Input.IsKeyPressed(Keys.G))
+			if (Input.IsKeyPressed(Keys.G)) {
 				while (!GenerateNewLevel()) { }
+			}
 
 			//Player map movement
 			if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {

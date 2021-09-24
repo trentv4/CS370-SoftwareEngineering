@@ -10,5 +10,8 @@ void main() {
 	vec4 texture = texture(albedoTexture, uv);
 	vec3 albedo = vec3(0.8, 0.2, 0.5);
 	vec3 outputColor = (texture.xyz * texture.w) + (albedo * (1-texture.w));
+	if(texture.a == 0) {
+		discard;
+	}
 	FragColor = vec4(outputColor, 1.0);
 }
