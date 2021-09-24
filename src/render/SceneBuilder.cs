@@ -5,10 +5,28 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Project.Render {
-	public class SceneBuilder {
-		public static RenderableNode CreateDemoScene() {
-			RenderableNode Scene = new RenderableNode();
+	/// <summary> Primary rendering root that stores custom references to track important objects in the rendering hierarchy. </summary>
+	public struct GameRoot {
+		/// <summary> 3-dimensional world, including models, entities, and anything "3d" excluding the player model. </summary>
+		public RenderableNode Scene;
+		/// <summary> Specific reference to the player model, rendered after the scene is rendered, but in the same world space. </summary>
+		public Model PlayerModel;
+		/// <summary> Interface root object, see documentation of InterfaceRoot for more details. </summary>
+		public InterfaceRoot Interface;
 
+		/// <summary> Creates one-time objects, in particular the player model. </summary>
+		public void Build() {
+			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
+		}
+
+		/// <summary> Renders all three-dimensional objects into world space. </summary>
+		public void Render() {
+			Scene.Render();
+			PlayerModel.Render();
+		}
+
+		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
+		public RenderableNode BuildRoom(Room currentRoom) {
 			Model plane = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			Model door1 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
@@ -16,48 +34,36 @@ namespace Project.Render {
 			Model door3 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 
 			// Order matters! [0] must always be PlayerModel
+			RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(new RenderableNode[] {
 				plane, door1, door2, door3
 			});
-
 			return Scene;
 		}
 	}
 
-	public struct GameRoot {
-		public RenderableNode Scene;
-		public Model PlayerModel;
-		public InterfaceRoot Interface;
-
-		public void Build() {
-			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
-		}
-
-		public void Render() {
-			Scene.Render();
-			PlayerModel.Render();
-		}
-
-		public RenderableNode BuildRoom(Room currentRoom) {
-			return SceneBuilder.CreateDemoScene();
-		}
-	}
-
+	/// <summary> Primary interface root for all user interfaces, separated into "categories" or "specific interface pieces". </summary>
 	public struct InterfaceRoot {
+		/// <summary> The widescreen map shown when "M" (or other keybinds) are pressed. </summary>
 		public RenderableNode Map;
+		/// <summary> Unimplemented. </summary>
 		public InterfaceModel MainMenu;
+		/// <summary> Unimplemented. </summary>
 		public InterfaceModel InGameInterface;
 
+		/// <summary> Creates one-time objects, in particular the main menu and in-game interface shell. </summary>
 		public InterfaceRoot Build() {
 			return this;
 		}
 
+		/// <summary> Draws different interface nodes based on the current game state. </summary>
 		public void Render(GameState state) {
 			if (state.IsViewingMap) {
 				Map.Render();
 			}
 		}
 
+		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
 		public RenderableNode BuildMapInterface(GameState state) {
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
@@ -106,7 +112,8 @@ namespace Project.Render {
 			return interfaceNode;
 		}
 
-		private Vector2 Transform(Vector2 start, Matrix3 adjustmentMatrix) {
+		/// <summary> Used when constructing the map to transform Vector2s by a translation/scaling transform. </summary>
+		private static Vector2 Transform(Vector2 start, Matrix3 adjustmentMatrix) {
 			Vector3 adjustedPosition = new Vector3(start.X, start.Y, 1.0f) * adjustmentMatrix;
 			return new Vector2(adjustedPosition.X, adjustedPosition.Y);
 		}
