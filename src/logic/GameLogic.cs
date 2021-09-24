@@ -14,7 +14,9 @@ namespace Project {
 		public float PlayerY;
 		public Level Level;
 		public bool IsViewingMap;
-	}
+		///<summary> Last tick that the map was regenerated. Used so renderer can regenerate minimap scene each regen.</summary>
+        public long LastMapRegenTick;
+    }
 
 	public class GameLogic {
 		/// <summary> Actively modified state, constantly being changed by Update() </summary>
@@ -30,7 +32,8 @@ namespace Project {
 			StateBuffer.PlayerX = 0.0f;
 			StateBuffer.PlayerY = 0.0f;
 			StateBuffer.IsViewingMap = false;
-		}
+            StateBuffer.LastMapRegenTick = 0;
+        }
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
@@ -48,8 +51,9 @@ namespace Project {
 			State.PlayerY = Level.Player.Position.Y;
 			State.Level = Level;
 			State.IsViewingMap = Level.IsViewingMap;
+            State.LastMapRegenTick = Level.LastMapRegenTick;
 
-			StateBuffer = State;
+            StateBuffer = State;
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>

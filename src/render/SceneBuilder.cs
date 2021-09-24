@@ -50,14 +50,21 @@ namespace Project.Render {
 		public InterfaceModel MainMenu;
 		public InterfaceModel InGameInterface;
 
-		public InterfaceRoot Build() {
+		/// <summary>Compared with GameState value to see if map needs to be regenerated</summary>
+        private long LastMapRegenTick;
+
+        public InterfaceRoot Build() {
 			return this;
 		}
 
 		public void Render(GameState state) {
 			if (state.IsViewingMap) {
-				if (Map == null) Map = CreateMapNode(state);
-				Map.Render();
+				// Create map node if it doesn't exist or the level regenerated
+				if(Map == null || LastMapRegenTick != state.LastMapRegenTick) {
+                	Map = CreateMapNode(state);
+                    LastMapRegenTick = state.LastMapRegenTick;
+                }
+                Map.Render();
 			}
 		}
 
