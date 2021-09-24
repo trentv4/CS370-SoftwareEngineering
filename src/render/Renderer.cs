@@ -6,6 +6,7 @@ using OpenTK.Windowing.Common;
 using System.Runtime.InteropServices;
 using Project.Levels;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace Project.Render {
 	/// <summary> Primary rendering class, instantiated in Program and continuously executed. OpenGL is only referenced from here and related classes. </summary>
@@ -20,6 +21,7 @@ namespace Project.Render {
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 
+        public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private GameRoot SceneHierarchy = new GameRoot();
 
 		// OpenGL error callback
@@ -59,6 +61,18 @@ namespace Project.Render {
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
+
+			// Process event queue
+			while(!EventQueue.IsEmpty) {
+                string eventString;
+                bool result = EventQueue.TryDequeue(out eventString);
+				switch(eventString) {
+					case "LevelRegenerated":
+                        break;
+					default:
+                        break;
+                }
+        	}
 
 			// Setting player model location according to logic thread player location
 			Model PlayerModel = SceneHierarchy.PlayerModel;

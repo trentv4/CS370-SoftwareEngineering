@@ -38,7 +38,6 @@ namespace Project.Levels {
 		///</summary>
 		bool GenerateNewLevel() {
 			Console.WriteLine("\nGenerating new level...");
-            LastMapRegenTick = System.DateTime.Now.Ticks; //Used by renderer to trigger minimap scene regen
 
             //Temporary room list for generation
             var roomsGen = new List<Room>();
@@ -250,6 +249,7 @@ namespace Project.Levels {
 			CurrentRoom = startRoom;
 			PreviousRoom = startRoom;
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
+            Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer that level regenerated
 			return true;
 		}
 
