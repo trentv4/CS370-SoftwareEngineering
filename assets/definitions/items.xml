@@ -4,14 +4,14 @@
     <Weight>2</Weight>
     <Damage>4</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>sword.png</TextureName>
   </Item>
   <Item>
     <Name>Health potion</Name>
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_green.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <Health>5</Health>
@@ -23,7 +23,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_blue.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <Mana>5</Mana>
@@ -35,7 +35,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_yellow.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <CarryWeight>5</CarryWeight>
@@ -47,7 +47,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_green.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <Armor>2</Armor>
@@ -59,7 +59,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_orange.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <MaxHealth>5</MaxHealth>
@@ -71,7 +71,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>potion_purple.png</TextureName>
     <Uses NumUses="1">
       <Consume>
         <MaxMana>5</MaxMana>
@@ -83,7 +83,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>key_blue.png</TextureName>
     <Uses NumUses="1">
       <Key>
         <Type>Blue</Type>
@@ -95,7 +95,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>key_red.png</TextureName>
     <Uses NumUses="1">
       <Key>
         <Type>Red</Type>
@@ -107,7 +107,7 @@
     <Weight>1</Weight>
     <Damage>0</Damage>
     <Armor>0</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>key_yellow.png</TextureName>
     <Uses NumUses="1">
       <Key>
         <Type>Yellow</Type>
@@ -119,13 +119,13 @@
     <Weight>3</Weight>
     <Damage>0</Damage>
     <Armor>2</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>armor_leather.png</TextureName>
   </Item>
   <Item>
     <Name>Steel armor</Name>
     <Weight>5</Weight>
     <Damage>0</Damage>
     <Armor>5</Armor>
-    <TextureName>plane.png</TextureName>
+    <TextureName>armor_steel.png</TextureName>
   </Item>
 </root>
