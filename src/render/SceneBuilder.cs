@@ -28,24 +28,29 @@ namespace Project.Render {
 
 		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
 		public RenderableNode BuildRoom(Room currentRoom) {
-			Model plane = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(90f, 0, 0)).SetScale(new Vector3(20f, 6f, 1f));
-			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
-			Model door1 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(0, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
-			Model door2 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
-			Model door3 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
-
 			List<Model> models = new List<Model>();
+
+			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(10f);
+			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
+			models.Add(plane);
+
 			foreach (Item i in currentRoom.Items) {
 				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(i.Position).SetRotation(new Vector3(20.0f, 0, 0));
 				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}
 
-			// Order matters! [0] must always be PlayerModel
+			foreach (Room r in currentRoom.ConnectedRooms) {
+				Vector2 connectedRoomPos = r.Position - currentRoom.Position;
+				float angle = (float)Math.Atan2(connectedRoomPos.Y, connectedRoomPos.X);
+
+				Model realDoor = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 10);
+				realDoor.SetRotation(new Vector3(0, angle / Renderer.RCF, 0)).SetScale(new Vector3(2f, 4f, 1f));
+				realDoor.AlbedoTexture = new Texture("assets/textures/blue.png");
+				models.Add(realDoor);
+			}
+
 			RenderableNode Scene = new RenderableNode();
-			Scene.Children.AddRange(new RenderableNode[] {
-				plane, door1, door2, door3
-			});
 			Scene.Children.AddRange(models);
 			return Scene;
 		}
