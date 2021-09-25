@@ -4,6 +4,7 @@ using Project.Levels;
 using System;
 using OpenTK.Graphics.OpenGL4;
 using Project.Items;
+using System.Linq;
 
 namespace Project.Render {
 	/// <summary> Primary rendering root that stores custom references to track important objects in the rendering hierarchy. </summary>
@@ -64,7 +65,11 @@ namespace Project.Render {
 				models.Add(door);
 			}
 
-			RenderableNode Scene = new RenderableNode();
+			// Note: This should really be done by distance from camera. Taking advantage of the hardcoded camera direction.
+			// Sort items by depth so distant models are rendered first. That way models behind transparent models are visible
+            models.OrderBy(model => -model.Position.Y);
+
+            RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(models);
 			return Scene;
 		}
