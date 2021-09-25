@@ -31,7 +31,7 @@ namespace Project {
 
 			NativeWindowSettings windowSettings = new NativeWindowSettings() {
 				Size = new Vector2i(1600, 900),
-				Title = "Display",
+				Title = "Face the future",
 				WindowBorder = WindowBorder.Fixed
 			};
 
