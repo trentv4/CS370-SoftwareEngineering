@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Levels;
 using System;
 using OpenTK.Graphics.OpenGL4;
+using Project.Items;
 
 namespace Project.Render {
 	/// <summary> Primary rendering root that stores custom references to track important objects in the rendering hierarchy. </summary>
@@ -33,11 +34,19 @@ namespace Project.Render {
 			Model door2 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(-5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 			Model door3 = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(5f, 0.5f, 3f)).SetRotation(new Vector3(0, 0, 0)).SetScale(new Vector3(3f, 3f, 5f));
 
+			List<Model> models = new List<Model>();
+			foreach (Item i in currentRoom.Items) {
+				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(i.Position).SetRotation(new Vector3(20.0f, 0, 0));
+				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
+				models.Add(itemModel);
+			}
+
 			// Order matters! [0] must always be PlayerModel
 			RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(new RenderableNode[] {
 				plane, door1, door2, door3
 			});
+			Scene.Children.AddRange(models);
 			return Scene;
 		}
 	}
