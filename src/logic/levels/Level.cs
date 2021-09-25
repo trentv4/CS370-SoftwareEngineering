@@ -249,7 +249,7 @@ namespace Project.Levels {
 			CurrentRoom = startRoom;
 			PreviousRoom = startRoom;
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
-			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer that level regenerated
+			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			return true;
 		}
 
@@ -278,11 +278,11 @@ namespace Project.Levels {
 					nextRoom = CurrentRoom.ConnectedRooms[3];
 				if (Input.IsKeyPressed(Keys.D5) && CurrentRoom.ConnectedRooms.Length >= 5)
 					nextRoom = CurrentRoom.ConnectedRooms[4];
-
 				if (nextRoom != null) {
 					if (nextRoom == PreviousRoom) {
 						Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
 					} else {
+						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 						PreviousRoom = CurrentRoom;
 						CurrentRoom = nextRoom;
 						Score += 100;
