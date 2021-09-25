@@ -61,7 +61,7 @@ namespace Project.Render {
 									  .SetPosition(doorPosition)
 									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
 									  .SetScale(new Vector3(2f, 4f, 1f));
-				door.AlbedoTexture = new Texture("assets/textures/blue.png");
+				door.AlbedoTexture = new Texture("assets/textures/door0.png");
 				models.Add(door);
 			}
 
