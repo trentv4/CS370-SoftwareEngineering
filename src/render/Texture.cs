@@ -15,6 +15,7 @@ namespace Project.Render {
 				this.TextureID = _loadedTextures[location];
 			} else {
 				ImageResult image;
+				StbImage.stbi__vertically_flip_on_load = 1;
 				using (FileStream stream = File.OpenRead(location)) {
 					image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
 				}
