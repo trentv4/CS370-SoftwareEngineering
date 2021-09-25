@@ -38,6 +38,7 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
 			GL.Enable(EnableCap.DepthTest);
+			VSync = VSyncMode.On;
 			GL.Viewport(0, 0, Size.X, Size.Y);
 			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
