@@ -44,6 +44,7 @@ namespace Project {
 				Console.WriteLine($"Mana: {Mana}/{MaxMana}");
 				Console.WriteLine($"Armor: {Armor}");
 				Console.WriteLine($"Carry weight: {CarryWeight}");
+				Console.WriteLine($"Position: {Position}");
 			}
 		}
 	}
