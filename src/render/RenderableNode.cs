@@ -126,11 +126,13 @@ namespace Project.Render {
 			v.AddRange(new float[] { 0, 0, 0, 0, 1, 0, 0.2f, 0.4f, 0.6f, 1.0f, 0.5f, 0.5f });
 			for (uint g = 0; g < density; g++) {
 				float angle = Renderer.RCF * g * (360.0f / (float)density);
+				float cos = (float)Math.Cos(angle);
+				float sin = (float)Math.Sin(angle);
 				v.AddRange(new float[] {
-					(float)Math.Cos(angle), 0, (float)Math.Sin(angle),
+					cos, 0, sin,
 					0, 1, 0,
 					0.6f, 0.4f, 0.2f, 1.0f,
-					(float)Math.Cos(angle), (float)Math.Sin(angle)});
+					(cos + 1) / 2, (sin + 1) / 2});
 			}
 			List<uint> i = new List<uint>();
 			for (uint g = 1; g < density; g++) {

@@ -33,7 +33,7 @@ namespace Project.Render {
 			float roomSize = 10.0f;
 
 			// Floor
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(50f);
+			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(25f);
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			models.Add(plane);
 
