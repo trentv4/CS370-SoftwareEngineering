@@ -146,12 +146,14 @@ namespace Project.Render {
 			List<float> vc = new List<float>();
 			List<uint> ic = new List<uint>();
 
+			float transparency = 0.1f;
+			float color = 1.0f;
 			for (uint g = 0; g < dc; g++) {
 				float angle = Renderer.RCF * g * (360.0f / (float)dc) * 2;
 				vc.AddRange(new[] { (float)Math.Cos(angle), 0.0f, (float)Math.Sin(angle) });
-				vc.AddRange(new[] { 0f, 0f, 0f, 0.9f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f });
+				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
 				vc.AddRange(new[] { (float)Math.Cos(angle), 1.0f, (float)Math.Sin(angle) });
-				vc.AddRange(new[] { 0f, 0f, 0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f, 0.0f });
+				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
 			}
 
 			for (uint g = 0; g < dc; g++) {
@@ -163,12 +165,12 @@ namespace Project.Render {
 
 			// Player model
 			new Model(new float[] {
-				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
-				 0.0f,  -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   0.8f, 0.0f, 0.8f, 0.0f,  0.0f, 0.0f,
+				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 1.0f,  0.0f, 0.0f,
+				 0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
+				 0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
+				-0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
+				-0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
+				 0.0f,  -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   0.8f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
 			}, new uint[] {
 				0, 1, 2,
 				0, 2, 3,

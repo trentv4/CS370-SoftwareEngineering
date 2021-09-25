@@ -30,12 +30,19 @@ namespace Project.Render {
 		public RenderableNode BuildRoom(Room currentRoom) {
 			List<Model> models = new List<Model>();
 
+			float roomSize = 10.0f;
+
 			// Floor
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(10.1f);
+			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(50f);
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			models.Add(plane);
+
 			// Walls
-			models.Add(Model.GetCachedModel("unit_cylinder").SetPosition(new Vector3(0f, -1f, 0f)).SetScale(new Vector3(10.1f, 10f, 10.1f)));
+			float distance = 20;
+			float iterations = 50;
+			for (float scale = distance + roomSize; scale > roomSize; scale -= (distance / iterations)) {
+				models.Add(Model.GetCachedModel("unit_cylinder").SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(scale, 10f, scale)));
+			}
 
 			// Items on the floor
 			foreach (Item i in currentRoom.Items) {
@@ -47,7 +54,7 @@ namespace Project.Render {
 			// Room connectors (doorways)
 			foreach (Room r in currentRoom.ConnectedRooms) {
 				float angle = currentRoom.AngleToRoom(r);
-				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 9.9f;
+				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * (roomSize - 0.1f);
 
 				Model door = Model.GetCachedModel("unit_rectangle")
 									  .SetPosition(doorPosition)

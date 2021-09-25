@@ -37,6 +37,11 @@ namespace Project.Render {
 			GL.DebugMessageCallback(debugCallback, IntPtr.Zero);
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
+			GL.Enable(EnableCap.Blend);
+			// A: new color, B: existing color
+			// This isn't correct and it influences render order, but..... it works?
+			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+			GL.BlendEquation(BlendEquationMode.FuncAdd);
 			GL.Enable(EnableCap.DepthTest);
 			VSync = VSyncMode.On;
 			GL.Viewport(0, 0, Size.X, Size.Y);
