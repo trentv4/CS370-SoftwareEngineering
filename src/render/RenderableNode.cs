@@ -141,6 +141,26 @@ namespace Project.Render {
 			i.AddRange(new uint[] { 0, density, 1 });
 			new Model(v.ToArray(), i.ToArray()).Cache("unit_circle");
 
+			// Unit cylinder
+			uint dc = 180;
+			List<float> vc = new List<float>();
+			List<uint> ic = new List<uint>();
+
+			for (uint g = 0; g < dc; g++) {
+				float angle = Renderer.RCF * g * (360.0f / (float)dc) * 2;
+				vc.AddRange(new[] { (float)Math.Cos(angle), 0.0f, (float)Math.Sin(angle) });
+				vc.AddRange(new[] { 0f, 0f, 0f, 0.9f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f });
+				vc.AddRange(new[] { (float)Math.Cos(angle), 1.0f, (float)Math.Sin(angle) });
+				vc.AddRange(new[] { 0f, 0f, 0f, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f, 0.0f });
+			}
+
+			for (uint g = 0; g < dc; g++) {
+				ic.AddRange(new uint[] { g, g + 1, g + 2 });
+			}
+			ic.AddRange(new uint[] { dc - 1, dc, 0 });
+
+			new Model(vc.ToArray(), ic.ToArray()).Cache("unit_cylinder");
+
 			// Player model
 			new Model(new float[] {
 				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 0.0f,  0.0f, 0.0f,

@@ -30,26 +30,31 @@ namespace Project.Render {
 		public RenderableNode BuildRoom(Room currentRoom) {
 			List<Model> models = new List<Model>();
 
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(10f);
+			// Floor
+			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(10.1f);
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			models.Add(plane);
+			// Walls
+			models.Add(Model.GetCachedModel("unit_cylinder").SetPosition(new Vector3(0f, -1f, 0f)).SetScale(new Vector3(10.1f, 10f, 10.1f)));
 
+			// Items on the floor
 			foreach (Item i in currentRoom.Items) {
 				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(i.Position).SetRotation(new Vector3(20.0f, 0, 0));
 				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}
 
+			// Room connectors (doorways)
 			foreach (Room r in currentRoom.ConnectedRooms) {
 				float angle = currentRoom.AngleToRoom(r);
-				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 10f;
+				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 9.9f;
 
-				Model realDoor = Model.GetCachedModel("unit_rectangle")
+				Model door = Model.GetCachedModel("unit_rectangle")
 									  .SetPosition(doorPosition)
 									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
 									  .SetScale(new Vector3(2f, 4f, 1f));
-				realDoor.AlbedoTexture = new Texture("assets/textures/blue.png");
-				models.Add(realDoor);
+				door.AlbedoTexture = new Texture("assets/textures/blue.png");
+				models.Add(door);
 			}
 
 			RenderableNode Scene = new RenderableNode();
