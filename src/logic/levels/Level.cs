@@ -25,13 +25,13 @@ namespace Project.Levels {
 
 		public bool IsViewingMap = false;
 
-        public long LastMapRegenTick = 0;
+		public long LastMapRegenTick = 0;
 
-        public Level() {
+		public Level() {
 			while (!GenerateNewLevel()) { }
 
 			Player.Inventory.PrintInventoryControls();
-        }
+		}
 
 		///<summary>Generates new level. Can be called multiple times to regenerate the level. 
 		///			Returns true if it succeeds and false if it fails.
@@ -39,8 +39,8 @@ namespace Project.Levels {
 		bool GenerateNewLevel() {
 			Console.WriteLine("\nGenerating new level...");
 
-            //Temporary room list for generation
-            var roomsGen = new List<Room>();
+			//Temporary room list for generation
+			var roomsGen = new List<Room>();
 			var connections = new Dictionary<Room, List<Room>>();
 			var rows = new List<List<Room>>();
 
@@ -249,7 +249,7 @@ namespace Project.Levels {
 			CurrentRoom = startRoom;
 			PreviousRoom = startRoom;
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
-            Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer that level regenerated
+			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer that level regenerated
 			return true;
 		}
 
@@ -315,6 +315,12 @@ namespace Project.Levels {
 
 		public double DistanceToRoom(Room otherRoom) {
 			return (otherRoom.Position - Position).Length;
+		}
+
+		public float AngleToRoom(Room otherRoom) {
+			Vector2 connectedRoomPos = otherRoom.Position - Position;
+			float angle = (float)Math.Atan2(connectedRoomPos.Y, connectedRoomPos.X);
+			return angle;
 		}
 	}
 }

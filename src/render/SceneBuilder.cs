@@ -41,11 +41,13 @@ namespace Project.Render {
 			}
 
 			foreach (Room r in currentRoom.ConnectedRooms) {
-				Vector2 connectedRoomPos = r.Position - currentRoom.Position;
-				float angle = (float)Math.Atan2(connectedRoomPos.Y, connectedRoomPos.X);
+				float angle = currentRoom.AngleToRoom(r);
+				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 10f;
 
-				Model realDoor = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * 10);
-				realDoor.SetRotation(new Vector3(0, angle / Renderer.RCF, 0)).SetScale(new Vector3(2f, 4f, 1f));
+				Model realDoor = Model.GetCachedModel("unit_rectangle")
+									  .SetPosition(doorPosition)
+									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
+									  .SetScale(new Vector3(2f, 4f, 1f));
 				realDoor.AlbedoTexture = new Texture("assets/textures/blue.png");
 				models.Add(realDoor);
 			}
