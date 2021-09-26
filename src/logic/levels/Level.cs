@@ -27,20 +27,47 @@ namespace Project.Levels {
 
 		public long LastMapRegenTick = 0;
 
-		public Level() {
-			while (!GenerateNewLevel()) { }
+		/// <summary>Current level the player is on. Starts at 0 and increases each time they reach and end room.</summary>
+        public int CurrentLevel = 0;
 
-			Player.Inventory.PrintInventoryControls();
+        public List<LevelGenConfig> GenerationConfigs;
+
+        public Level() {
+            SetupGenerationConfigs();
+            TryGenerateLevel(1000);
+
+            Player.Inventory.PrintInventoryControls();
 		}
 
-		///<summary>Generates new level. Can be called multiple times to regenerate the level. 
-		///			Returns true if it succeeds and false if it fails.
+		/// <summary>Set level generation configs</summary>
+		void SetupGenerationConfigs() {
+            GenerationConfigs = new List<LevelGenConfig>() {
+            	new LevelGenConfig() {NumLevels = 2, Rows = 3, MinRoomsPerRow = 1, MaxRoomsPerRow = 2, MaxConnections = 2, PruneChance = 0.9f, MaxConnectionDistance = 3.0f},
+            	new LevelGenConfig() {NumLevels = 2, Rows = 4, MinRoomsPerRow = 1, MaxRoomsPerRow = 2, MaxConnections = 3, PruneChance = 0.0f, MaxConnectionDistance = 3.5f},
+            	new LevelGenConfig() {NumLevels = 4, Rows = 4, MinRoomsPerRow = 2, MaxRoomsPerRow = 3, MaxConnections = 3, PruneChance = 0.5f, MaxConnectionDistance = 3.0f},
+            	new LevelGenConfig() {NumLevels = 4, Rows = 5, MinRoomsPerRow = 2, MaxRoomsPerRow = 3, MaxConnections = 3, PruneChance = 0.6f, MaxConnectionDistance = 3.0f},
+            	new LevelGenConfig() {NumLevels = 5, Rows = 5, MinRoomsPerRow = 3, MaxRoomsPerRow = 4, MaxConnections = 4, PruneChance = 0.6f, MaxConnectionDistance = 3.0f},
+            	new LevelGenConfig() {NumLevels = 8, Rows = 5, MinRoomsPerRow = 3, MaxRoomsPerRow = 5, MaxConnections = 5, PruneChance = 0.6f, MaxConnectionDistance = 3.0f}
+            };
+		}
+
+		/// <summary>Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail.</summary>
+		bool TryGenerateLevel(int numGenerationAttempts) {
+            for (int i = 0; i < numGenerationAttempts; i++)
+				if(GenerateNewLevel())
+                    return true;
+
+            Console.WriteLine($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time!");
+            return false;
+        }
+
+		///<summary>Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails.
 		///</summary>
 		bool GenerateNewLevel() {
 			Console.WriteLine("\nGenerating new level...");
 
-			//Temporary room list for generation
-			var roomsGen = new List<Room>();
+            //Temporary room list for generation
+            var roomsGen = new List<Room>();
 			var connections = new Dictionary<Room, List<Room>>();
 			var rows = new List<List<Room>>();
 
@@ -49,11 +76,28 @@ namespace Project.Levels {
 			var rand = new Random(randSeed);
 			Console.WriteLine($"Level generation seed: {randSeed}");
 
-			//Room generation config
-			int numRows = 5; //Num rows excluding start and end room
-			int minRoomsPerRow = 2;
-			int maxRoomsPerRow = 5;
-			float centerY = (float)maxRoomsPerRow / 2.0f;
+            //Room generation config
+            LevelGenConfig genSettings = null;
+            int level = 0;
+            int index = 0;
+            foreach (var config in GenerationConfigs) {
+                genSettings = config;
+                if(CurrentLevel >= level && CurrentLevel < level + config.NumLevels)
+                    break;
+
+                level += config.NumLevels;
+                index++;
+            }
+            if(genSettings == null) //Use final config if none is found for current level
+                genSettings = GenerationConfigs[GenerationConfigs.Count - 1];
+
+            int numRows = genSettings.Rows; //Num rows excluding start and end room
+			int minRoomsPerRow = genSettings.MinRoomsPerRow;
+			int maxRoomsPerRow = genSettings.MaxRoomsPerRow;
+            int maxConnections = genSettings.MaxConnections;
+            double pruneChance = genSettings.PruneChance;
+            float maxConnectionDistance = genSettings.MaxConnectionDistance;
+            float centerY = (float)maxRoomsPerRow / 2.0f;
 
 			//Create start room and its row
 			var startRoom = new Room(0, centerY);
@@ -123,8 +167,7 @@ namespace Project.Levels {
 						var previousRoomConnections = connections[previousRoom];
 
 						//Connect rooms that are < 3 distance from each other
-						float connectionMaximumThreshold = 3f;
-						if (Vector2.Distance(room.Position, previousRoom.Position) < connectionMaximumThreshold) {
+						if (Vector2.Distance(room.Position, previousRoom.Position) < maxConnectionDistance) {
 							connectedRooms.Add(previousRoom);
 							previousRoomConnections.Add(room);
 						}
@@ -143,36 +186,49 @@ namespace Project.Levels {
 				}
 			}
 
-			//Prune connections from some rooms with > 2 connections
-			foreach (var room in roomsGen) {
-				var roomConnections = connections[room];
-				//If room has < 5 connections there's a chance of removing connections
-				//If room has >= 5 connections then some connections are always removed to avoid an overly connected map 
-				double chance = rand.NextDouble();
-				const double pruneChance = 0.6; //Chance that connections will be pruned
-				if (chance > pruneChance && roomConnections.Count < 5)
-					continue;
+			//Shuffle rooms so connections are pruned in a non uniform manner
+			int roomCount = roomsGen.Count;
+            int[] shuffledList = new int[roomCount];
+            for (int i = 0; i < shuffledList.Length; i++) {
+                shuffledList[i] = i;
+            }
+			while(roomCount > 1) {
+                roomCount--;
+                int nextValue = (int)(rand.NextDouble() * roomCount);
+                int listValue = shuffledList[nextValue];
+                shuffledList[nextValue] = shuffledList[roomCount];
+                shuffledList[roomCount] = listValue;
+            }
 
-				while (roomConnections.Count > 2) {
-					//Prune a connection if that's possible without giving another room < 2 connections
-					Room roomToRemove = null;
-					foreach (var connectedRoom in roomConnections) {
-						var roomConnections2 = connections[connectedRoom];
-						if (roomConnections2.Count > 2) {
-							roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
-							roomConnections2.Remove(room);
-							break;
+            //Prune connections if there's more than maxConnections or by random chance
+            foreach (var room in roomsGen) {
+				var roomConnections = connections[room];
+				if (roomConnections.Count > maxConnections || rand.NextDouble() <= pruneChance)
+				{
+					while (roomConnections.Count > 2) {
+						//Look for a connection that removing won't cause another room to have < 2 connections
+						Room roomToRemove = null;
+						foreach (var connectedRoom in roomConnections) {
+							var roomConnections2 = connections[connectedRoom];
+							if (roomConnections2.Count > 2) {
+								roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
+								roomConnections2.Remove(room);
+								break;
+							}
 						}
+
+						//Remove connection
+						if (roomToRemove != null)
+							roomConnections.Remove(roomToRemove);
+						else
+							break;
 					}
-					//Remove connection
-					if (roomToRemove != null)
-						roomConnections.Remove(roomToRemove);
-					else
-						break;
 				}
+
+
 			}
 
-			//Do floodfill from initial room to see if final room can be reached
+			//Do floodfill to see if theres a path from start to finish, and to detect stranded rooms
 			{
 				var checkedRooms = new List<Room>();
 				var roomQueue = new Queue<Room>();
@@ -220,34 +276,33 @@ namespace Project.Levels {
 				}
 			}
 
-			//Check again that all rooms have >= 2 && <= 5 connections
+			//Check again that all rooms have >= 2 && <= maxConnections
 			foreach (var room in roomsGen) {
 				var roomConnections = connections[room];
-				if (roomConnections.Count < 2 || roomConnections.Count > 5) {
+				if (roomConnections.Count < 2) {
 					Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
 					return false;
 				}
-				if (roomConnections.Count > 5) { //Note: This is a temporary connection limit until door based room movement is added
+				if (roomConnections.Count > maxConnections) {
 					Console.WriteLine($"Level generation error! Room {room.Id} has > 5 connections.");
 					return false;
 				}
 			}
 
-			//Set final ConnectedRooms array for each room
+			//Set final rooms list and their connections
 			foreach (var room in roomsGen) {
 				var connectedRooms = connections[room];
 				room.ConnectedRooms = connectedRooms.ToArray();
 			}
-
-			//Set final room array
 			Rooms = roomsGen.ToArray();
 			StartRoom = startRoom;
 			EndRoom = endRoom;
 
-			//Spawn the player
+			//Spawn the player in the start room
 			Player = new Player(new Vector2(0.0f, 0.0f));
 			CurrentRoom = startRoom;
 			PreviousRoom = startRoom;
+			
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
 			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			return true;
@@ -262,7 +317,7 @@ namespace Project.Levels {
 
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G)) {
-				while (!GenerateNewLevel()) { }
+				TryGenerateLevel(1000);
 			}
 
 			//Player map movement
@@ -285,7 +340,7 @@ namespace Project.Levels {
 						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 						PreviousRoom = CurrentRoom;
 						CurrentRoom = nextRoom;
-						Score += 100;
+                        Score += 100;
 					}
 				}
 			}
@@ -294,8 +349,8 @@ namespace Project.Levels {
 			if (CurrentRoom == EndRoom) {
 				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
 				Score = 0;
-				while (!GenerateNewLevel()) { }
-			}
+                TryGenerateLevel(10000);
+            }
 		}
 	}
 
@@ -323,4 +378,22 @@ namespace Project.Levels {
 			return angle;
 		}
 	}
+
+	/// <summary>Configuration for level generation</summary>
+	public class LevelGenConfig {
+		/// <summary>The number of levels to use this config for before moving to the next one</summary>
+        public int NumLevels;
+		/// <summary>The number of rows in the level, excluding the start and end rows</summary>
+        public int Rows;
+		/// <summary>Minimum number of rooms per row</summary>
+        public int MinRoomsPerRow;
+		/// <summary>Maximum number of rooms per row</summary>
+        public int MaxRoomsPerRow;
+		/// <summary>Maximum number of connections a room can have. Any beyond this number are culled. All rooms must have at least 2 connections.</summary>
+        public int MaxConnections;
+		/// <summary>The chance of pruning connections for rooms when they have < MaxConnections.</summary>
+        public float PruneChance;
+		/// <summary>Rooms must be within this distance from each other to be connected.</summary>
+        public float MaxConnectionDistance;
+    }
 }
