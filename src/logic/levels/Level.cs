@@ -337,10 +337,10 @@ namespace Project.Levels {
 					if (nextRoom == PreviousRoom) {
 						Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
 					} else {
-						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 						PreviousRoom = CurrentRoom;
 						CurrentRoom = nextRoom;
                         Score += 100;
+						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 					}
 				}
 			}
@@ -349,7 +349,32 @@ namespace Project.Levels {
 			if (CurrentRoom == EndRoom) {
 				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
 				Score = 0;
+                CurrentLevel++;
                 TryGenerateLevel(10000);
+            }
+
+            CheckIfPlayerEnteredDoorway();
+        }
+
+		/// <summary>Moves them to the next room if they collide with a doorway and it doesn't go to the previous room.</summary>
+		void CheckIfPlayerEnteredDoorway() {
+			// Loop through each door
+			float roomSize = 10.0f;
+            float doorSize = 0.8f;
+            foreach (Room r in CurrentRoom.ConnectedRooms) {
+				float angle = CurrentRoom.AngleToRoom(r);
+				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), (float)Math.Cos(angle), 0.0f) * (roomSize - 0.1f);
+                float distance = (doorPosition.Xy - Player.Position).Length;
+
+				//If player within certain distance of door and it's not the previous room, move to next room
+                if(distance < doorSize && r != PreviousRoom) {
+                    PreviousRoom = CurrentRoom;
+                    CurrentRoom = r;
+                    Score += 100;
+                    Player.Position = new Vector2(0.0f, 0.0f);
+                    Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+                    break;
+                }
             }
 		}
 	}
