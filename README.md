@@ -10,5 +10,7 @@
 
 # Overview
 
+[Design document](https://docs.google.com/document/d/1gYEqKsX7-bFS0qfd3JbI5buF9eBmvD9uDNgfBKHmUww/edit?usp=sharing)
+
 [Project requirements image](https://media.discordapp.net/attachments/881975639568171081/882318797158113320/Capture.PNG)
 
