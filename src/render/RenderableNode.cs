@@ -186,6 +186,82 @@ namespace Project.Render {
 		}
 	}
 
+	public class InterfaceString : RenderableNode {
+		public string TextContent { get; private set; }
+		private FontAtlas Font;
+
+		private readonly int ElementBufferArray_ID;
+		private readonly int VertexBufferObject_ID;
+		private int IndexLength;
+
+		public InterfaceString(string font, string TextContent) {
+			Font = FontAtlas.GetFont(font);
+			this.TextContent = TextContent;
+			ElementBufferArray_ID = GL.GenBuffer();
+			VertexBufferObject_ID = GL.GenBuffer();
+
+			UpdateStringOnGPU(TextContent);
+		}
+
+		private void UpdateStringOnGPU(string text) {
+			List<float> vertices = new List<float>();
+			List<uint> indices = new List<uint>();
+
+			List<int> unicodeList = new List<int>(text.Length);
+			for (int i = 0; i < text.Length; i++) {
+				unicodeList.Add(Char.ConvertToUtf32(text, i));
+				if (Char.IsHighSurrogate(text[i]))
+					i++;
+			}
+			float cursor = 0;
+			for (int i = 0; i < unicodeList.Count; i++) {
+				FontAtlas.Glyph g = Font.GetGlyph(unicodeList[i]);
+				vertices.AddRange(new float[] {
+					cursor + g.PositionOffset.X, 0 + g.PositionOffset.Y,
+					g.UVs[0].X, g.UVs[0].Y,
+					cursor + g.PositionOffset.X + g.Size.X, 0 + g.PositionOffset.Y,
+					g.UVs[1].X, g.UVs[1].Y,
+					cursor + g.PositionOffset.X, g.Size.Y + g.PositionOffset.Y,
+					g.UVs[2].X, g.UVs[2].Y,
+					cursor + g.PositionOffset.X + g.Size.X, g.Size.Y + g.PositionOffset.Y,
+					g.UVs[3].X, g.UVs[3].Y,
+				});
+				indices.AddRange(new uint[] { ((uint)i * 4) + 0, ((uint)i * 4) + 1, ((uint)i * 4) + 2, ((uint)i * 4) + 1, ((uint)i * 4) + 2, ((uint)i * 4) + 3 });
+				cursor += g.Advance;
+			}
+
+			float[] vert = vertices.ToArray();
+			uint[] ind = indices.ToArray();
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, ind.Length * sizeof(uint), ind, BufferUsageHint.StaticDraw);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BufferData(BufferTarget.ArrayBuffer, vert.Length * sizeof(float), vert, BufferUsageHint.StaticDraw);
+			IndexLength = ind.Length;
+		}
+
+		protected override void RenderSelf() {
+			if (!Renderer.INSTANCE.isFont) return;
+			Matrix3 modelMatrix = Matrix3.Identity;
+
+			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
+			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio, 1, 1.0f));
+			modelMatrix *= Matrix3.CreateScale(1.0f / 10f);
+			//modelMatrix *= Matrix3.CreateRotationZ(Rotation * Renderer.RCF);
+			//modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
+
+			GL.UniformMatrix3(Renderer.INSTANCE.InterfaceProgram.UniformMVP_ID, true, ref modelMatrix);
+
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(2 * sizeof(float)), 4 * sizeof(float));
+
+			GL.ActiveTexture(TextureUnit.Texture0);
+			GL.BindTexture(TextureTarget.Texture2D, Font.AtlasTexture.TextureID);
+
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+		}
+	}
+
 	public class InterfaceModel : RenderableNode {
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
@@ -231,6 +307,7 @@ namespace Project.Render {
 		}
 
 		protected override void RenderSelf() {
+			if (Renderer.INSTANCE.isFont) return;
 			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
 			Matrix3 modelMatrix = Matrix3.Identity;
 			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio * Scale.X, Scale.Y, 1.0f));

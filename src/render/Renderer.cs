@@ -22,6 +22,9 @@ namespace Project.Render {
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFont FontProgram { get; private set; } // Font renderer using MSDF (z=0)
 
+		// temporary fix
+		public bool isFont = false;
+
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private static GameRoot SceneHierarchy = new GameRoot();
 
@@ -67,6 +70,7 @@ namespace Project.Render {
 			// Shorthand for setting vertex shader attribs
 			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			InterfaceProgram.SetVertexAttribPointers(new[] { 2, 2 });
+			FontProgram.SetVertexAttribPointers(new[] { 2, 2 });
 		}
 
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
@@ -90,6 +94,7 @@ namespace Project.Render {
 			SceneHierarchy.Render();
 			DebugGroupEnd();
 
+			isFont = false;
 			DebugGroup("Interface pass", 1);
 			InterfaceProgram.Use();
 			GL.Disable(EnableCap.DepthTest);
@@ -97,8 +102,9 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
 
+			isFont = true;
 			DebugGroup("Font pass", 2);
-			InterfaceProgram.Use();
+			FontProgram.Use();
 			GL.Disable(EnableCap.DepthTest);
 			SceneHierarchy.Interface.Render(state);
 			GL.Enable(EnableCap.DepthTest);

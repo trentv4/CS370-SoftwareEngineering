@@ -31,7 +31,7 @@ namespace Project.Render {
 		}
 
 		/// <summary> Retreives a specified FontAtlas with a given name. Throws an exception if the font is unloaded. </summary>
-		public FontAtlas GetFont(string fontName) {
+		public static FontAtlas GetFont(string fontName) {
 			if (!_loadedFonts.ContainsKey(fontName))
 				throw new Exception($"Unable to find font named {fontName}!");
 			return _loadedFonts.GetValueOrDefault(fontName);
@@ -52,8 +52,8 @@ namespace Project.Render {
 			JsonElement root = JsonDocument.Parse(new StreamReader(fontAtlasConfiguration).ReadToEnd()).RootElement;
 
 			JsonElement atlas = root.GetProperty("atlas");
-			int width = atlas.GetProperty("width").GetInt32();
-			int height = atlas.GetProperty("height").GetInt32();
+			float width = (float)atlas.GetProperty("width").GetInt32();
+			float height = (float)atlas.GetProperty("height").GetInt32();
 			float size = (float)atlas.GetProperty("size").GetDouble();
 
 			// Todo: implement kerning
@@ -77,20 +77,27 @@ namespace Project.Render {
 					float planeBoundsBottom = (float)planeBounds.GetProperty("bottom").GetDouble();
 					float planeBoundsTop = (float)planeBounds.GetProperty("top").GetDouble();
 
-					JsonElement atlasBounds = glyph.GetProperty("planeBounds");
+					JsonElement atlasBounds = glyph.GetProperty("atlasBounds");
 					float atlasBoundsLeft = (float)atlasBounds.GetProperty("left").GetDouble();
 					float atlasBoundsRight = (float)atlasBounds.GetProperty("right").GetDouble();
 					float atlasBoundsBottom = (float)atlasBounds.GetProperty("bottom").GetDouble();
 					float atlasBoundsTop = (float)atlasBounds.GetProperty("top").GetDouble();
 
 					currentGlyph.UVs = new Vector2[] {
-							new Vector2(atlasBoundsLeft, atlasBoundsBottom),
-							new Vector2(atlasBoundsLeft, atlasBoundsTop),
-							new Vector2(atlasBoundsRight, atlasBoundsBottom),
-							new Vector2(atlasBoundsRight, atlasBoundsTop),
+							new Vector2(atlasBoundsLeft / width, atlasBoundsBottom / height),//2
+							new Vector2(atlasBoundsRight / width, atlasBoundsBottom / height),//3
+							new Vector2(atlasBoundsLeft / width, atlasBoundsTop / height),//0
+							new Vector2(atlasBoundsRight / width, atlasBoundsTop / height),//1
 						};
-					currentGlyph.PositionOffset = new Vector2(planeBoundsBottom, planeBoundsLeft);
-					currentGlyph.Size = new Vector2(planeBoundsRight - planeBoundsLeft, planeBoundsTop - planeBoundsTop);
+					currentGlyph.PositionOffset = new Vector2(planeBoundsLeft, planeBoundsBottom);
+					currentGlyph.Size = new Vector2(planeBoundsRight - planeBoundsLeft, planeBoundsTop - planeBoundsBottom);
+				} else {
+					currentGlyph.UVs = new Vector2[] {
+						new Vector2(0,0),
+						new Vector2(0,0),
+						new Vector2(0,0),
+						new Vector2(0,0)
+					};
 				}
 				glyphs[i] = currentGlyph;
 			}

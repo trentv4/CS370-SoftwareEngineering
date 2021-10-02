@@ -67,9 +67,9 @@ namespace Project.Render {
 
 			// Note: This should really be done by distance from camera. Taking advantage of the hardcoded camera direction.
 			// Sort items by depth so distant models are rendered first. That way models behind transparent models are visible
-            models.OrderBy(model => -model.Position.Y);
+			models.OrderBy(model => -model.Position.Y);
 
-            RenderableNode Scene = new RenderableNode();
+			RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(models);
 			return Scene;
 		}
@@ -142,6 +142,7 @@ namespace Project.Render {
 			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
+			interfaceNode.Children.Add(new InterfaceString("calibri", "test message with a bit of length"));
 			return interfaceNode;
 		}
 
