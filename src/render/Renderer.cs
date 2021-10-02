@@ -20,6 +20,7 @@ namespace Project.Render {
 		// Render
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
+		public ShaderProgramFont FontProgram { get; private set; } // Font renderer using MSDF (z=0)
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private static GameRoot SceneHierarchy = new GameRoot();
@@ -52,12 +53,16 @@ namespace Project.Render {
 												"src/render/shaders/ForwardShader_fragment.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader_vertex.glsl",
 												"src/render/shaders/InterfaceShader_fragment.glsl");
+			FontProgram = new ShaderProgramFont("src/render/shaders/FontShader_vertex.glsl",
+												"src/render/shaders/FontShader_fragment.glsl");
 
 			// Creates "unit" models - models specified in code that are manipulated with model matrices
 			Model.CreateUnitModels();
 			InterfaceModel.CreateUnitModels();
 			// Builds the scene. Includes player, interface, and world.
 			SceneHierarchy.Build();
+
+			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
 
 			// Shorthand for setting vertex shader attribs
 			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
@@ -86,6 +91,13 @@ namespace Project.Render {
 			DebugGroupEnd();
 
 			DebugGroup("Interface pass", 1);
+			InterfaceProgram.Use();
+			GL.Disable(EnableCap.DepthTest);
+			SceneHierarchy.Interface.Render(state);
+			GL.Enable(EnableCap.DepthTest);
+			DebugGroupEnd();
+
+			DebugGroup("Font pass", 2);
 			InterfaceProgram.Use();
 			GL.Disable(EnableCap.DepthTest);
 			SceneHierarchy.Interface.Render(state);

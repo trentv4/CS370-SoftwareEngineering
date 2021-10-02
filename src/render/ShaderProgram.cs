@@ -97,4 +97,19 @@ namespace Project.Render {
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 		}
 	}
+
+	/// <summary> ShaderProgram for font (MSDF) rendering.<br/>
+	/// Uniforms:  mat3 mvp (model-view-projection matrix), sampler2D albedoTexture<br/>
+	/// Attribs: vec2 _position, vec2 _uv</summary>
+	public class ShaderProgramFont : ShaderProgram {
+		public readonly int UniformMVP_ID;
+		public readonly int UniformTextureAtlas;
+
+		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/FontShader.
+		/// The purpose of this shader is a MSDF-based font renderer. Primarily operates on textured quads. </summary>
+		public ShaderProgramFont(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+			UniformMVP_ID = GL.GetUniformLocation(ShaderProgram_ID, "mvp");
+			UniformTextureAtlas = GL.GetUniformLocation(ShaderProgram_ID, "textureAtlas");
+		}
+	}
 }
