@@ -10,7 +10,8 @@ namespace Project {
 	public enum LaunchMode {
 		SinglePlayer,
 		Server,
-		Client
+		Client,
+		Test
 	};
 
 	public class Program {
@@ -22,6 +23,7 @@ namespace Project {
 			foreach (String argument in args) {
 				if (argument.Equals("-client")) Mode = LaunchMode.Client;
 				if (argument.Equals("-server")) Mode = LaunchMode.Server;
+				if (argument.Equals("-test")) Mode = LaunchMode.Test;
 			}
 			Console.WriteLine("Initializing");
 			GameWindowSettings gameSettings = new GameWindowSettings() {
