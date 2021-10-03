@@ -354,6 +354,7 @@ namespace Project.Levels {
             }
 
             CheckIfPlayerEnteredDoorway();
+            CheckIfPlayerOnItem();
         }
 
 		/// <summary>Moves them to the next room if they collide with a doorway and it doesn't go to the previous room.</summary>
@@ -372,11 +373,36 @@ namespace Project.Levels {
                     CurrentRoom = r;
                     Score += 100;
                     Player.Position = new Vector2(0.0f, 0.0f);
-                    Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+                    Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate scene
                     break;
                 }
             }
 		}
+
+		/// <summary>If the player is stepping on an item and there's enough room in their inventory the item is picked up.</summary>
+		void CheckIfPlayerOnItem() {
+            float itemRadius = 0.6f;
+			foreach (Item item in CurrentRoom.Items) {
+                var itemPos = new Vector2(item.Position.X, item.Position.Z);
+                float playerItemDistance = (itemPos - Player.Position).Length;
+
+				//If player is within the items radius attempt to pick it up
+				if(playerItemDistance < itemRadius) {
+                    bool result = Player.Inventory.AddItem(item);
+					if(result) {
+						//Added to inventory
+                        CurrentRoom.Items.Remove(item);
+                    	Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate scene
+                        break;
+                    }
+					else {
+						//Failed to add to inventory
+                        Console.Write($"Not enough room in inventory for {item.Definition.Name} (weight: {item.Definition.Weight}). ");
+						Console.Write($"Inventory status: {Player.Inventory.Weight}/{Player.CarryWeight}\n");
+                    }
+                }
+            }
+        }
 	}
 
 	public class Room {
