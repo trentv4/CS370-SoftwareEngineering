@@ -188,7 +188,11 @@ namespace Project.Render {
 
 	public class InterfaceString : RenderableNode {
 		public string TextContent { get; private set; }
+		public float Width { get; private set; }
 		private FontAtlas Font;
+
+		public Vector2 Scale { get; private set; } = Vector2.One;
+		public Vector2 Position { get; private set; } = Vector2.Zero;
 
 		private readonly int ElementBufferArray_ID;
 		private readonly int VertexBufferObject_ID;
@@ -237,6 +241,7 @@ namespace Project.Render {
 			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
 			GL.BufferData(BufferTarget.ArrayBuffer, vert.Length * sizeof(float), vert, BufferUsageHint.StaticDraw);
 			IndexLength = ind.Length;
+			Width = cursor;
 		}
 
 		protected override void RenderSelf() {
@@ -244,11 +249,9 @@ namespace Project.Render {
 			Matrix3 modelMatrix = Matrix3.Identity;
 
 			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
-			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio, 1, 1.0f));
+			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio * Scale.X, Scale.Y, 1.0f));
 			modelMatrix *= Matrix3.CreateScale(1.0f / 10f);
-			//modelMatrix *= Matrix3.CreateRotationZ(Rotation * Renderer.RCF);
-			//modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
-
+			modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
 			GL.UniformMatrix3(Renderer.INSTANCE.InterfaceProgram.UniformMVP_ID, true, ref modelMatrix);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
@@ -259,6 +262,24 @@ namespace Project.Render {
 			GL.BindTexture(TextureTarget.Texture2D, Font.AtlasTexture.TextureID);
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+		}
+
+
+		/// <summary> Chainable method to set the scale of this object. </summary>
+		public InterfaceString SetScale(Vector2 scale) {
+			this.Scale = scale;
+			return this;
+		}
+
+		/// <summary> Chainable method to set the scale of this object in all axis. </summary>
+		public InterfaceString SetScale(float scale) {
+			return SetScale(new Vector2(scale, scale));
+		}
+
+		/// <summary> Chainable method to set the position of this object. </summary>
+		public InterfaceString SetPosition(Vector2 position) {
+			this.Position = position;
+			return this;
 		}
 	}
 

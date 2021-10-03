@@ -142,7 +142,7 @@ namespace Project.Render {
 			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
-			interfaceNode.Children.Add(new InterfaceString("calibri", "test message with a bit of length"));
+			interfaceNode.Children.Add(new InterfaceString("calibri", "test message with a bit of length").SetPosition(new Vector2(-1, 1)).SetScale(2f));
 			return interfaceNode;
 		}
 
