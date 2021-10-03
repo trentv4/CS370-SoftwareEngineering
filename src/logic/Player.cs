@@ -17,7 +17,15 @@ namespace Project {
 		public int CarryWeight = 10;
 		public Vector2 Position;
 
-		public Player(Vector2 initialPosition) {
+        private float MinPitch = -89.0f;
+        private float MaxPitch = 89.0f;
+        public float CameraPitch = 0.0f;
+        public float CameraYaw = 0.0f;
+
+		/// <summary>Used to adjust camera mouse movement speed. Default speed is too fast.</summary>
+        public float CameraMovementMultiplier = 0.01f;
+
+        public Player(Vector2 initialPosition) {
 			Position = initialPosition;
 			Inventory = new Inventory(this);
 		}
@@ -37,8 +45,13 @@ namespace Project {
 			Position.X += ad * speed;
 			Position.Y += ws * speed;
 
-			//Print player stats
-			if (Input.IsKeyPressed(Keys.P)) {
+            //Mouse camera movement
+            CameraPitch += -Input.MouseState.Delta.Y * CameraMovementMultiplier;
+            CameraYaw += Input.MouseState.Delta.X * CameraMovementMultiplier;
+            CameraPitch = MathUtil.MinMax(CameraPitch, MinPitch, MaxPitch);
+
+            //Print player stats
+            if (Input.IsKeyPressed(Keys.P)) {
 				Console.WriteLine("\n\n*****Player stats*****");
 				Console.WriteLine($"Health: {Health}/{MaxHealth}");
 				Console.WriteLine($"Mana: {Mana}/{MaxMana}");
