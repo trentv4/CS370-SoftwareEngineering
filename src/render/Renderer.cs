@@ -105,6 +105,7 @@ namespace Project.Render {
 			isFont = true;
 			DebugGroup("Font pass", 2);
 			FontProgram.Use();
+			GL.Uniform1(FontProgram.UniformIsFont, 1);
 			GL.Disable(EnableCap.DepthTest);
 			SceneHierarchy.Interface.Render(state);
 			GL.Enable(EnableCap.DepthTest);

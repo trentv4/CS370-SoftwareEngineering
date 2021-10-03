@@ -104,12 +104,14 @@ namespace Project.Render {
 	public class ShaderProgramFont : ShaderProgram {
 		public readonly int UniformMVP_ID;
 		public readonly int UniformTextureAtlas;
+		public readonly int UniformIsFont;
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/FontShader.
 		/// The purpose of this shader is a MSDF-based font renderer. Primarily operates on textured quads. </summary>
 		public ShaderProgramFont(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
 			UniformMVP_ID = GL.GetUniformLocation(ShaderProgram_ID, "mvp");
 			UniformTextureAtlas = GL.GetUniformLocation(ShaderProgram_ID, "textureAtlas");
+			UniformIsFont = GL.GetUniformLocation(ShaderProgram_ID, "isFont");
 		}
 	}
 }
