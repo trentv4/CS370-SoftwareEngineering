@@ -245,7 +245,6 @@ namespace Project.Render {
 		}
 
 		protected override void RenderSelf() {
-			if (!Renderer.INSTANCE.isFont) return;
 			Matrix3 modelMatrix = Matrix3.Identity;
 
 			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
@@ -253,6 +252,7 @@ namespace Project.Render {
 			modelMatrix *= Matrix3.CreateScale(1.0f / 10f);
 			modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
 			GL.UniformMatrix3(Renderer.INSTANCE.InterfaceProgram.UniformMVP_ID, true, ref modelMatrix);
+			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 1);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
@@ -328,7 +328,6 @@ namespace Project.Render {
 		}
 
 		protected override void RenderSelf() {
-			if (Renderer.INSTANCE.isFont) return;
 			float scaleRatio = (Renderer.INSTANCE.Size.Y / (float)Renderer.INSTANCE.Size.X);
 			Matrix3 modelMatrix = Matrix3.Identity;
 			modelMatrix *= Matrix3.CreateScale(new Vector3(scaleRatio * Scale.X, Scale.Y, 1.0f));
@@ -337,6 +336,7 @@ namespace Project.Render {
 			modelMatrix *= new Matrix3(new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(-Position.X, -Position.Y, 0.0f));
 
 			GL.UniformMatrix3(Renderer.INSTANCE.InterfaceProgram.UniformMVP_ID, true, ref modelMatrix);
+			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 0);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
