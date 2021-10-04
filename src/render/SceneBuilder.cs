@@ -102,7 +102,7 @@ namespace Project.Render {
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
 			Room[] rooms = state.Level.Rooms;
 
-			float bothScaling = 0.75f;
+			float bothScaling = 0.9f;
 			float xScaling = (18.0f / state.Level.EndRoom.Position.X) * bothScaling;
 			float yScaling = 3 * bothScaling;
 			Matrix3 adjust = new Matrix3(new Vector3(xScaling, 0, 0), new Vector3(0, yScaling, 0), new Vector3(-9.0f * bothScaling, -2.5f * yScaling, 1));
@@ -118,7 +118,8 @@ namespace Project.Render {
 				} else {
 					circle.AlbedoTexture = new Texture("assets/textures/red.png");
 				}
-				roomNodes.Add(circle);
+                circle.SetScale(0.5f);
+                roomNodes.Add(circle);
 
 				foreach (Room connection in current.ConnectedRooms) {
 					if (current.Position.X < connection.Position.X) continue;
@@ -127,7 +128,7 @@ namespace Project.Render {
 					Vector2 positionBNormalized = positionB - positionA;
 
 					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
-					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized) * xScaling, 0.5f));
+					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized) * xScaling, 0.25f));
 					connector.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
 
 					connectorNodes.Add(connector);

@@ -7,6 +7,9 @@ namespace Project.Util {
 		///<summary>The number of consecutive frames each key has been down.</summary>
 		private static int[] _keyDownStates = new int[(int)Keys.LastKey];
 
+		///<summary>Returns the state of the mouse (e.g. position, button state).</summary>
+        public static MouseState MouseState => Program.INSTANCE.MouseState;
+
 		///<summary>
 		///Returns true if the key was pressed this frame, but not last frame. For non-repeating input.
 		///Use this instead of OpenTKs IsKeyPressed(), as the OpenTK version isn't working correctly. 
@@ -31,8 +34,8 @@ namespace Project.Util {
 			return keyboardState.IsKeyReleased(key);
 		}
 
-		///<summary>Updates key states</summary>
-		public static void Update() {
+        ///<summary>Updates key states</summary>
+        public static void Update() {
 			var keyboardState = Program.INSTANCE.KeyboardState;
 			for (int i = 0; i < _keyDownStates.Length; i++)
 				if (keyboardState.IsKeyDown((Keys)i))
