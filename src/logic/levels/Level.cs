@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using Project.Render;
 using Project.Util;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.Linq;
 
 namespace Project.Levels {
 	public class Level {
@@ -30,6 +31,8 @@ namespace Project.Levels {
 		/// <summary>Current level the player is on. Starts at 0 and increases each time they reach and end room.</summary>
         public int CurrentLevel = 0;
 
+        private int LastLevelGenSeed = 0;
+
         public List<LevelGenConfig> GenerationConfigs;
 
         public Level() {
@@ -42,12 +45,9 @@ namespace Project.Levels {
 		/// <summary>Set level generation configs</summary>
 		void SetupGenerationConfigs() {
             GenerationConfigs = new List<LevelGenConfig>() {
-            	new LevelGenConfig() {NumLevels = 2, Rows = 3, MinRoomsPerRow = 1, MaxRoomsPerRow = 2, MaxConnections = 2, PruneChance = 0.9f, MaxConnectionDistance = 3.0f},
-            	new LevelGenConfig() {NumLevels = 2, Rows = 4, MinRoomsPerRow = 1, MaxRoomsPerRow = 2, MaxConnections = 3, PruneChance = 0.0f, MaxConnectionDistance = 3.5f},
-            	new LevelGenConfig() {NumLevels = 4, Rows = 4, MinRoomsPerRow = 2, MaxRoomsPerRow = 3, MaxConnections = 3, PruneChance = 0.5f, MaxConnectionDistance = 3.0f},
-            	new LevelGenConfig() {NumLevels = 4, Rows = 5, MinRoomsPerRow = 2, MaxRoomsPerRow = 3, MaxConnections = 3, PruneChance = 0.6f, MaxConnectionDistance = 3.0f},
-            	new LevelGenConfig() {NumLevels = 5, Rows = 5, MinRoomsPerRow = 3, MaxRoomsPerRow = 4, MaxConnections = 4, PruneChance = 0.6f, MaxConnectionDistance = 3.0f},
-            	new LevelGenConfig() {NumLevels = 8, Rows = 5, MinRoomsPerRow = 3, MaxRoomsPerRow = 5, MaxConnections = 5, PruneChance = 0.6f, MaxConnectionDistance = 3.0f}
+            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 2, MinRoomsPerPath = 2, MaxRoomsPerPath = 3, PruneChance = 0.15f, SecondaryPathChance = 0.2f },
+            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 3, MinRoomsPerPath = 3, MaxRoomsPerPath = 4, PruneChance = 0.25f, SecondaryPathChance = 0.4f },
+            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 4, MinRoomsPerPath = 3, MaxRoomsPerPath = 7, PruneChance = 0.5f, SecondaryPathChance = 0.5f },
             };
 		}
 
@@ -57,24 +57,15 @@ namespace Project.Levels {
 				if(GenerateNewLevel())
                     return true;
 
-            Console.WriteLine($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time!");
+            Console.WriteLine($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time! Seed: {LastLevelGenSeed}");
             return false;
         }
 
-		///<summary>Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails.
-		///</summary>
+		/// <summary>Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails.</summary>
 		bool GenerateNewLevel() {
-			Console.WriteLine("\nGenerating new level...");
-
-            //Temporary room list for generation
-            var roomsGen = new List<Room>();
-			var connections = new Dictionary<Room, List<Room>>();
-			var rows = new List<List<Room>>();
-
-			//Random number generator used to vary level gen
-			int randSeed = (int)System.DateTime.Now.Ticks; //Seed with time so generation is always different
-			var rand = new Random(randSeed);
-			Console.WriteLine($"Level generation seed: {randSeed}");
+            //Random number generator used to vary level gen
+            LastLevelGenSeed = (int)System.DateTime.Now.Ticks; //Seed with time so generation is always different
+			var rand = new Random(LastLevelGenSeed);
 
             //Room generation config
             LevelGenConfig genSettings = null;
@@ -91,206 +82,237 @@ namespace Project.Levels {
             if(genSettings == null) //Use final config if none is found for current level
                 genSettings = GenerationConfigs[GenerationConfigs.Count - 1];
 
-            int numRows = genSettings.Rows; //Num rows excluding start and end room
-			int minRoomsPerRow = genSettings.MinRoomsPerRow;
-			int maxRoomsPerRow = genSettings.MaxRoomsPerRow;
-            int maxConnections = genSettings.MaxConnections;
+			int minRoomsPerPath = genSettings.MinRoomsPerPath;
+			int maxRoomsPerPath = genSettings.MaxRoomsPerPath;
+            int numPrimaryPaths = genSettings.NumPrimaryPaths;
             double pruneChance = genSettings.PruneChance;
-            float maxConnectionDistance = genSettings.MaxConnectionDistance;
-            float centerY = (float)maxRoomsPerRow / 2.0f;
+            float secondaryPathChance = genSettings.SecondaryPathChance;
 
-			//Create start room and its row
-			var startRoom = new Room(0, centerY);
+			float yDelta = 5.0f / numPrimaryPaths; //Vertical separation between each primary path
+            float centerY = yDelta * numPrimaryPaths / 2;
+            float angleMaxDegrees = 12.0f; //Max angle magnitude of each room relative to the previous room
+            float angleMaxRadians = angleMaxDegrees * (MathF.PI / 180.0f);
+            float xDeltaMax = 10.0f / maxRoomsPerPath; //Maximum x separation between each room on a primary path
+
+            //Level generation state
+            var roomsGen = new List<Room>();
+			var connections = new Dictionary<Room, List<Room>>();
+			var pathEnds = new List<Room>(); //End rooms of each primary path
+            var primaryPaths = new List<List<Room>>(); //Rooms in each primary path
+
+            //Create start room
+            var startRoom = new Room(-0.5f, centerY);
 			roomsGen.Add(startRoom);
 			connections[startRoom] = new List<Room>();
-			var startRow = new List<Room>();
-			startRow.Add(startRoom);
-			rows.Add(startRow);
 
-			//Generate rooms and set their positions
-			float rowX = 1.0f;
-			for (int i = 1; i < numRows + 1; i++) {
-				var row = new List<Room>();
-				int numRooms = rand.Next(minRoomsPerRow, maxRoomsPerRow + 1);
-				float roomDistY = 6.0f / (float)numRooms;
-				float roomY = (float)(rand.NextDouble() / 2.0); //Random initial Y pos
+            //Generate primary paths
+            for (uint i = 0; i < numPrimaryPaths; i++) {
+                int roomsInPath = rand.Next(minRoomsPerPath, maxRoomsPerPath);
+                float xDelta = 10.0f / (roomsInPath + 1);
+                float roomX = xDelta;
+                float roomY = yDelta * i + 0.5f;
+                Room lastRoom = null;
+                Room curRoom = startRoom;
+                var path = new List<Room>();
+                primaryPaths.Add(path);
 
-				for (int j = 0; j < numRooms; j++) {
-					var room = new Room(rowX, roomY);
-					row.Add(room);
-					roomsGen.Add(room);
-					connections[room] = new List<Room>();
-					roomY += roomDistY;
-				}
+                for (int j = 0; j < roomsInPath; j++) {
+					//Calculate position of next room
+					if(j != 0) {
+                    	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
+                    	roomX += xDelta * MathF.Cos(angle);
+                    	roomY += xDelta * MathF.Sin(angle);
+					}
 
-				//Adjust next row x pos with some random variation
-				rowX += 1.5f + ((float)(rand.NextDouble() / 2.0) - 0.125f);
-				rows.Add(row);
-			}
+                    //Create next room
+                    lastRoom = curRoom;
+                    curRoom = new Room(roomX, roomY);
+                    roomsGen.Add(curRoom);
+                    path.Add(curRoom);
+                    connections[curRoom] = new List<Room>();
+                	connections[curRoom].Add(lastRoom);
+                	connections[lastRoom].Add(curRoom);
+                }
+                pathEnds.Add(curRoom);
+            }
 
-			//Add end room and its row
-			var endRoom = new Room(rowX, centerY);
+            //Add end room
+            var endRoom = new Room(xDeltaMax * (maxRoomsPerPath + 1), centerY);
 			roomsGen.Add(endRoom);
 			connections[endRoom] = new List<Room>();
-			var endRow = new List<Room>();
-			endRow.Add(endRoom);
-			rows.Add(endRow);
 
-			//Add random items to each room
-			foreach (var room in roomsGen) {
-				int numItemsToAdd = rand.Next(0, 5);
-				for (int i = 0; i < numItemsToAdd; i++) {
-					//Pick random item and add it to the room
-					var def = ItemManager.Definitions[rand.Next(ItemManager.Definitions.Count)];
-					var item = new Item(def);
-					room.Items.Add(item);
-
-					//Pick random position for the item
-					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
-					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
-					item.Position = new Vector3(x, 0.0f, y);
-				}
-			}
-
-			//Connect all rooms between adjacent rows
-			List<Room> lastRow = null;
-			foreach (var row in rows) { //Loop through rows
-				if (lastRow == null) {
-					lastRow = row;
-					continue;
-				}
-
-				//Connect each room in this row to all rooms in the previous row
-				foreach (var room in row) {
-					var connectedRooms = connections[room];
-					foreach (var previousRoom in lastRow) {
-						var previousRoomConnections = connections[previousRoom];
-
-						//Connect rooms that are < 3 distance from each other
-						if (Vector2.Distance(room.Position, previousRoom.Position) < maxConnectionDistance) {
-							connectedRooms.Add(previousRoom);
-							previousRoomConnections.Add(room);
-						}
-					}
-				}
-
-				lastRow = row;
-			}
-
-			//Ensure all rooms have at least 2 connections to avoid the player getting stuck
-			foreach (var room in roomsGen) {
-				var roomConnections = connections[room];
-				if (roomConnections.Count < 2) {
-					Console.WriteLine($"Room at {room.Position} has {roomConnections.Count} connections. 2 is the minimum. Retrying level generation.");
-					return false;
-				}
-			}
-
-			//Shuffle rooms so connections are pruned in a non uniform manner
-			int roomCount = roomsGen.Count;
-            int[] shuffledList = new int[roomCount];
-            for (int i = 0; i < shuffledList.Length; i++) {
-                shuffledList[i] = i;
-            }
-			while(roomCount > 1) {
-                roomCount--;
-                int nextValue = (int)(rand.NextDouble() * roomCount);
-                int listValue = shuffledList[nextValue];
-                shuffledList[nextValue] = shuffledList[roomCount];
-                shuffledList[roomCount] = listValue;
+			//Connect primary path end points to end room
+			foreach (Room room in pathEnds) {
+                connections[room].Add(endRoom);
+                connections[endRoom].Add(room);
             }
 
-            //Prune connections if there's more than maxConnections or by random chance
-            foreach (var room in roomsGen) {
-				var roomConnections = connections[room];
-				if (roomConnections.Count > maxConnections || rand.NextDouble() <= pruneChance)
-				{
-					while (roomConnections.Count > 2) {
-						//Look for a connection that removing won't cause another room to have < 2 connections
-						Room roomToRemove = null;
-						foreach (var connectedRoom in roomConnections) {
-							var roomConnections2 = connections[connectedRoom];
-							if (roomConnections2.Count > 2) {
-								roomToRemove = connectedRoom; //Remove the room outside of the loop to not invalid the enumerator
-								roomConnections2.Remove(room);
-								break;
-							}
-						}
+            //Generate secondary paths that branch off primary paths
+            foreach (List<Room> path in primaryPaths) {
+                for (int i = 0; i < path.Count; i++) {
+                    //Chance on each primary path room to have a secondary path
+                    if (rand.NextDouble() <= secondaryPathChance) {
+                     	Room primary = path[i];
 
-						//Remove connection
-						if (roomToRemove != null)
-							roomConnections.Remove(roomToRemove);
-						else
+                        //Look for another primary in range to connect this room with
+                        float closestRoom = float.PositiveInfinity;
+                        Room nextRoom = null;
+                        foreach (var room in roomsGen) {
+							if(room == primary || path.Contains(room) || room == startRoom || room == endRoom)
+                                continue;
+							if(connections[room].Contains(primary) || connections[primary].Contains(room))
+                                continue;
+
+                            float dist = (float)primary.DistanceToRoom(room);
+							if(dist < closestRoom) {
+								closestRoom = dist;
+                                nextRoom = room;
+                            }
+                        }
+
+						if(nextRoom != null) { //Connect to another primary
+                            connections[primary].Add(nextRoom);
+                            connections[nextRoom].Add(primary);
+                        }
+						else { //Form a separate branch
+							//Todo: Rewrite this so branches do more than just looping back into the same path
+							Room nextPrimary = (i == path.Count - 1) ? path[i - 1] : path[i + 1];
+                        	float xDelta = 10.0f / (path.Count + 1);
+                        	float minSecondaryAngle = 5.0f;
+                        	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
+                        	angle = Math.Sign(angle) * Math.Max(minSecondaryAngle, Math.Abs(angle));
+                        	float roomX = primary.Position.X;
+                        	float roomY = primary.Position.Y;
+                        	roomX += xDelta * MathF.Cos(angle) * 0.5f;// * 2);
+                        	roomY += xDelta * MathF.Sin(angle) * 0.5f;// * 2);
+
+                        	var room = new Room(roomX, roomY);
+                        	roomsGen.Add(room);
+                        	connections[room] = new List<Room>();
+                        	connections[room].Add(primary);
+                        	connections[primary].Add(room);
+
+                        	connections[room].Add(nextPrimary);
+                        	connections[nextPrimary].Add(room);
+						}
+                    }
+                }
+            }
+
+            //Pushes close rooms away from each other
+            int roomSeparationSteps = 5;
+            float minPushDistance = 2.0f;
+            for (int i = 0; i < roomSeparationSteps; i++) {
+                foreach (var room0 in roomsGen) {
+                    foreach (var room1 in roomsGen) {
+                        if (room0 == room1 || room0 == startRoom || room0 == endRoom || room1 == startRoom || room0 == endRoom)
+                            continue;
+
+						//Push rooms away from each other if they're within minPushDistance
+                        float distance = (float)room0.DistanceToRoom(room1);
+                        if (distance <= minPushDistance) {
+                            float strength = 1.0f / (distance * distance);
+                            strength *= 0.05f;
+                            Vector2 dir0 = (room0.Position - room1.Position).Normalized();
+                            Vector2 dir1 = -dir0;
+
+                            room0.Position += dir0 * strength;
+                            room1.Position += dir1 * strength;
+                        }
+                    }
+				}
+			}
+
+			//Ensure rooms aren't before/after the start/end rooms
+			foreach (var room in roomsGen) {
+				room.Position.X = MathUtil.MinMax(room.Position.X, startRoom.Position.X + xDeltaMax * 0.5f, endRoom.Position.X - xDeltaMax * 0.5f);
+			}
+
+			//Iterate rooms in random order and prune some connections
+			foreach (int i in Enumerable.Range(0, roomsGen.Count).OrderBy(i => rand.Next())) {
+                Room room = roomsGen[i];
+            	var roomConnections = connections[room];
+				if (room == startRoom || room == endRoom)
+                    continue;
+                if (roomConnections.Count <= 2 || rand.NextDouble() > pruneChance)
+                    continue;
+
+                //Find a connection where the room on the other end will still have >= 2 connections
+                if (roomConnections.Count > 2) {
+					Room room2 = null;
+					foreach (var connectedRoom in roomConnections) {
+						if (connections[connectedRoom].Count > 2) {
+							room2 = connectedRoom;
 							break;
+						}
 					}
+
+                    //Remove connection
+                    if (room2 != null) {
+						roomConnections.Remove(room2);
+                        connections[room2].Remove(room);
+                    }
 				}
+            }
 
+            //Do floodfill to see if theres a path from start to finish, and to detect stranded rooms
+            {
+                var checkedRooms = new List<Room>();
+                var roomQueue = new Queue<Room>();
+                roomQueue.Enqueue(startRoom);
+                bool success = false;
+                while (roomQueue.Count > 0) {
+                    //Get next room from queue
+                    var room = roomQueue.Dequeue();
+                    checkedRooms.Add(room);
 
-			}
+                    //Check if we've reached the end room
+                    if (room == endRoom)
+                        success = true;
 
-			//Do floodfill to see if theres a path from start to finish, and to detect stranded rooms
-			{
-				var checkedRooms = new List<Room>();
-				var roomQueue = new Queue<Room>();
-				roomQueue.Enqueue(startRoom);
-				bool success = false;
-				while (roomQueue.Count > 0) {
-					//Get next room from queue
-					var room = roomQueue.Dequeue();
-					var connectedRooms = connections[room];
-					checkedRooms.Add(room);
+                    //Push connections onto queue if they haven't already been checked
+                    foreach (var connection in connections[room])
+                        if (!checkedRooms.Contains(connection))
+                            roomQueue.Enqueue(connection);
+                }
 
-					//Check if we've reached the end room
-					if (room == endRoom)
-						success = true;
+                //Fail level generation if start and end rooms aren't connected
+                if (!success) {
+                    Console.WriteLine("Level generation error! No valid path from start room to end room.");
+                    return false;
+                }
 
-					//Push connections onto queue if they haven't already been checked
-					foreach (var connection in connectedRooms)
-						if (!checkedRooms.Contains(connection))
-							roomQueue.Enqueue(connection);
-				}
+                //Get a list of rooms that aren't connected to the start room
+                var strandedRooms = new List<Room>(); //Rooms that don't have a path to the start room
+                foreach (var room in roomsGen)
+                    if (!checkedRooms.Contains(room))
+                        strandedRooms.Add(room);
 
-				//Fail level generation if start and end rooms aren't connected
-				if (!success) {
-					Console.WriteLine("Level generation error! No valid path from start room to end room.");
-					return false;
-				}
+                //Remove rooms that aren't connected to the start room.
+                //Done in two steps since you shouldn't enumerate a list (roomsGen) while removing items from it
+                foreach (var room in strandedRooms) {
+                    roomsGen.Remove(room);
 
-				//Get a list of rooms that aren't connected to the start room
-				var strandedRooms = new List<Room>(); //Rooms that don't have a path to the start room
-				foreach (var room in roomsGen)
-					if (!checkedRooms.Contains(room))
-						strandedRooms.Add(room);
+                    //Iterate all other rooms and remove their connections to this one if present
+                    foreach (var room2 in roomsGen) {
+                        var room2Connections = connections[room2];
+                        if (room2Connections.Contains(room))
+                            room2Connections.Remove(room);
+                    }
+                }
+            }
 
-				//Remove rooms that aren't connected to the start room.
-				//Done in two steps since you should enumerate a list (roomsGen) while removing items from it
-				foreach (var room in strandedRooms) {
-					roomsGen.Remove(room);
+            //Check again that all rooms have >= 2 connections
+            foreach (var room in roomsGen) {
+            	var roomConnections = connections[room];
+            	if (roomConnections.Count < 2) {
+            		Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
+            		return false;
+            	}
+            }
 
-					//Iterate all other rooms and remove their connections to this one if present
-					foreach (var room2 in roomsGen) {
-						var room2Connections = connections[room2];
-						if (room2Connections.Contains(room))
-							room2Connections.Remove(room);
-					}
-				}
-			}
-
-			//Check again that all rooms have >= 2 && <= maxConnections
-			foreach (var room in roomsGen) {
-				var roomConnections = connections[room];
-				if (roomConnections.Count < 2) {
-					Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
-					return false;
-				}
-				if (roomConnections.Count > maxConnections) {
-					Console.WriteLine($"Level generation error! Room {room.Id} has > 5 connections.");
-					return false;
-				}
-			}
-
-			//Set final rooms list and their connections
-			foreach (var room in roomsGen) {
+            //Set final rooms list and their connections
+            foreach (var room in roomsGen) {
 				var connectedRooms = connections[room];
 				room.ConnectedRooms = connectedRooms.ToArray();
 			}
@@ -435,16 +457,14 @@ namespace Project.Levels {
 		/// <summary>The number of levels to use this config for before moving to the next one</summary>
         public int NumLevels;
 		/// <summary>The number of rows in the level, excluding the start and end rows</summary>
-        public int Rows;
+        public int NumPrimaryPaths;
 		/// <summary>Minimum number of rooms per row</summary>
-        public int MinRoomsPerRow;
+        public int MinRoomsPerPath;
 		/// <summary>Maximum number of rooms per row</summary>
-        public int MaxRoomsPerRow;
-		/// <summary>Maximum number of connections a room can have. Any beyond this number are culled. All rooms must have at least 2 connections.</summary>
-        public int MaxConnections;
+        public int MaxRoomsPerPath;
 		/// <summary>The chance of pruning connections for rooms when they have < MaxConnections.</summary>
         public float PruneChance;
-		/// <summary>Rooms must be within this distance from each other to be connected.</summary>
-        public float MaxConnectionDistance;
+        /// <summary>The chance of a secondary path forming off of each room on a primary path</summary>
+        public float SecondaryPathChance;
     }
 }
