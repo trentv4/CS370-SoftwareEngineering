@@ -81,14 +81,16 @@ namespace Project.Render {
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			ForwardProgram.Use();
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + new Vector3(0, 2, -3), PlayerModel.Position, Vector3.UnitY);
-			Matrix4 Perspective = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
+			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
-			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective);
+			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
 			SceneHierarchy.Render();
 			DebugGroupEnd();
 
 			DebugGroup("Interface pass", 1);
 			InterfaceProgram.Use();
+			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
+			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			GL.Disable(EnableCap.DepthTest);
 			SceneHierarchy.Interface.Render(state);
 			GL.Enable(EnableCap.DepthTest);

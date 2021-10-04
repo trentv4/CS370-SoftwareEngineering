@@ -87,14 +87,16 @@ namespace Project.Render {
 	/// Uniforms:  mat3 mvp (model-view-projection matrix), sampler2D albedoTexture<br/>
 	/// Attribs: vec2 _position, vec2 _uv</summary>
 	public class ShaderProgramInterface : ShaderProgram {
-		public readonly int UniformMVP_ID;
+		public readonly int UniformModel_ID;
+		public readonly int UniformPerspective_ID;
 		public readonly int UniformTextureAlbedo_ID;
 		public readonly int UniformIsFont;
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
 		public ShaderProgramInterface(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
-			UniformMVP_ID = GL.GetUniformLocation(ShaderProgram_ID, "mvp");
+			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
+			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 			UniformIsFont = GL.GetUniformLocation(ShaderProgram_ID, "isFont");
 		}

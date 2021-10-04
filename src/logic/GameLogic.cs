@@ -14,7 +14,8 @@ namespace Project {
 		public float PlayerY;
 		public Level Level;
 		public bool IsViewingMap;
-    }
+		public int Score;
+	}
 
 	public class GameLogic {
 		/// <summary> Actively modified state, constantly being changed by Update() </summary>
@@ -23,6 +24,7 @@ namespace Project {
 		private GameState StateBuffer = new GameState();
 
 		public Level Level;
+		public int GameTick;
 
 		public Server Server;
 
@@ -30,7 +32,7 @@ namespace Project {
 			StateBuffer.PlayerX = 0.0f;
 			StateBuffer.PlayerY = 0.0f;
 			StateBuffer.IsViewingMap = false;
-        }
+		}
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
@@ -43,13 +45,15 @@ namespace Project {
 		public virtual void Update() {
 			Input.Update();
 			Level.Update();
+			GameTick++;
 
 			State.PlayerX = Level.Player.Position.X;
 			State.PlayerY = Level.Player.Position.Y;
 			State.Level = Level;
 			State.IsViewingMap = Level.IsViewingMap;
+			State.Score = (GameTick / 600) + ((int)Level.Score);
 
-            StateBuffer = State;
+			StateBuffer = State;
 		}
 
 		/// <summary> Retrieve a copy of the GameState, typically for the renderer. </summary>
