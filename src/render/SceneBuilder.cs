@@ -102,13 +102,26 @@ namespace Project.Render {
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
 			Room[] rooms = state.Level.Rooms;
 
-			float bothScaling = 0.9f;
-			float xScaling = (18.0f / state.Level.EndRoom.Position.X) * bothScaling;
-			float yScaling = 3 * bothScaling;
-			Matrix3 adjust = new Matrix3(new Vector3(xScaling, 0, 0), new Vector3(0, yScaling, 0), new Vector3(-9.0f * bothScaling, -2.5f * yScaling, 1));
+			Vector2 screenSize = Renderer.INSTANCE.Size;
+			Vector2 centerPoint = screenSize / 2;
+
+			Vector2 min = new Vector2(10000, 10000);
+			Vector2 max = new Vector2(0, 0);
+			foreach (Room r in rooms) {
+				if (r.Position.X > max.X) max.X = r.Position.X;
+				if (r.Position.Y > max.Y) max.Y = r.Position.Y;
+				if (r.Position.X < min.X) min.X = r.Position.X;
+				if (r.Position.Y < min.Y) min.Y = r.Position.Y;
+			}
+			Vector2 screenMin = new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f);
+			Vector2 screenMax = new Vector2(screenSize.X - (screenSize.X / 1.25f), screenSize.Y - (screenSize.Y / 1.25f));
 
 			foreach (Room current in rooms) {
-				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(Transform(current.Position, adjust));
+				Vector2 screenSpacePosition = new Vector2(
+					screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
+					screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+				);
+				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(screenSpacePosition);
 				if (current == state.Level.EndRoom) {
 					circle.AlbedoTexture = new Texture("assets/textures/green.png");
 				} else if (current == state.Level.StartRoom) {
@@ -118,17 +131,20 @@ namespace Project.Render {
 				} else {
 					circle.AlbedoTexture = new Texture("assets/textures/red.png");
 				}
-                circle.SetScale(0.5f);
-                roomNodes.Add(circle);
+				circle.SetScale(40f);
+				roomNodes.Add(circle);
 
 				foreach (Room connection in current.ConnectedRooms) {
 					if (current.Position.X < connection.Position.X) continue;
-					Vector2 positionA = Transform(current.Position, adjust);
-					Vector2 positionB = Transform(connection.Position, adjust);
+					Vector2 positionA = screenSpacePosition;
+					Vector2 positionB = new Vector2(
+						screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
+						screenMin.Y + (connection.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+					);
 					Vector2 positionBNormalized = positionB - positionA;
 
 					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
-					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized) * xScaling, 0.25f));
+					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f));
 					connector.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
 
 					connectorNodes.Add(connector);
@@ -137,20 +153,19 @@ namespace Project.Render {
 
 			InterfaceModel mapBackground = InterfaceModel.GetCachedModel("unit_rectangle");
 			mapBackground.AlbedoTexture = new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest);
-			mapBackground.SetScale(new Vector2(30, 16));
+			mapBackground.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f));
+			mapBackground.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2));
+
+			InterfaceString mapLabel = new InterfaceString("calibri", "Map (known)");
+			mapLabel.SetScale(50f);
+			mapLabel.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f));
 
 			RenderableNode interfaceNode = new RenderableNode();
 			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
-			interfaceNode.Children.Add(new InterfaceString("calibri", "test message with a bit of length").SetPosition(new Vector2(-1, 1)).SetScale(600f));
+			interfaceNode.Children.Add(mapLabel);
 			return interfaceNode;
-		}
-
-		/// <summary> Used when constructing the map to transform Vector2s by a translation/scaling transform. </summary>
-		private static Vector2 Transform(Vector2 start, Matrix3 adjustmentMatrix) {
-			Vector3 adjustedPosition = new Vector3(start.X, start.Y, 1.0f) * adjustmentMatrix;
-			return new Vector2(adjustedPosition.X, adjustedPosition.Y);
 		}
 	}
 }
