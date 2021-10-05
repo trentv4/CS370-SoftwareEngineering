@@ -36,7 +36,8 @@ namespace Project {
         public float CameraPitch = 0.0f;
         public float CameraYaw = 0.0f;
 		/// <summary>Used to adjust camera mouse movement speed. Default speed is too fast.</summary>
-        public float CameraMouseSensitivity = 0.01f;
+        public float CameraMouseSensitivity = 0.1f;
+		public bool MouseLocked = false;
 
 		public Server Server;
 
@@ -105,13 +106,20 @@ namespace Project {
 
 			//Toggle mouse visibility and centering for mouse camera movement
 			if (Input.IsKeyPressed(Keys.F1)) {
-				//For some reason setting this to false also makes the cursor invisible, making CursorVisible useless...
-				Program.INSTANCE.CursorGrabbed = !Program.INSTANCE.CursorGrabbed;
+				MouseLocked = !MouseLocked;
+			}
+			if(MouseLocked) {
+				Program.INSTANCE.CursorGrabbed = true;
+				//CursorVisible isn't explicitly set here because that breaks CursorGrabbed for some reason
+			}
+			else {
+				Program.INSTANCE.CursorGrabbed = false;
+				Program.INSTANCE.CursorVisible = true;
 			}
 
             //Mouse camera movement
-            CameraPitch += -Input.MouseState.Delta.Y * CameraMouseSensitivity;
-            CameraYaw += Input.MouseState.Delta.X * CameraMouseSensitivity;
+            CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
+            CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
             CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
 
             //Print player stats
