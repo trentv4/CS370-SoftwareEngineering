@@ -52,7 +52,7 @@ namespace Project.Levels {
 		}
 
 		/// <summary>Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail.</summary>
-		bool TryGenerateLevel(int numGenerationAttempts) {
+		public bool TryGenerateLevel(int numGenerationAttempts) {
             for (int i = 0; i < numGenerationAttempts; i++)
 				if(GenerateNewLevel())
                     return true;
@@ -183,8 +183,8 @@ namespace Project.Levels {
                         	angle = Math.Sign(angle) * Math.Max(minSecondaryAngle, Math.Abs(angle));
                         	float roomX = primary.Position.X;
                         	float roomY = primary.Position.Y;
-                        	roomX += xDelta * MathF.Cos(angle) * 0.5f;// * 2);
-                        	roomY += xDelta * MathF.Sin(angle) * 0.5f;// * 2);
+                        	roomX += xDelta * MathF.Cos(angle) * 0.5f;
+                        	roomY += xDelta * MathF.Sin(angle) * 0.5f;
 
                         	var room = new Room(roomX, roomY);
                         	roomsGen.Add(room);
@@ -199,7 +199,7 @@ namespace Project.Levels {
                 }
             }
 
-            //Pushes close rooms away from each other
+            //Push close rooms away from each other
             int roomSeparationSteps = 5;
             float minPushDistance = 2.0f;
             for (int i = 0; i < roomSeparationSteps; i++) {
@@ -304,8 +304,7 @@ namespace Project.Levels {
 
             //Check again that all rooms have >= 2 connections
             foreach (var room in roomsGen) {
-            	var roomConnections = connections[room];
-            	if (roomConnections.Count < 2) {
+            	if (connections[room].Count < 2) {
             		Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
             		return false;
             	}
@@ -332,40 +331,6 @@ namespace Project.Levels {
 
 		public void Update() {
 			Player.Update();
-
-			//Map view toggle
-			if (Input.IsKeyPressed(Keys.M))
-				IsViewingMap = !IsViewingMap;
-
-			//Regenerate level
-			if (Input.IsKeyPressed(Keys.G)) {
-				TryGenerateLevel(1000);
-			}
-
-			//Player map movement
-			if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {
-				Room nextRoom = null;
-				if (Input.IsKeyPressed(Keys.D1) && CurrentRoom.ConnectedRooms.Length >= 1)
-					nextRoom = CurrentRoom.ConnectedRooms[0];
-				if (Input.IsKeyPressed(Keys.D2) && CurrentRoom.ConnectedRooms.Length >= 2)
-					nextRoom = CurrentRoom.ConnectedRooms[1];
-				if (Input.IsKeyPressed(Keys.D3) && CurrentRoom.ConnectedRooms.Length >= 3)
-					nextRoom = CurrentRoom.ConnectedRooms[2];
-				if (Input.IsKeyPressed(Keys.D4) && CurrentRoom.ConnectedRooms.Length >= 4)
-					nextRoom = CurrentRoom.ConnectedRooms[3];
-				if (Input.IsKeyPressed(Keys.D5) && CurrentRoom.ConnectedRooms.Length >= 5)
-					nextRoom = CurrentRoom.ConnectedRooms[4];
-				if (nextRoom != null) {
-					if (nextRoom == PreviousRoom) {
-						Console.WriteLine($"Can't move from room {CurrentRoom.Id} to room {nextRoom.Id} since you'd be moving backwards.");
-					} else {
-						PreviousRoom = CurrentRoom;
-						CurrentRoom = nextRoom;
-                        Score += 100;
-						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
-					}
-				}
-			}
 
 			//Print out score and generate a new level if player completes this one
 			if (CurrentRoom == EndRoom) {

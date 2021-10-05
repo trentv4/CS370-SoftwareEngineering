@@ -17,48 +17,13 @@ namespace Project {
 		public int CarryWeight = 10;
 		public Vector2 Position;
 
-        private float MinPitch = -89.0f;
-        private float MaxPitch = 89.0f;
-        public float CameraPitch = 0.0f;
-        public float CameraYaw = 0.0f;
-
-		/// <summary>Used to adjust camera mouse movement speed. Default speed is too fast.</summary>
-        public float CameraMovementMultiplier = 0.01f;
-
         public Player(Vector2 initialPosition) {
 			Position = initialPosition;
 			Inventory = new Inventory(this);
 		}
 
 		public void Update() {
-			Inventory.UpdateUI();
-			UpdateInput();
-		}
-
-		private void UpdateInput() {
-			//Player movement
-			int ws = Convert.ToInt32(Input.IsKeyDown(Keys.W)) - Convert.ToInt32(Input.IsKeyDown(Keys.S));
-			int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
-			int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
-			int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
-			float speed = 0.1f;
-			Position.X += ad * speed;
-			Position.Y += ws * speed;
-
-            //Mouse camera movement
-            CameraPitch += -Input.MouseState.Delta.Y * CameraMovementMultiplier;
-            CameraYaw += Input.MouseState.Delta.X * CameraMovementMultiplier;
-            CameraPitch = MathUtil.MinMax(CameraPitch, MinPitch, MaxPitch);
-
-            //Print player stats
-            if (Input.IsKeyPressed(Keys.P)) {
-				Console.WriteLine("\n\n*****Player stats*****");
-				Console.WriteLine($"Health: {Health}/{MaxHealth}");
-				Console.WriteLine($"Mana: {Mana}/{MaxMana}");
-				Console.WriteLine($"Armor: {Armor}");
-				Console.WriteLine($"Carry weight: {CarryWeight}");
-				Console.WriteLine($"Position: {Position}");
-			}
+			
 		}
 	}
 }
