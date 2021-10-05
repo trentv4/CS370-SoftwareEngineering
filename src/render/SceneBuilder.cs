@@ -103,8 +103,6 @@ namespace Project.Render {
 			Room[] rooms = state.Level.Rooms;
 
 			Vector2 screenSize = Renderer.INSTANCE.Size;
-			Vector2 centerPoint = screenSize / 2;
-
 			Vector2 min = new Vector2(10000, 10000);
 			Vector2 max = new Vector2(0, 0);
 			foreach (Room r in rooms) {
@@ -160,11 +158,16 @@ namespace Project.Render {
 			mapLabel.SetScale(50f);
 			mapLabel.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f));
 
+			InterfaceString score = new InterfaceString("calibri", $"Score: {state.Level.Score}");
+			score.SetScale(50f);
+			score.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
+
 			RenderableNode interfaceNode = new RenderableNode();
 			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
 			interfaceNode.Children.Add(mapLabel);
+			interfaceNode.Children.Add(score);
 			return interfaceNode;
 		}
 	}
