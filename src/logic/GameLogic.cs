@@ -6,6 +6,7 @@ using Project.Util;
 using Project.Render;
 using System;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Mathematics;
 
 namespace Project {
 	/// <summary> Struct storing all data required to execute the game. By storing this 
@@ -100,9 +101,15 @@ namespace Project {
 			int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
 			int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
 			int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
+
 			float speed = 0.1f;
-			player.Position.X += ad * speed;
-			player.Position.Y += ws * speed;
+			float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
+			float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
+
+			player.Position += new Vector2(
+				(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
+				(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
+			);
 
 			//Toggle mouse visibility and centering for mouse camera movement
 			if (Input.IsKeyPressed(Keys.F1)) {
