@@ -91,36 +91,36 @@ namespace Project {
 		private void UpdatePlayerInput() {
 			var player = Level.Player;
 
-			//Player movement
-			int ws = Convert.ToInt32(Input.IsKeyDown(Keys.W)) - Convert.ToInt32(Input.IsKeyDown(Keys.S));
-			int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
-			int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
-			int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
-
-			float speed = 0.1f;
-			float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
-			float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
-
-			player.Position += new Vector2(
-				(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
-				(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
-			);
-
 			//Toggle mouse visibility and centering for mouse camera movement
 			if (Input.IsKeyPressed(Keys.Escape)) {
-				Program.INSTANCE.CursorGrabbed = false;
-				Program.INSTANCE.CursorVisible = true;
+				Renderer.INSTANCE.CursorGrabbed = false;
+				Renderer.INSTANCE.CursorVisible = true;
 			}
 
 			if (Input.MouseState.IsAnyButtonDown) {
-				Program.INSTANCE.CursorGrabbed = true;
+				Renderer.INSTANCE.CursorGrabbed = true;
 			}
 
 			//Mouse camera movement
-			if (Program.INSTANCE.CursorGrabbed) {
+			if (Renderer.INSTANCE.CursorGrabbed) {
 				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
-				CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
+				CameraYaw -= Input.MouseDeltaX * CameraMouseSensitivity;
 				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
+
+				//Player movement
+				int ws = Convert.ToInt32(Input.IsKeyDown(Keys.W)) - Convert.ToInt32(Input.IsKeyDown(Keys.S));
+				int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
+				int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
+				int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
+
+				float speed = 0.1f;
+				float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
+				float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
+
+				player.Position += new Vector2(
+					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
+					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
+				);
 			}
 
             //Print player stats
