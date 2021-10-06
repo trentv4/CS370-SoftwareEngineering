@@ -108,16 +108,16 @@ namespace Project {
 
 			//Toggle mouse visibility and centering for mouse camera movement
 			if (Input.IsKeyPressed(Keys.Escape)) {
-				Renderer.INSTANCE.CursorGrabbed = false;
-				Renderer.INSTANCE.CursorVisible = true;
+				Program.INSTANCE.CursorGrabbed = false;
+				Program.INSTANCE.CursorVisible = true;
 			}
 
 			if (Input.MouseState.IsAnyButtonDown) {
-				Renderer.INSTANCE.CursorGrabbed = true;
+				Program.INSTANCE.CursorGrabbed = true;
 			}
 
 			//Mouse camera movement
-			if (Renderer.INSTANCE.CursorGrabbed) {
+			if (Program.INSTANCE.CursorGrabbed) {
 				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
 				CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
 				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
