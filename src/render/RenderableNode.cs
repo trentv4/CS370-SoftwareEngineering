@@ -394,6 +394,15 @@ namespace Project.Render {
 			}
 			i.AddRange(new uint[] { 0, density, 1 });
 			new InterfaceModel(v.ToArray(), i.ToArray()).Cache("unit_circle");
+
+			new InterfaceModel(new float[] {
+				0.0f, -0.25f, 0.5f, 0.25f, // 0
+				0.5f, -0.5f,  1f, 0f, // 1
+				0.0f, 0.5f,   0.5f, 1f, // 2
+				-0.5f, -0.5f, 0.0f, 0.0f // 3
+			}, new uint[] {
+				0,1,2, 0,3,2
+			}).Cache("pointer");
 		}
 	}
 }

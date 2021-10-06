@@ -13,8 +13,6 @@ namespace Project.Render {
 		public RenderableNode Scene;
 		/// <summary> Specific reference to the player model, rendered after the scene is rendered, but in the same world space. </summary>
 		public Model PlayerModel;
-		/// <summary> Interface root object, see documentation of InterfaceRoot for more details. </summary>
-		public InterfaceRoot Interface;
 
 		/// <summary> Creates one-time objects, in particular the player model. </summary>
 		public void Build() {
@@ -80,20 +78,35 @@ namespace Project.Render {
 		/// <summary> The widescreen map shown when "M" (or other keybinds) are pressed. </summary>
 		public RenderableNode Map;
 		/// <summary> Unimplemented. </summary>
-		public InterfaceModel MainMenu;
+		public RenderableNode MainMenu;
 		/// <summary> Unimplemented. </summary>
-		public InterfaceModel InGameInterface;
+		public RenderableNode InGameInterface;
 
 		/// <summary> Creates one-time objects, in particular the main menu and in-game interface shell. </summary>
 		public InterfaceRoot Build() {
 			return this;
 		}
 
+		public InterfaceRoot Rebuild(GameState state) {
+			Map = BuildMapInterface(state);
+			InGameInterface = BuildInGameInterface(state);
+			return this;
+		}
+
 		/// <summary> Draws different interface nodes based on the current game state. </summary>
 		public void Render(GameState state) {
-			if (state.IsViewingMap) {
-				Map.Render();
+			if (state.IsInGame) {
+				InGameInterface.Render();
+				if (state.IsViewingMap)
+					Map.Render();
+			} else {
+				//MainMenu.Render();
 			}
+		}
+
+		public RenderableNode BuildInGameInterface(GameState state) {
+			RenderableNode node = new RenderableNode();
+			return node;
 		}
 
 		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
@@ -162,12 +175,23 @@ namespace Project.Render {
 			score.SetScale(50f);
 			score.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
 
+			Vector2 currentRoom = state.Level.CurrentRoom.Position;
+			Vector2 pointerPosition = new Vector2(
+				screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
+				screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+			);
+			InterfaceModel pointer = InterfaceModel.GetCachedModel("pointer").SetScale(50f);
+			pointer.AlbedoTexture = new Texture("assets/textures/gold.png");
+			pointer.SetPosition(pointerPosition);
+			pointer.SetRotation(state.CameraYaw + 90);
+
 			RenderableNode interfaceNode = new RenderableNode();
 			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
 			interfaceNode.Children.Add(mapLabel);
 			interfaceNode.Children.Add(score);
+			interfaceNode.Children.Add(pointer);
 			return interfaceNode;
 		}
 	}

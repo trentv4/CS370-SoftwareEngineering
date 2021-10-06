@@ -20,6 +20,8 @@ namespace Project {
 		public int Score;
 		public float CameraPitch;
 		public float CameraYaw;
+		// Interface elements
+		public bool IsInGame;
 	}
 
 	public class GameLogic {
@@ -48,6 +50,7 @@ namespace Project {
 			StateBuffer.IsViewingMap = false;
 			StateBuffer.CameraPitch = 0.0f;
 			StateBuffer.CameraYaw = 0.0f;
+			StateBuffer.IsInGame = true;
 		}
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
@@ -64,11 +67,6 @@ namespace Project {
 			UpdateInput();
 			GameTick++;
 
-			//Toggle mouse visibility and centering for mouse camera movement
-			if (Input.IsKeyPressed(Keys.F1)) {
-				//For some reason setting this to false also makes the cursor invisible, making CursorVisible useless...
-				Program.INSTANCE.CursorGrabbed = !Program.INSTANCE.CursorGrabbed;
-			}
 
 			State.PlayerX = Level.Player.Position.X;
 			State.PlayerY = Level.Player.Position.Y;
@@ -77,6 +75,7 @@ namespace Project {
 			State.Score = (GameTick / 600) + ((int)Level.Score);
 			State.CameraPitch = CameraPitch;
 			State.CameraYaw = CameraYaw;
+			State.IsInGame = true;
 			StateBuffer = State;
 		}
 
@@ -112,22 +111,21 @@ namespace Project {
 			);
 
 			//Toggle mouse visibility and centering for mouse camera movement
-			if (Input.IsKeyPressed(Keys.F1)) {
-				MouseLocked = !MouseLocked;
-			}
-			if(MouseLocked) {
-				Program.INSTANCE.CursorGrabbed = true;
-				//CursorVisible isn't explicitly set here because that breaks CursorGrabbed for some reason
-			}
-			else {
-				Program.INSTANCE.CursorGrabbed = false;
-				Program.INSTANCE.CursorVisible = true;
+			if (Input.IsKeyPressed(Keys.Escape)) {
+				Renderer.INSTANCE.CursorGrabbed = false;
+				Renderer.INSTANCE.CursorVisible = true;
 			}
 
-            //Mouse camera movement
-            CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
-            CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
-            CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
+			if (Input.MouseState.IsAnyButtonDown) {
+				Renderer.INSTANCE.CursorGrabbed = true;
+			}
+
+			//Mouse camera movement
+			if (Renderer.INSTANCE.CursorGrabbed) {
+				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
+				CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
+				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
+			}
 
             //Print player stats
             if (Input.IsKeyPressed(Keys.P)) {

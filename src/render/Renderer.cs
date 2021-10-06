@@ -23,6 +23,7 @@ namespace Project.Render {
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private static GameRoot SceneHierarchy = new GameRoot();
+		private static InterfaceRoot Interface = new InterfaceRoot();
 
 		// OpenGL error callback
 		private static DebugProc debugCallback = DebugCallback;
@@ -77,10 +78,9 @@ namespace Project.Render {
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
+			DebugGroup("Forward geometry pass", 0);
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
-
-			DebugGroup("Forward geometry pass", 0);
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			ForwardProgram.Use();
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
@@ -90,11 +90,12 @@ namespace Project.Render {
 			DebugGroupEnd();
 
 			DebugGroup("Interface pass", 1);
+			Interface.Rebuild(state);
 			InterfaceProgram.Use();
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			GL.Disable(EnableCap.DepthTest);
-			SceneHierarchy.Interface.Render(state);
+			Interface.Render(state);
 			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
 
@@ -108,7 +109,7 @@ namespace Project.Render {
 				bool result = EventQueue.TryDequeue(out eventString);
 				switch (eventString) {
 					case "LevelRegenerated":
-						SceneHierarchy.Interface.Map = SceneHierarchy.Interface.BuildMapInterface(state);
+						Interface.Map = Interface.BuildMapInterface(state);
 						SceneHierarchy.Scene = SceneHierarchy.BuildRoom(state.Level.CurrentRoom);
 						break;
 					default:
