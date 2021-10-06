@@ -339,6 +339,22 @@ namespace Project.Levels {
             	}
             }
 
+			//Add random items to each room
+			foreach (var room in roomsGen) {
+				int numItemsToAdd = rand.Next(0, 5);
+				for (int i = 0; i < numItemsToAdd; i++) {
+					//Pick random item and add it to the room
+					var def = ItemManager.Definitions[rand.Next(ItemManager.Definitions.Count)];
+					var item = new Item(def);
+					room.Items.Add(item);
+
+					//Pick random position for the item
+					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
+					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
+					item.Position = new Vector3(x, 0.0f, y);
+				}
+			}
+
             //Set final rooms list and their connections
             foreach (var room in roomsGen) {
 				var connectedRooms = connections[room];
