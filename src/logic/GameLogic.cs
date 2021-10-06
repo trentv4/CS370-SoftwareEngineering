@@ -35,11 +35,11 @@ namespace Project {
 
 		//Camera variables
 		readonly float CameraMinPitch = -89.0f;
-        readonly float CameraMaxPitch = 89.0f;
-        public float CameraPitch = 0.0f;
-        public float CameraYaw = 0.0f;
+		readonly float CameraMaxPitch = 89.0f;
+		public float CameraPitch = 0.0f;
+		public float CameraYaw = 0.0f;
 		/// <summary>Used to adjust camera mouse movement speed. Default speed is too fast.</summary>
-        public float CameraMouseSensitivity = 0.1f;
+		public float CameraMouseSensitivity = 0.1f;
 		public bool MouseLocked = false;
 
 		public Server Server;
@@ -95,21 +95,6 @@ namespace Project {
 		private void UpdatePlayerInput() {
 			var player = Level.Player;
 
-			//Player movement
-			int ws = Convert.ToInt32(Input.IsKeyDown(Keys.W)) - Convert.ToInt32(Input.IsKeyDown(Keys.S));
-			int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
-			int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
-			int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
-
-			float speed = 0.1f;
-			float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
-			float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
-
-			player.Position += new Vector2(
-				(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
-				(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
-			);
-
 			//Toggle mouse visibility and centering for mouse camera movement
 			if (Input.IsKeyPressed(Keys.Escape)) {
 				Renderer.INSTANCE.CursorGrabbed = false;
@@ -123,12 +108,27 @@ namespace Project {
 			//Mouse camera movement
 			if (Renderer.INSTANCE.CursorGrabbed) {
 				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
-				CameraYaw += Input.MouseDeltaX * CameraMouseSensitivity;
+				CameraYaw -= Input.MouseDeltaX * CameraMouseSensitivity;
 				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
+
+				//Player movement
+				int ws = Convert.ToInt32(Input.IsKeyDown(Keys.W)) - Convert.ToInt32(Input.IsKeyDown(Keys.S));
+				int ad = Convert.ToInt32(Input.IsKeyDown(Keys.A)) - Convert.ToInt32(Input.IsKeyDown(Keys.D));
+				int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
+				int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
+
+				float speed = 0.1f;
+				float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
+				float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
+
+				player.Position += new Vector2(
+					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
+					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
+				);
 			}
 
-            //Print player stats
-            if (Input.IsKeyPressed(Keys.P)) {
+			//Print player stats
+			if (Input.IsKeyPressed(Keys.P)) {
 				Console.WriteLine("\n\n*****Player stats*****");
 				Console.WriteLine($"Health: {player.Health}/{player.MaxHealth}");
 				Console.WriteLine($"Mana: {player.Mana}/{player.MaxMana}");
@@ -168,7 +168,7 @@ namespace Project {
 					} else {
 						Level.PreviousRoom = Level.CurrentRoom;
 						Level.CurrentRoom = nextRoom;
-                        Level.Score += 100;
+						Level.Score += 100;
 						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 					}
 				}
