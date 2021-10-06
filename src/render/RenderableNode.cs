@@ -248,7 +248,7 @@ namespace Project.Render {
 			Matrix4 modelMatrix = Matrix4.Identity;
 			modelMatrix *= Matrix4.CreateScale(new Vector3(Scale.X, Scale.Y, 1f));
 			modelMatrix *= Matrix4.CreateTranslation(new Vector3(Position.X, Position.Y, 0f));
-			GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
+			GL.UniformMatrix4(Renderer.INSTANCE.InterfaceProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 1);
 
@@ -330,7 +330,7 @@ namespace Project.Render {
 			modelMatrix *= Matrix4.CreateScale(new Vector3(Scale.X, Scale.Y, 1f));
 			modelMatrix *= Matrix4.CreateRotationZ(Rotation * Renderer.RCF);
 			modelMatrix *= Matrix4.CreateTranslation(new Vector3(Position.X, Position.Y, 0f));
-			GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
+			GL.UniformMatrix4(Renderer.INSTANCE.InterfaceProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 0);
 
