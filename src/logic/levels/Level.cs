@@ -89,10 +89,10 @@ namespace Project.Levels {
             float secondaryPathChance = genSettings.SecondaryPathChance;
 
 			float yDelta = 5.0f / numPrimaryPaths; //Vertical separation between each primary path
-            float centerY = yDelta * numPrimaryPaths / 2;
+            float xDeltaMax = 10.0f / maxRoomsPerPath; //Maximum x separation between each room on a primary path
+            float centerY = yDelta * numPrimaryPaths / 2; //Map center y 
             float angleMaxDegrees = 12.0f; //Max angle magnitude of each room relative to the previous room
             float angleMaxRadians = angleMaxDegrees * (MathF.PI / 180.0f);
-            float xDeltaMax = 10.0f / maxRoomsPerPath; //Maximum x separation between each room on a primary path
 
             //Level generation state
             var roomsGen = new List<Room>();
@@ -137,7 +137,7 @@ namespace Project.Levels {
             }
 
             //Add end room
-            var endRoom = new Room(xDeltaMax * (maxRoomsPerPath + 1), centerY);
+            var endRoom = new Room(xDeltaMax * maxRoomsPerPath + 0.5f, centerY);
 			roomsGen.Add(endRoom);
 			connections[endRoom] = new List<Room>();
 
@@ -199,9 +199,26 @@ namespace Project.Levels {
                 }
             }
 
-            //Push close rooms away from each other
-            int roomSeparationSteps = 5;
-            float minPushDistance = 2.0f;
+			//Determine min/max room positions pre room push step
+			Vector2 prePushMin = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+			Vector2 prePushMax = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+			foreach(var room in roomsGen) {
+				if(room == startRoom || room == endRoom)
+					continue;
+
+				if (room.Position.X < prePushMin.X)
+					prePushMin.X = room.Position.X;
+				if (room.Position.Y < prePushMin.Y)
+					prePushMin.Y = room.Position.Y;
+				if (room.Position.X > prePushMax.X)
+					prePushMax.X = room.Position.X;
+				if (room.Position.Y > prePushMax.Y)
+					prePushMax.Y = room.Position.Y;
+			}
+
+			//Push close rooms away from each other
+			int roomSeparationSteps = 5;
+            float maxPushDistance = 2.0f; //Maximum distance a room can be pushed each step
             for (int i = 0; i < roomSeparationSteps; i++) {
                 foreach (var room0 in roomsGen) {
                     foreach (var room1 in roomsGen) {
@@ -210,7 +227,7 @@ namespace Project.Levels {
 
 						//Push rooms away from each other if they're within minPushDistance
                         float distance = (float)room0.DistanceToRoom(room1);
-                        if (distance <= minPushDistance) {
+                        if (distance <= maxPushDistance) {
                             float strength = 1.0f / (distance * distance);
                             strength *= 0.05f;
                             Vector2 dir0 = (room0.Position - room1.Position).Normalized();
@@ -218,13 +235,25 @@ namespace Project.Levels {
 
                             room0.Position += dir0 * strength;
                             room1.Position += dir1 * strength;
+
+							//How much to increase min/max bounds by during push step. Currently disabled but left in for future tweaking
+							float pushStepBoundsIncrease = 0.0f;
+							//Ensure rooms aren't pushed out of bounds
+							room0.Position.X = MathUtil.MinMax(room0.Position.X, prePushMin.X - pushStepBoundsIncrease, prePushMax.X + pushStepBoundsIncrease);
+							room0.Position.Y = MathUtil.MinMax(room0.Position.Y, prePushMin.Y - pushStepBoundsIncrease, prePushMax.Y + pushStepBoundsIncrease);
+							room1.Position.X = MathUtil.MinMax(room1.Position.X, prePushMin.X - pushStepBoundsIncrease, prePushMax.X + pushStepBoundsIncrease);
+							room1.Position.Y = MathUtil.MinMax(room1.Position.Y, prePushMin.Y - pushStepBoundsIncrease, prePushMax.Y + pushStepBoundsIncrease);
                         }
+
                     }
 				}
 			}
 
 			//Ensure rooms aren't before/after the start/end rooms
 			foreach (var room in roomsGen) {
+				if(room == startRoom || room == endRoom)
+					continue;
+
 				room.Position.X = MathUtil.MinMax(room.Position.X, startRoom.Position.X + xDeltaMax * 0.5f, endRoom.Position.X - xDeltaMax * 0.5f);
 			}
 
@@ -302,8 +331,8 @@ namespace Project.Levels {
                 }
             }
 
-            //Check again that all rooms have >= 2 connections
-            foreach (var room in roomsGen) {
+			//Check again that all rooms have >= 2 connections
+			foreach (var room in roomsGen) {
             	if (connections[room].Count < 2) {
             		Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
             		return false;
