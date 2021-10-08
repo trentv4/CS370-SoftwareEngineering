@@ -53,11 +53,16 @@ namespace Project {
 			StateBuffer.IsInGame = true;
 		}
 
+		~GameLogic() {
+			Sounds.Cleanup();
+		}
+
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
 			ItemManager.LoadDefinitions();
 			Level = new Level();
 			Server = new Server(Level);
+			Sounds.Init();
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
@@ -66,7 +71,6 @@ namespace Project {
 			Level.Update();
 			UpdateInput();
 			GameTick++;
-
 
 			State.PlayerX = Level.Player.Position.X;
 			State.PlayerY = Level.Player.Position.Y;

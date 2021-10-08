@@ -423,7 +423,8 @@ namespace Project.Levels {
                     bool result = Player.Inventory.AddItem(item);
 					if(result) {
 						//Added to inventory
-                        CurrentRoom.Items.Remove(item);
+						Sounds.PlaySound("assets/sounds/ItemPickup0.wav");
+						CurrentRoom.Items.Remove(item);
                     	Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate scene
                         break;
                     }
