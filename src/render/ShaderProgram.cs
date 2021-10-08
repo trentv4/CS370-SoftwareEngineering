@@ -33,6 +33,7 @@ namespace Project.Render {
 		public ShaderProgram Use() {
 			GL.UseProgram(ShaderProgram_ID);
 			GL.BindVertexArray(VertexArrayObject_ID);
+			Renderer.INSTANCE.CurrentProgram = this;
 			return this;
 		}
 

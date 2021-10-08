@@ -29,6 +29,8 @@ namespace Project.Render {
 		public Vector3 Scale { get; private set; } = Vector3.One;
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
+		public bool IsFog { get; private set; } = false;
+
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
 		private int IndexLength;
@@ -68,36 +70,33 @@ namespace Project.Render {
 		}
 
 		protected override void RenderSelf() {
+			if (IsFog != (Renderer.INSTANCE.CurrentProgram.GetType() == typeof(ShaderProgramFog)))
+				return;
 			Matrix4 modelMatrix = Matrix4.Identity;
 			modelMatrix *= Matrix4.CreateScale(Scale);
 			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
 			modelMatrix *= Matrix4.CreateTranslation(Position);
-			GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
 
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
+			if (IsFog) {
+				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
 
-			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
+			} else {
+				GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
 
-			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
-		}
+				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 
-		public void RenderSelfFoggy() {
-			Matrix4 modelMatrix = Matrix4.Identity;
-			modelMatrix *= Matrix4.CreateScale(Scale);
-			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
-			modelMatrix *= Matrix4.CreateTranslation(Position);
-			GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
-
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
-			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
+				GL.ActiveTexture(TextureUnit.Texture0);
+				GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			}
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
 		}
@@ -122,6 +121,11 @@ namespace Project.Render {
 		/// <summary> Chainable method to set the position of this object. </summary>
 		public Model SetPosition(Vector3 position) {
 			this.Position = position;
+			return this;
+		}
+
+		public Model SetFoggy(bool isFoggy) {
+			this.IsFog = isFoggy;
 			return this;
 		}
 

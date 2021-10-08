@@ -37,11 +37,7 @@ namespace Project.Render {
 			models.Add(plane);
 
 			// Walls
-			float distance = 20;
-			float iterations = 50;
-			for (float scale = distance + roomSize; scale > roomSize; scale -= (distance / iterations)) {
-				models.Add(Model.GetCachedModel("unit_cylinder").SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(scale, 10f, scale)));
-			}
+			models.Add(Model.GetCachedModel("unit_cylinder").SetFoggy(true).SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(roomSize, 10f, roomSize)));
 
 			// Items on the floor
 			foreach (Item i in currentRoom.Items) {

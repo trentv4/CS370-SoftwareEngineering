@@ -22,10 +22,11 @@ namespace Project.Render {
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
 
+		public ShaderProgram CurrentProgram;
+
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private static GameRoot SceneHierarchy = new GameRoot();
 		private static InterfaceRoot Interface = new InterfaceRoot();
-		private static Model TestModel;
 
 		private static int FramebufferID;
 		private static int depth;
@@ -80,8 +81,6 @@ namespace Project.Render {
 			// Builds the scene. Includes player, interface, and world.
 			SceneHierarchy.Build();
 
-			TestModel = Model.GetCachedModel("player").SetScale(3f);
-
 			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
 
 			// Shorthand for setting vertex shader attribs
@@ -120,7 +119,7 @@ namespace Project.Render {
 			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
 			GL.Enable(EnableCap.CullFace);
 			GL.CullFace(CullFaceMode.Front);
-			TestModel.Render();
+			SceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
 			DebugGroupEnd();
 
@@ -131,7 +130,7 @@ namespace Project.Render {
 			GL.BindTexture(TextureTarget.Texture2D, depth);
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
-			TestModel.RenderSelfFoggy();
+			SceneHierarchy.Render();
 			DebugGroupEnd();
 
 			DebugGroup("Interface", debugGroup++);
