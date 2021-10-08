@@ -86,6 +86,22 @@ namespace Project.Render {
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
 		}
 
+		public void RenderSelfFoggy() {
+			Matrix4 modelMatrix = Matrix4.Identity;
+			modelMatrix *= Matrix4.CreateScale(Scale);
+			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateTranslation(Position);
+			GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
+
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
+
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+		}
+
 		/// <summary> Chainable method to set the scale of this object. </summary>
 		public Model SetScale(Vector3 scale) {
 			this.Scale = scale;
@@ -178,10 +194,10 @@ namespace Project.Render {
 				0, 2, 3,
 				0, 3, 4,
 				0, 4, 1,
-				5, 1, 2,
-				5, 2, 3,
-				5, 3, 4,
-				5, 4, 1
+				1, 5, 2,
+				2, 5, 3,
+				3, 5, 4,
+				4, 5, 1
 			}).Cache("player");
 		}
 	}
@@ -261,7 +277,6 @@ namespace Project.Render {
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
 		}
-
 
 		/// <summary> Chainable method to set the scale of this object. </summary>
 		public InterfaceString SetScale(Vector2 scale) {
