@@ -20,10 +20,16 @@ namespace Project.Render {
 		// Render
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
+		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
+		public ShaderProgram CurrentProgram;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 		private static GameRoot SceneHierarchy = new GameRoot();
 		private static InterfaceRoot Interface = new InterfaceRoot();
+
+		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
+		private static int FogDepthFramebuffer_ID;
+		private static int FogDepthTexture_ID;
 
 		// OpenGL error callback
 		private static DebugProc debugCallback = DebugCallback;
@@ -53,18 +59,38 @@ namespace Project.Render {
 												"src/render/shaders/ForwardShader_fragment.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader_vertex.glsl",
 												"src/render/shaders/InterfaceShader_fragment.glsl");
+			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader_vertex.glsl",
+												"src/render/shaders/FogShader_fragment.glsl");
+
+			GL.Uniform2(FogProgram.UniformScreenSize, (float)Size.X, (float)Size.Y);
+
+			FogDepthFramebuffer_ID = GL.GenFramebuffer();
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FogDepthFramebuffer_ID);
+			FogDepthTexture_ID = GL.GenTexture();
+			GL.BindTexture(TextureTarget.Texture2D, FogDepthTexture_ID);
+			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, Size.X, Size.Y,
+						  0, PixelFormat.DepthComponent, PixelType.UnsignedByte, new byte[0]);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
+			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+									TextureTarget.Texture2D, FogDepthTexture_ID, 0);
+
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
 			// Creates "unit" models - models specified in code that are manipulated with model matrices
 			Model.CreateUnitModels();
 			InterfaceModel.CreateUnitModels();
+
 			// Builds the scene. Includes player, interface, and world.
 			SceneHierarchy.Build();
 
+			// Loads all fonts
 			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
 
 			// Shorthand for setting vertex shader attribs
 			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			InterfaceProgram.SetVertexAttribPointers(new[] { 2, 2 });
+			FogProgram.SetVertexAttribPointers(new[] { 3 });
 		}
 
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
@@ -78,7 +104,10 @@ namespace Project.Render {
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
-			DebugGroup("Forward geometry pass", 0);
+			int debugGroup = 0;
+
+			DebugGroup("Geometry pass", debugGroup++);
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -89,8 +118,29 @@ namespace Project.Render {
 			SceneHierarchy.Render();
 			DebugGroupEnd();
 
-			DebugGroup("Interface pass", 1);
+			DebugGroup("Fog", debugGroup++);
+			// Blit existing depth buffer to fog depth buffer
+			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FogDepthFramebuffer_ID);
+			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
+			// Draw depth of back faces of fog to fog depth buffer
+			GL.Enable(EnableCap.CullFace);
+			GL.CullFace(CullFaceMode.Front);
+			SceneHierarchy.Render();
+			GL.Disable(EnableCap.CullFace);
+			// Draw front faces of fog objects
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			FogProgram.Use();
+			GL.ActiveTexture(TextureUnit.Texture0);
+			GL.BindTexture(TextureTarget.Texture2D, FogDepthTexture_ID);
+			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
+			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
+			SceneHierarchy.Render();
+			DebugGroupEnd();
+
+			DebugGroup("Interface", debugGroup++);
 			Interface.Rebuild(state);
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			InterfaceProgram.Use();
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
@@ -102,6 +152,7 @@ namespace Project.Render {
 			Context.SwapBuffers();
 		}
 
+		/// <summary> Processes all events sent over from the GPU, typically for regenerating levels and maps. </summary>
 		private static void ProcessEventsFromQueue(GameState state) {
 			// Process event queue
 			while (!EventQueue.IsEmpty) {
@@ -127,15 +178,17 @@ namespace Project.Render {
 				throw new Exception(messageString);
 		}
 
+		/// <summary> Starts a GPU debug group, used for grouping operations together into one section for debugging in RenderDoc. </summary>
 		private static void DebugGroup(string title, int id) {
 			GL.PushDebugGroup(DebugSourceExternal.DebugSourceApplication, id, title.Length, title);
 		}
 
+		/// <summary> Ends the current debug group on the GPU. </summary>
 		private static void DebugGroupEnd() {
 			GL.PopDebugGroup();
 		}
 
-		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering </summary>
+		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering. </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
 			Program.LogicThread.Update();
 		}

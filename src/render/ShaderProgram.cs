@@ -33,6 +33,7 @@ namespace Project.Render {
 		public ShaderProgram Use() {
 			GL.UseProgram(ShaderProgram_ID);
 			GL.BindVertexArray(VertexArrayObject_ID);
+			Renderer.INSTANCE.CurrentProgram = this;
 			return this;
 		}
 
@@ -99,6 +100,27 @@ namespace Project.Render {
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 			UniformIsFont = GL.GetUniformLocation(ShaderProgram_ID, "isFont");
+		}
+	}
+
+	/// <summary> ShaderProgram for interface rendering.<br/>
+	/// Uniforms:  mat3 mvp (model-view-projection matrix), sampler2D albedoTexture<br/>
+	/// Attribs: vec2 _position, vec2 _uv</summary>
+	public class ShaderProgramFog : ShaderProgram {
+		public readonly int UniformModel_ID;
+		public readonly int UniformView_ID;
+		public readonly int UniformPerspective_ID;
+		public readonly int UniformDepth_ID;
+		public readonly int UniformScreenSize;
+
+		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
+		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
+		public ShaderProgramFog(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
+			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
+			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
+			UniformDepth_ID = GL.GetUniformLocation(ShaderProgram_ID, "depth");
+			UniformScreenSize = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
 		}
 	}
 }
