@@ -82,9 +82,6 @@ namespace Project.Render {
 
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 			} else {
 				GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
 
@@ -124,6 +121,7 @@ namespace Project.Render {
 			return this;
 		}
 
+		/// <summary> Sets the fog status. If true, the object will be rendered as volumetric fog. Be sure that your backfaces are actually back faces! </summary>
 		public Model SetFoggy(bool isFoggy) {
 			this.IsFog = isFoggy;
 			return this;

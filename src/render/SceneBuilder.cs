@@ -36,7 +36,7 @@ namespace Project.Render {
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			models.Add(plane);
 
-			// Walls
+			// Wall
 			models.Add(Model.GetCachedModel("unit_cylinder").SetFoggy(true).SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(roomSize, 10f, roomSize)));
 
 			// Items on the floor
@@ -58,10 +58,6 @@ namespace Project.Render {
 				door.AlbedoTexture = new Texture("assets/textures/door0.png");
 				models.Add(door);
 			}
-
-			// Note: This should really be done by distance from camera. Taking advantage of the hardcoded camera direction.
-			// Sort items by depth so distant models are rendered first. That way models behind transparent models are visible
-			models.OrderBy(model => -model.Position.Y);
 
 			RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(models);

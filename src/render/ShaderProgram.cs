@@ -111,6 +111,7 @@ namespace Project.Render {
 		public readonly int UniformView_ID;
 		public readonly int UniformPerspective_ID;
 		public readonly int UniformDepth_ID;
+		public readonly int UniformScreenSize;
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
@@ -119,6 +120,7 @@ namespace Project.Render {
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformDepth_ID = GL.GetUniformLocation(ShaderProgram_ID, "depth");
+			UniformScreenSize = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
 		}
 	}
 }
