@@ -21,6 +21,7 @@ namespace Project.Render {
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
+		public ShaderProgramVignette VignetteProgram { get; private set; } // Fog renderer
 		public ShaderProgram CurrentProgram;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
@@ -57,12 +58,17 @@ namespace Project.Render {
 			// Shader program creation
 			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader_vertex.glsl",
 												"src/render/shaders/ForwardShader_fragment.glsl");
+
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader_vertex.glsl",
 												"src/render/shaders/InterfaceShader_fragment.glsl");
+
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader_vertex.glsl",
 												"src/render/shaders/FogShader_fragment.glsl");
+			GL.Uniform2(FogProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 
-			GL.Uniform2(FogProgram.UniformScreenSize, (float)Size.X, (float)Size.Y);
+			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader_vertex.glsl",
+												"src/render/shaders/VignetteShader_fragment.glsl");
+			GL.Uniform2(VignetteProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 
 			FogDepthFramebuffer_ID = GL.GenFramebuffer();
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FogDepthFramebuffer_ID);
@@ -147,6 +153,11 @@ namespace Project.Render {
 			GL.Disable(EnableCap.DepthTest);
 			Interface.Render(state);
 			GL.Enable(EnableCap.DepthTest);
+			DebugGroupEnd();
+
+			DebugGroup("Vignette", debugGroup++);
+			VignetteProgram.Use();
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
 			Context.SwapBuffers();
