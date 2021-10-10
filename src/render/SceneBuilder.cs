@@ -97,7 +97,26 @@ namespace Project.Render {
 		}
 
 		public RenderableNode BuildInGameInterface(GameState state) {
+			Vector2 screenSize = Renderer.INSTANCE.Size;
+			Inventory inventory = state.Level.Player.Inventory;
+
+
+			Item current = inventory.Items.Count > 0 ? inventory.Items[0] : null;
+			Item left = inventory.Items.Count > 1 ? inventory.Items[1] : null;
+			Item right = inventory.Items.Count > 2 ? inventory.Items[2] : null;
+
+			InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f);
+			InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f);
+			InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition(new Vector2((screenSize.X / 2) + 150, 100)).SetScale(100);
+			if (current != null)
+				currentItem.AlbedoTexture = new Texture($"assets/textures/{current.Definition.TextureName}");
+			if (left != null)
+				leftItem.AlbedoTexture = new Texture($"assets/textures/{left.Definition.TextureName}");
+			if (right != null)
+				rightItem.AlbedoTexture = new Texture($"assets/textures/{right.Definition.TextureName}");
+
 			RenderableNode node = new RenderableNode();
+			node.Children.AddRange(new[] { currentItem, leftItem, rightItem });
 			return node;
 		}
 
