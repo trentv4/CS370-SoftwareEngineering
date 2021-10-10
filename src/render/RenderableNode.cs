@@ -211,6 +211,7 @@ namespace Project.Render {
 
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
+		public float Opacity { get; private set; } = 1.0f;
 
 		private readonly int ElementBufferArray_ID;
 		private readonly int VertexBufferObject_ID;
@@ -269,6 +270,7 @@ namespace Project.Render {
 			GL.UniformMatrix4(Renderer.INSTANCE.InterfaceProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 1);
+			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformOpacity, Opacity);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
@@ -296,6 +298,11 @@ namespace Project.Render {
 			this.Position = position;
 			return this;
 		}
+
+		public InterfaceString SetOpacity(float opacity) {
+			this.Opacity = opacity;
+			return this;
+		}
 	}
 
 	public class InterfaceModel : RenderableNode {
@@ -305,6 +312,7 @@ namespace Project.Render {
 		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
+		public float Opacity { get; private set; } = 1.0f;
 
 		private int IndexLength;
 		private static readonly Dictionary<string, InterfaceModel> _cachedModels = new Dictionary<string, InterfaceModel>();
@@ -350,6 +358,7 @@ namespace Project.Render {
 			GL.UniformMatrix4(Renderer.INSTANCE.InterfaceProgram.UniformModel_ID, true, ref modelMatrix);
 
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 0);
+			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformOpacity, Opacity);
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
@@ -375,6 +384,11 @@ namespace Project.Render {
 		/// <summary> Chainable method to set the rotation of this object. </summary>
 		public InterfaceModel SetRotation(float rotation) {
 			this.Rotation = rotation;
+			return this;
+		}
+
+		public InterfaceModel SetOpacity(float opacity) {
+			this.Opacity = opacity;
 			return this;
 		}
 

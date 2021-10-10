@@ -92,6 +92,7 @@ namespace Project.Render {
 		public readonly int UniformPerspective_ID;
 		public readonly int UniformTextureAlbedo_ID;
 		public readonly int UniformIsFont;
+		public readonly int UniformOpacity;
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
@@ -100,6 +101,7 @@ namespace Project.Render {
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 			UniformIsFont = GL.GetUniformLocation(ShaderProgram_ID, "isFont");
+			UniformOpacity = GL.GetUniformLocation(ShaderProgram_ID, "opacity");
 		}
 	}
 

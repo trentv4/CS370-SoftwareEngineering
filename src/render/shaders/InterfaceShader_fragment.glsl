@@ -4,6 +4,7 @@ in vec2 uv;
 
 uniform sampler2D albedoTexture;
 uniform bool isFont;
+uniform float opacity;
 
 out vec4 FragColor;
 
@@ -15,8 +16,8 @@ void main() {
 		float signedDistance = max(min(sdf.r, sdf.g), min(max(sdf.r, sdf.g), sdf.b));
 		// Remaps to [0, 1]
 		float screenPxDistance = 2 * (signedDistance - 0.5);
-		float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-		FragColor = mix(vec4(0,0,0,0), vec4(1,1,1,1), opacity);
+		float glyphOpacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+		FragColor = mix(vec4(0,0,0,0), vec4(1,1,1,1), glyphOpacity * opacity);
 	} else {
 		// Regular 2d textured quad rendering, with a default albedo color
 		vec4 texture = texture(albedoTexture, uv);
@@ -24,6 +25,6 @@ void main() {
 			discard;
 		}
 		vec3 outputColor = (texture.xyz * texture.w) + (vec3(0.2, 0.2, 0.2) * (1-texture.w));
-		FragColor = vec4(outputColor, 1.0);
+		FragColor = vec4(outputColor, opacity);
 	}
 }
