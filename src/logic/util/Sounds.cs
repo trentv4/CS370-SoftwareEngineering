@@ -10,18 +10,26 @@ namespace Project.Util {
 		private static ALDevice _device = ALDevice.Null;
 		private static ALContext _context = ALContext.Null;
 		private static List<SoundInstance> _sounds = new List<SoundInstance>();
+		public static bool IsAudioEnabled = false;
 
 		/// <summary>Initializes OpenAL context for audio playback.</summary>
 		public static void Init() {
-			//Initialize OpenAL
-			var contextAttributes = new int[] { 0 };
-			_device = ALC.OpenDevice(null);
-			_context = ALC.CreateContext(_device, contextAttributes);
-			ALC.MakeContextCurrent(_context);
+			try {
+				//Initialize OpenAL
+				var contextAttributes = new int[] { 0 };
+				_device = ALC.OpenDevice(null);
+				_context = ALC.CreateContext(_device, contextAttributes);
+				ALC.MakeContextCurrent(_context);
+				IsAudioEnabled = true;
+			} catch (DllNotFoundException e) {
+				Console.WriteLine("OpenAL.dll unable to be loaded. Disabling sounds.");
+				Console.WriteLine(e.ToString());
+			}
 		}
 
 		/// <summary>Cleanup OpenAL resources</summary>
 		public static void Cleanup() {
+			if (!IsAudioEnabled) return;
 			if (_context != ALContext.Null) {
 				ALC.MakeContextCurrent(ALContext.Null);
 				ALC.DestroyContext(_context);
@@ -36,6 +44,7 @@ namespace Project.Util {
 
 		/// <summary>Play sound. Loads it into memory the first time it's played and keeps it cached for future playback.</summary>
 		public static void PlaySound(string filePath) {
+			if (!IsAudioEnabled) return;
 			//Find or load sound
 			string name = Path.GetFileName(filePath);
 			var sound = _sounds.Find(sound => sound.Name == name);
