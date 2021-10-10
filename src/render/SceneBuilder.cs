@@ -110,7 +110,7 @@ namespace Project.Render {
 			if (inventory.Position - 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position - 1 >= 0) {
 				left = inventory.Items[inventory.Position - 1];
 			}
-			if (inventory.Position + 1 < inventory.Items.Count && inventory.Items.Count > 2 && inventory.Position + 1 >= 0) {
+			if (inventory.Position + 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position + 1 >= 0) {
 				right = inventory.Items[inventory.Position + 1];
 			}
 
