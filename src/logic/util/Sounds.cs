@@ -10,6 +10,10 @@ namespace Project.Util {
 		private static ALDevice _device = ALDevice.Null;
 		private static ALContext _context = ALContext.Null;
 		private static List<SoundInstance> _sounds = new List<SoundInstance>();
+		/// <summary>Sources used to play sounds. If all of these are playing then no new sounds can be played.</summary>
+		private static int[] _sources = new int[32];
+		/// <summary>Tracks the last sound a source played</summary>
+		private static Dictionary<int, string> _sourceSounds = new Dictionary<int, string>();
 		public static bool IsAudioEnabled = false;
 
 		/// <summary>Initializes OpenAL context for audio playback.</summary>
@@ -20,6 +24,12 @@ namespace Project.Util {
 				_device = ALC.OpenDevice(null);
 				_context = ALC.CreateContext(_device, contextAttributes);
 				ALC.MakeContextCurrent(_context);
+
+				//Initialize source pool
+				AL.GenSources(_sources);
+				foreach (int source in _sources)
+					_sourceSounds[source] = null;
+
 				IsAudioEnabled = true;
 			} catch (DllNotFoundException e) {
 				Console.WriteLine("OpenAL.dll unable to be loaded. Disabling sounds.");
@@ -30,12 +40,25 @@ namespace Project.Util {
 		/// <summary>Cleanup OpenAL resources</summary>
 		public static void Cleanup() {
 			if (!IsAudioEnabled) return;
+
+			//Destroy sources
+			for (int i = 0; i < _sources.Length; i++) {
+				int source = _sources[i];
+				AL.SourceStop(source);
+				AL.DeleteSource(source);
+			}
+
+			//Destroy sound instances
+			_sounds.Clear();
+
+			//Destroy OpenAL context
 			if (_context != ALContext.Null) {
 				ALC.MakeContextCurrent(ALContext.Null);
 				ALC.DestroyContext(_context);
 			}
 			_context = ALContext.Null;
 
+			//Destroy OpenAL device
 			if (_device != ALDevice.Null) {
 				ALC.CloseDevice(_device);
 			}
@@ -43,8 +66,9 @@ namespace Project.Util {
 		}
 
 		/// <summary>Play sound. Loads it into memory the first time it's played and keeps it cached for future playback.</summary>
-		public static void PlaySound(string filePath) {
+		public static void PlaySound(string filePath, bool looping = false) {
 			if (!IsAudioEnabled) return;
+
 			//Find or load sound
 			string name = Path.GetFileName(filePath);
 			var sound = _sounds.Find(sound => sound.Name == name);
@@ -56,10 +80,30 @@ namespace Project.Util {
 				_sounds.Add(sound);
 			}
 
-			//Todo: Use a different source each time a sound is played so one sound can be played several times at once instead of being restarted
-			//		Can have a pool of OpenAL sources and cycle between them
-			//Play the sound
-			sound.Play();
+			//Find an unused source and play the sound from it
+			bool foundSource = false;
+			for (int i = 0; i < _sources.Length; i++) {
+				int source = _sources[i];
+				ALSourceState state = AL.GetSourceState(source);
+				if(state == ALSourceState.Initial || state == ALSourceState.Stopped) { //Source that's never been used or not playing
+					sound.Play(source, looping);
+					_sourceSounds[source] = filePath; //Track which sound the source is playing
+					foundSource = true;
+					break;
+				}
+			}
+
+			//Report error if no free source was found
+			if(!foundSource)
+				Console.WriteLine($"Failed to play sound \"{filePath}\". All OpenAL sources are in use.");
+		}
+
+		/// <summary>Stop every source that's playing a sound.</summary>
+		public static void StopSound(string filePath) {
+			//Stop all sources that are playing this sound
+			foreach(var kv in _sourceSounds)
+				if(kv.Value == filePath)
+					AL.SourceStop(kv.Key);
 		}
 	}
 
@@ -68,7 +112,6 @@ namespace Project.Util {
 		public readonly string Name;
 		/// <summary>OpenAL buffer for audio data</summary>
 		private int _buffer;
-		private int _source;
 
 		public SoundInstance(string name, byte[] data, ALFormat format, int frequency) {
 			Name = name;
@@ -76,21 +119,18 @@ namespace Project.Util {
 			//Create OpenAL buffer and copy sound data to it
 			_buffer = AL.GenBuffer();
 			AL.BufferData(_buffer, format, ref data[0], data.Length, frequency);
-
-			//Create and config OpenAL source to play the sound from
-			_source = AL.GenSource();
-			AL.Source(_source, ALSourcei.Buffer, _buffer); //Set buffer to play from
-			AL.Source(_source, ALSourceb.Looping, false); //Not looping
 		}
 
-		public SoundInstance() {
-			AL.DeleteSource(_source);
+		~SoundInstance() {
 			AL.DeleteBuffer(_buffer);
 		}
 
 		/// <summary>Play the sound</summary>
-		public void Play() {
-			AL.SourcePlay(_source);
+		public void Play(int source, bool looping) {
+			//Play buffered audio from source
+			AL.Source(source, ALSourcei.Buffer, _buffer);
+			AL.Source(source, ALSourceb.Looping, looping); //If true, the sound will be played repeatedly until stopped
+			AL.SourcePlay(source);
 		}
 
 		/// <summary>Create a sound instance from a file. Supports .wav and .ogg</summary>
