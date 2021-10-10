@@ -88,6 +88,7 @@ namespace Project.Render {
 		/// <summary> Draws different interface nodes based on the current game state. </summary>
 		public void Render(GameState state) {
 			if (state.IsInGame) {
+				InGameInterface = BuildInGameInterface(state);
 				InGameInterface.Render();
 				if (state.IsViewingMap)
 					Map.Render();
@@ -100,10 +101,18 @@ namespace Project.Render {
 			Vector2 screenSize = Renderer.INSTANCE.Size;
 			Inventory inventory = state.Level.Player.Inventory;
 
-
-			Item current = inventory.Items.Count > 0 ? inventory.Items[0] : null;
-			Item left = inventory.Items.Count > 1 ? inventory.Items[1] : null;
-			Item right = inventory.Items.Count > 2 ? inventory.Items[2] : null;
+			Item current = null;
+			Item left = null;
+			Item right = null;
+			if (inventory.Position < inventory.Items.Count && inventory.Items.Count > 0) {
+				current = inventory.Items[inventory.Position];
+			}
+			if (inventory.Position - 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position - 1 >= 0) {
+				left = inventory.Items[inventory.Position - 1];
+			}
+			if (inventory.Position + 1 < inventory.Items.Count && inventory.Items.Count > 2 && inventory.Position + 1 >= 0) {
+				right = inventory.Items[inventory.Position + 1];
+			}
 
 			InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f);
 			InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f);
