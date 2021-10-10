@@ -243,6 +243,16 @@ namespace Project {
 				uint numItemsAdded = inventory.AddRandomItems(5);
 				Console.WriteLine($"Added {numItemsAdded} to the inventory.");
 			}
+
+			//Update inventory position selector
+			if(Input.IsKeyPressed(Keys.Q)) {
+				inventory.Position--;
+			}
+			if(Input.IsKeyPressed(Keys.E)) {
+				inventory.Position++;
+			}
+			//Ensure inventory position is in valid range
+			inventory.Position = MathUtil.MinMax(inventory.Position, 0, Math.Max(inventory.Items.Count - 1, 0));
 		}
 	}
 

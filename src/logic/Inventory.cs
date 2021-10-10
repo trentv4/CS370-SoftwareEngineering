@@ -19,6 +19,9 @@ namespace Project {
 		///<summary>Last item selected in the inventory UI</summary>
 		public Item LastItemSelected = null;
 
+		/// <summary>Index of the currently selected item on the inventory UI</summary>
+		public int Position = 0;
+
 		public Inventory(Player owner) {
 			Owner = owner;
 		}
