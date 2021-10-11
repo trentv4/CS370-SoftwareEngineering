@@ -155,8 +155,12 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
 
+
 			DebugGroup("Vignette", debugGroup++);
 			VignetteProgram.Use();
+			float vignetteStrength = 1.75f;
+			//vignetteStrength = 1.5f + (0.5f + ((float)Math.Sin(PlayerModel.Rotation.Y * RCF) / 2));
+			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, vignetteStrength);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 

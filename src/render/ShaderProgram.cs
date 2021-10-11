@@ -128,9 +128,11 @@ namespace Project.Render {
 
 	public class ShaderProgramVignette : ShaderProgram {
 		public readonly int UniformScreenSize_ID;
+		public readonly int UniformVignetteStrength_ID;
 
 		public ShaderProgramVignette(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
 			UniformScreenSize_ID = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
+			UniformVignetteStrength_ID = GL.GetUniformLocation(ShaderProgram_ID, "vignetteStrength");
 		}
 	}
 }
