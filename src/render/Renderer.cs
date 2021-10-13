@@ -155,7 +155,6 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
 
-
 			DebugGroup("Vignette", debugGroup++);
 			VignetteProgram.Use();
 			float vignetteStrength = 1.75f;

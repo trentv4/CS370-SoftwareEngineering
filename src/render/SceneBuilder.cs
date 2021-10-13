@@ -194,7 +194,6 @@ namespace Project.Render {
 			InterfaceString score = new InterfaceString("calibri", $"Score: {state.Level.Score}");
 			score.SetScale(50f);
 			score.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
-			score.SetOpacity(0.5f);
 
 			Vector2 currentRoom = state.Level.CurrentRoom.Position;
 			Vector2 pointerPosition = new Vector2(

@@ -13,8 +13,28 @@ namespace Project.Render {
 
 		/// <summary> Loads a vertex and a fragment shader from disk, compiles them, links, and creates a ShaderProgram. </summary>
 		public ShaderProgram(string vertexShaderPath, string fragmentShaderPath) {
-			int vertexShaderID = CreateShaderFromFile(vertexShaderPath, ShaderType.VertexShader);
-			int fragmentShaderID = CreateShaderFromFile(fragmentShaderPath, ShaderType.FragmentShader);
+			int vertexShaderID = CreateShaderFromSource(new StreamReader(vertexShaderPath).ReadToEnd(), ShaderType.VertexShader);
+			int fragmentShaderID = CreateShaderFromSource(new StreamReader(fragmentShaderPath).ReadToEnd(), ShaderType.FragmentShader);
+			Debug.Assert(vertexShaderID != 0 && fragmentShaderID != 0, "Failure during shader loading with creating vert/frag shaders");
+			ShaderProgram_ID = GL.CreateProgram();
+			GL.AttachShader(ShaderProgram_ID, vertexShaderID);
+			GL.AttachShader(ShaderProgram_ID, fragmentShaderID);
+			GL.LinkProgram(ShaderProgram_ID);
+			if (GL.GetProgramInfoLog(ShaderProgram_ID) != System.String.Empty)
+				throw new Exception($"\tError in shader program linkage: \n{GL.GetProgramInfoLog(ShaderProgram_ID)}");
+			GL.UseProgram(ShaderProgram_ID);
+			GL.DeleteShader(vertexShaderID);
+			GL.DeleteShader(fragmentShaderID);
+
+			VertexArrayObject_ID = GL.GenVertexArray();
+		}
+
+		public ShaderProgram(string unifiedPath) {
+			string unified = new StreamReader(unifiedPath).ReadToEnd();
+			string[] sources = unified.Split("<split>");
+			Debug.Assert(sources.Length == 2, $"Shader at {unifiedPath} is not a unified glsl file.");
+			int vertexShaderID = CreateShaderFromSource(sources[0], ShaderType.VertexShader);
+			int fragmentShaderID = CreateShaderFromSource(sources[1], ShaderType.FragmentShader);
 			Debug.Assert(vertexShaderID != 0 && fragmentShaderID != 0, "Failure during shader loading with creating vert/frag shaders");
 			ShaderProgram_ID = GL.CreateProgram();
 			GL.AttachShader(ShaderProgram_ID, vertexShaderID);
@@ -53,9 +73,8 @@ namespace Project.Render {
 		}
 
 		/// <summary> Creates a shader in GL from the path provided and returns the ID. </summary>
-		private static int CreateShaderFromFile(string path, ShaderType type) {
-			string source = new StreamReader(path).ReadToEnd();
-			Debug.Assert(source.Length > 0, $"Shader at {path} is of length zero.");
+		private static int CreateShaderFromSource(string source, ShaderType type) {
+			Debug.Assert(source.Length > 0, $"Shader of type {type} is of length zero.");
 			int shaderID = GL.CreateShader(type);
 			GL.ShaderSource(shaderID, source);
 			GL.CompileShader(shaderID);
