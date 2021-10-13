@@ -314,12 +314,12 @@ namespace Project.Render {
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 		public float Opacity { get; private set; } = 1.0f;
 
-		private int IndexLength;
+		private int _indexLength;
 		private static readonly Dictionary<string, InterfaceModel> _cachedModels = new Dictionary<string, InterfaceModel>();
 
 		/// <summary> Creates an InterfaceModel given vertex data and indices. </summary>
 		public InterfaceModel(float[] vertexData, uint[] indices) {
-			IndexLength = indices.Length;
+			_indexLength = indices.Length;
 
 			ElementBufferArray_ID = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
@@ -332,7 +332,7 @@ namespace Project.Render {
 
 		/// <summary> Private constructor used when cached models are loaded. </summary>
 		private InterfaceModel(InterfaceModel copy) {
-			this.IndexLength = copy.IndexLength;
+			this._indexLength = copy._indexLength;
 			this.ElementBufferArray_ID = copy.ElementBufferArray_ID;
 			this.VertexBufferObject_ID = copy.VertexBufferObject_ID;
 		}
@@ -367,7 +367,7 @@ namespace Project.Render {
 			GL.ActiveTexture(TextureUnit.Texture0);
 			GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
 
-			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}
 
 		/// <summary> Chainable method to set the scale of this object. </summary>
