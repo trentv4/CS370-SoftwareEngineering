@@ -21,7 +21,7 @@ namespace Project.Render {
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
-		public ShaderProgramVignette VignetteProgram { get; private set; } // Fog renderer
+		public ShaderProgramVignette VignetteProgram { get; private set; } // Vignette renderer
 		public ShaderProgram CurrentProgram;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
@@ -33,16 +33,16 @@ namespace Project.Render {
 		private static int FogDepthTexture_ID;
 
 		// OpenGL error callback
-		private static DebugProc debugCallback = DebugCallback;
-		private static GCHandle debugCallbackHandle;
+		private static DebugProc _debugCallback = DebugCallback;
+		private static GCHandle _debugCallbackHandle;
 
 		public static readonly GameLogic LogicThread = new GameLogic();
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
 			// Sets required OpenGL flags
-			debugCallbackHandle = GCHandle.Alloc(debugCallback);
-			GL.DebugMessageCallback(debugCallback, IntPtr.Zero);
+			_debugCallbackHandle = GCHandle.Alloc(_debugCallback);
+			GL.DebugMessageCallback(_debugCallback, IntPtr.Zero);
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
 			GL.Enable(EnableCap.Blend);

@@ -38,10 +38,7 @@ namespace Project.Networking {
             //Register packet handlers
             connection.RegisterRawDataHandler("Command", (rawData, con) => { //General "command" packet for testing purposes
 				string command = rawData.ToUTF8String();
-				switch(command) {
-                    case "i":
-						level.Player.Inventory.PrintInventoryState();
-                        break;
+				switch (command) {
                     case "r":
 						uint numAdded = level.Player.Inventory.AddRandomItems(5);
 						Console.WriteLine($"Added {numAdded} to player inventory due to network command!");

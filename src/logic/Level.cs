@@ -10,62 +10,47 @@ using System.Linq;
 namespace Project.Levels {
 	public class Level {
 		private readonly Random Random = new System.Random();
-		public Player Player;
-		public Room[] Rooms;
 
 		///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
 		public uint Score = 0;
+		public Player Player;
 
+		public Room[] Rooms;
 		///<summary>The room that the player is in.</summary>
 		public Room CurrentRoom = null;
 		///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
 		public Room PreviousRoom = null;
-
 		public Room StartRoom = null;
 		public Room EndRoom = null;
 
-		public bool IsViewingMap = false;
-
-		public long LastMapRegenTick = 0;
-
 		/// <summary>Current level the player is on. Starts at 0 and increases each time they reach and end room.</summary>
-        public int CurrentLevel = 0;
+		public int CurrentLevel = 0;
+		private int LevelSeed = 0;
 
-        private int LastLevelGenSeed = 0;
+		private readonly List<LevelGenConfig> GenerationConfigs = new List<LevelGenConfig>() {
+				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 2, MinRoomsPerPath = 2, MaxRoomsPerPath = 3, PruneChance = 0.15f, SecondaryPathChance = 0.2f },
+				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 3, MinRoomsPerPath = 3, MaxRoomsPerPath = 4, PruneChance = 0.25f, SecondaryPathChance = 0.4f },
+				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 4, MinRoomsPerPath = 3, MaxRoomsPerPath = 7, PruneChance = 0.5f, SecondaryPathChance = 0.5f },
+			};
 
-        public List<LevelGenConfig> GenerationConfigs;
-
-        public Level() {
-            SetupGenerationConfigs();
-            TryGenerateLevel(1000);
-
-            Player.Inventory.PrintInventoryControls();
+		public Level() {
+			TryGenerateLevel(1000);
 		}
 
-		/// <summary>Set level generation configs</summary>
-		void SetupGenerationConfigs() {
-            GenerationConfigs = new List<LevelGenConfig>() {
-            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 2, MinRoomsPerPath = 2, MaxRoomsPerPath = 3, PruneChance = 0.15f, SecondaryPathChance = 0.2f },
-            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 3, MinRoomsPerPath = 3, MaxRoomsPerPath = 4, PruneChance = 0.25f, SecondaryPathChance = 0.4f },
-            	new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 4, MinRoomsPerPath = 3, MaxRoomsPerPath = 7, PruneChance = 0.5f, SecondaryPathChance = 0.5f },
-            };
-		}
-
-		/// <summary>Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail.</summary>
+		/// <summary> Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail. </summary>
 		public bool TryGenerateLevel(int numGenerationAttempts) {
             for (int i = 0; i < numGenerationAttempts; i++)
 				if(GenerateNewLevel())
                     return true;
 
-            Console.WriteLine($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time! Seed: {LastLevelGenSeed}");
-            return false;
+			throw new Exception($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time! Seed: {LevelSeed}");
         }
 
-		/// <summary>Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails.</summary>
-		bool GenerateNewLevel() {
-            //Random number generator used to vary level gen
-            LastLevelGenSeed = (int)System.DateTime.Now.Ticks; //Seed with time so generation is always different
-			var rand = new Random(LastLevelGenSeed);
+		/// <summary> Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails. </summary>
+		private bool GenerateNewLevel() {
+			//Random number generator used to vary level gen
+			LevelSeed = (int)System.DateTime.Now.Ticks; //Seed with time so generation is always different
+			Random rand = new Random(LevelSeed);
 
             //Room generation config
             LevelGenConfig genSettings = null;
@@ -351,7 +336,7 @@ namespace Project.Levels {
 					//Pick random position for the item
 					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
 					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
-					item.Position = new Vector3(x, 0.0f, y);
+					item.Position = new Vector2(x, y);
 				}
 			}
 
@@ -415,7 +400,7 @@ namespace Project.Levels {
 		void CheckIfPlayerOnItem() {
             float itemRadius = 0.6f;
 			foreach (Item item in CurrentRoom.Items) {
-                var itemPos = new Vector2(item.Position.X, item.Position.Z);
+				var itemPos = new Vector2(item.Position.X, item.Position.Y);
                 float playerItemDistance = (itemPos - Player.Position).Length;
 
 				//If player is within the items radius attempt to pick it up

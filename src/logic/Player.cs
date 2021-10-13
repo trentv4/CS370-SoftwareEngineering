@@ -1,8 +1,3 @@
-using System;
-using Project.Items;
-using Project.Render;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using Project.Util;
 using OpenTK.Mathematics;
 
 namespace Project {
@@ -17,7 +12,7 @@ namespace Project {
 		public int CarryWeight = 10;
 		public Vector2 Position;
 
-        public Player(Vector2 initialPosition) {
+		public Player(Vector2 initialPosition) {
 			Position = initialPosition;
 			Inventory = new Inventory(this);
 		}

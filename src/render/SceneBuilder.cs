@@ -41,7 +41,7 @@ namespace Project.Render {
 
 			// Items on the floor
 			foreach (Item i in currentRoom.Items) {
-				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(i.Position).SetRotation(new Vector3(20.0f, 0, 0));
+				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(i.Position.X, 0, i.Position.Y)).SetRotation(new Vector3(20.0f, 0, 0));
 				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}

@@ -34,13 +34,14 @@ namespace Project {
 		public int GameTick;
 
 		//Camera variables
-		readonly float CameraMinPitch = -89.0f;
-		readonly float CameraMaxPitch = 89.0f;
+		private readonly float CameraMinPitch = -89.0f;
+		private readonly float CameraMaxPitch = 89.0f;
 		public float CameraPitch = 0.0f;
 		public float CameraYaw = 0.0f;
 		/// <summary>Used to adjust camera mouse movement speed. Default speed is too fast.</summary>
 		public float CameraMouseSensitivity = 0.1f;
 		public bool MouseLocked = false;
+		public bool IsViewingMap = false;
 
 		public Server Server;
 
@@ -75,7 +76,7 @@ namespace Project {
 			State.PlayerX = Level.Player.Position.X;
 			State.PlayerY = Level.Player.Position.Y;
 			State.Level = Level;
-			State.IsViewingMap = Level.IsViewingMap;
+			State.IsViewingMap = IsViewingMap;
 			State.Score = (GameTick / 600) + ((int)Level.Score);
 			State.CameraPitch = CameraPitch;
 			State.CameraYaw = CameraYaw;
@@ -146,7 +147,7 @@ namespace Project {
 		private void UpdateLevelInput() {
 			//Toggle minimap
 			if (Input.IsKeyPressed(Keys.M))
-				Level.IsViewingMap = !Level.IsViewingMap;
+				IsViewingMap = !IsViewingMap;
 
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G)) {
@@ -184,10 +185,7 @@ namespace Project {
 			var player = Level.Player;
 			var inventory = player.Inventory;
 
-			//Press I to print inventory
-			if (Input.IsKeyPressed(Keys.I)) {
-				inventory.PrintInventoryState();
-			} else if (Input.IsKeyPressed(Keys.R)) { //Add random items to the inventory
+			if (Input.IsKeyPressed(Keys.R)) { //Add random items to the inventory
 				uint numItemsAdded = inventory.AddRandomItems(5);
 				Console.WriteLine($"Added {numItemsAdded} to the inventory.");
 			}
