@@ -56,18 +56,11 @@ namespace Project.Render {
 			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 			// Shader program creation
-			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader_vertex.glsl",
-												"src/render/shaders/ForwardShader_fragment.glsl");
-
-			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader_vertex.glsl",
-												"src/render/shaders/InterfaceShader_fragment.glsl");
-
-			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader_vertex.glsl",
-												"src/render/shaders/FogShader_fragment.glsl");
+			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl");
+			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
+			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
 			GL.Uniform2(FogProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
-
-			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader_vertex.glsl",
-												"src/render/shaders/VignetteShader_fragment.glsl");
+			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
 			GL.Uniform2(VignetteProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 
 			FogDepthFramebuffer_ID = GL.GenFramebuffer();

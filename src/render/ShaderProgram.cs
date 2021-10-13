@@ -95,7 +95,7 @@ namespace Project.Render {
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/ForwardShader.
 		/// The purpose of this shader is a simpistic forward-renderer (as opposed to a deferred). </summary>
-		public ShaderProgramForwardRenderer(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+		public ShaderProgramForwardRenderer(string unifiedPath) : base(unifiedPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
@@ -115,7 +115,7 @@ namespace Project.Render {
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
-		public ShaderProgramInterface(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+		public ShaderProgramInterface(string unifiedPath) : base(unifiedPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
@@ -136,7 +136,7 @@ namespace Project.Render {
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. </summary>
-		public ShaderProgramFog(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+		public ShaderProgramFog(string unifiedPath) : base(unifiedPath) {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
@@ -149,7 +149,7 @@ namespace Project.Render {
 		public readonly int UniformScreenSize_ID;
 		public readonly int UniformVignetteStrength_ID;
 
-		public ShaderProgramVignette(string vertexShaderPath, string fragmentShaderPath) : base(vertexShaderPath, fragmentShaderPath) {
+		public ShaderProgramVignette(string unifiedPath) : base(unifiedPath) {
 			UniformScreenSize_ID = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
 			UniformVignetteStrength_ID = GL.GetUniformLocation(ShaderProgram_ID, "vignetteStrength");
 		}
