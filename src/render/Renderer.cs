@@ -12,7 +12,12 @@ namespace Project.Render {
 	/// <summary> Primary rendering class, instantiated in Program and continuously executed. OpenGL is only referenced from here and related classes. </summary>
 	public class Renderer : GameWindow {
 		public Renderer(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
+		public static readonly GameLogic LogicThread = new GameLogic();
 		public static Renderer INSTANCE;
+
+		// OpenGL error callback
+		private static DebugProc _debugCallback = DebugCallback;
+		private static GCHandle _debugCallbackHandle;
 
 		/// <summary> Radian Conversion Factor (used for degree-radian conversions). Equal to pi/180. </summary>
 		internal const float RCF = 0.017453293f;
@@ -25,18 +30,13 @@ namespace Project.Render {
 		public ShaderProgram CurrentProgram;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
-		private static GameRoot SceneHierarchy = new GameRoot();
-		private static InterfaceRoot Interface = new InterfaceRoot();
+
+		private static GameRoot _sceneHierarchy = new GameRoot();
+		private static InterfaceRoot _interfaceRoot = new InterfaceRoot();
 
 		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
 		private static int FogDepthFramebuffer_ID;
 		private static int FogDepthTexture_ID;
-
-		// OpenGL error callback
-		private static DebugProc _debugCallback = DebugCallback;
-		private static GCHandle _debugCallbackHandle;
-
-		public static readonly GameLogic LogicThread = new GameLogic();
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -81,7 +81,7 @@ namespace Project.Render {
 			InterfaceModel.CreateUnitModels();
 
 			// Builds the scene. Includes player, interface, and world.
-			SceneHierarchy.Build();
+			_sceneHierarchy.Build();
 
 			// Loads all fonts
 			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
@@ -99,7 +99,7 @@ namespace Project.Render {
 			ProcessEventsFromQueue(state);
 
 			// Setting player model location according to logic thread player location
-			Model PlayerModel = SceneHierarchy.PlayerModel;
+			Model PlayerModel = _sceneHierarchy.PlayerModel;
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
@@ -114,7 +114,7 @@ namespace Project.Render {
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
-			SceneHierarchy.Render();
+			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
 			DebugGroup("Fog", debugGroup++);
@@ -125,7 +125,7 @@ namespace Project.Render {
 			// Draw depth of back faces of fog to fog depth buffer
 			GL.Enable(EnableCap.CullFace);
 			GL.CullFace(CullFaceMode.Front);
-			SceneHierarchy.Render();
+			_sceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
 			// Draw front faces of fog objects
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
@@ -134,17 +134,17 @@ namespace Project.Render {
 			GL.BindTexture(TextureTarget.Texture2D, FogDepthTexture_ID);
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
-			SceneHierarchy.Render();
+			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
 			DebugGroup("Interface", debugGroup++);
-			Interface.Rebuild(state);
+			_interfaceRoot.Rebuild(state);
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			InterfaceProgram.Use();
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			GL.Disable(EnableCap.DepthTest);
-			Interface.Render(state);
+			_interfaceRoot.Render(state);
 			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
 
@@ -167,8 +167,8 @@ namespace Project.Render {
 				bool result = EventQueue.TryDequeue(out eventString);
 				switch (eventString) {
 					case "LevelRegenerated":
-						Interface.Map = Interface.BuildMapInterface(state);
-						SceneHierarchy.Scene = SceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						_interfaceRoot.Map = _interfaceRoot.BuildMapInterface(state);
+						_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
 						break;
 					default:
 						break;
