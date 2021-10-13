@@ -184,61 +184,9 @@ namespace Project {
 			var player = Level.Player;
 			var inventory = player.Inventory;
 
-			int numKeyPressed = -1;
-			if (Input.IsKeyPressed(Keys.D0))
-				numKeyPressed = 0;
-			if (Input.IsKeyPressed(Keys.D1))
-				numKeyPressed = 1;
-			if (Input.IsKeyPressed(Keys.D2))
-				numKeyPressed = 2;
-			if (Input.IsKeyPressed(Keys.D3))
-				numKeyPressed = 3;
-			if (Input.IsKeyPressed(Keys.D4))
-				numKeyPressed = 4;
-			if (Input.IsKeyPressed(Keys.D5))
-				numKeyPressed = 5;
-			if (Input.IsKeyPressed(Keys.D6))
-				numKeyPressed = 6;
-			if (Input.IsKeyPressed(Keys.D7))
-				numKeyPressed = 7;
-			if (Input.IsKeyPressed(Keys.D8))
-				numKeyPressed = 8;
-			if (Input.IsKeyPressed(Keys.D9))
-				numKeyPressed = 9;
-
 			//Press I to print inventory
 			if (Input.IsKeyPressed(Keys.I)) {
 				inventory.PrintInventoryState();
-			} else if (numKeyPressed > -1 && numKeyPressed < inventory.Items.Count) {
-				//Get selected item
-				Item item = inventory.Items[numKeyPressed];
-				inventory.LastItemSelected = item;
-
-				//Print item info
-				Console.WriteLine($"\n\n*****{item.Definition.Name}*****");
-				Console.WriteLine($"Weight: {item.Definition.Weight}");
-				if (item.Definition.Consumeable || item.Definition.IsKey) {
-					Console.WriteLine($"Uses: (Press U to use) : {inventory.LastItemSelected.UsesRemaining} uses remaining");
-					if (item.Definition.Consumeable)
-						Console.WriteLine("\t- Consumeable");
-					if (item.Definition.IsKey)
-						Console.WriteLine("\t- Key");
-				}
-			} else if (Input.IsKeyPressed(Keys.U) && inventory.LastItemSelected != null) {
-				if (inventory.LastItemSelected.Definition.Consumeable) {
-					inventory.LastItemSelected.Consume(player);
-					Console.WriteLine($"Consumed {inventory.LastItemSelected.Definition.Name}! {inventory.LastItemSelected.UsesRemaining} uses remaining.");
-				} else if (inventory.LastItemSelected.Definition.IsKey) {
-					//Not yet implemented
-					Console.WriteLine($"You try to use {inventory.LastItemSelected.Definition.Name}, but you have nothing to unlock!");
-				} else {
-					Console.WriteLine($"{inventory.LastItemSelected.Definition.Name} isn't a useable item!");
-				}
-
-				if (inventory.LastItemSelected != null && inventory.LastItemSelected.UsesRemaining == 0) {
-					Console.WriteLine($"{inventory.LastItemSelected.Definition.Name} was removed from the inventory since it has 0 uses left.");
-					inventory.Items.Remove(inventory.LastItemSelected);
-				}
 			} else if (Input.IsKeyPressed(Keys.R)) { //Add random items to the inventory
 				uint numItemsAdded = inventory.AddRandomItems(5);
 				Console.WriteLine($"Added {numItemsAdded} to the inventory.");
@@ -253,6 +201,27 @@ namespace Project {
 			}
 			//Ensure inventory position is in valid range
 			inventory.Position = MathUtil.MinMax(inventory.Position, 0, Math.Max(inventory.Items.Count - 1, 0));
+
+			//Use selected item
+		 	if (Input.IsKeyPressed(Keys.U) && inventory.Position < inventory.Items.Count) {
+				var item = inventory.Items[inventory.Position];
+				bool used = false;
+				if (item.Definition.Consumeable) {
+					item.Consume(player);
+					used = true;
+					Console.WriteLine($"Consumed {item.Definition.Name}! {item.UsesRemaining} uses remaining.");
+				} else if (item.Definition.IsKey) {
+					//Not yet implemented
+					Console.WriteLine($"You try to use {item.Definition.Name}, but you have nothing to unlock!");
+				} else {
+					Console.WriteLine($"{item.Definition.Name} isn't a useable item!");
+				}
+
+				if (item != null && item.UsesRemaining == 0 && used) {
+					Console.WriteLine($"{item.Definition.Name} was removed from the inventory since it has 0 uses left.");
+					inventory.Items.Remove(item);
+				}
+			}
 		}
 	}
 
