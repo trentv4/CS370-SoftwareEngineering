@@ -25,19 +25,19 @@ namespace Project.Tests {
 
 		[Test]
 		public void TestItemDefinitionLoading() {
-			Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
+			Assert.IsTrue(ItemDefinition.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
 		}
 
 		[Test]
 		public void TestItemUsage() {
 			//Clear existing definition and load armor potion 
-			ItemManager.Definitions.Clear();
-			Assert.IsTrue(ItemManager.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
+			ItemDefinition.Definitions.Clear();
+			Assert.IsTrue(ItemDefinition.LoadDefinitionsFromString(ArmorPotionItemDefinition), "Failed to load valid item definition xml.");
 
 			//Create player and add armor potion to their inventory
 			var player = new Player(new Vector2(0.0f, 0.0f));
 			var inventory = new Inventory(player);
-			inventory.AddItem(ItemManager.Definitions[0]);
+			inventory.AddItem(ItemDefinition.Definitions[0]);
 
 			//Use armor potion and check that it changed play stats correctly
 			int initialArmor = player.Armor;

@@ -60,7 +60,7 @@ namespace Project {
 
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
-			ItemManager.LoadDefinitions();
+			ItemDefinition.LoadDefinitions();
 			Level = new Level();
 			Server = new Server(Level);
 			Sounds.Init();

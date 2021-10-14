@@ -51,7 +51,7 @@ namespace Project {
 			for (uint i = 0; i < numToAdd; i++) {
 				//Get random item definition
 				var rand = new Random();
-				var def = ItemManager.Definitions[rand.Next() % ItemManager.Definitions.Count];
+				var def = ItemDefinition.Definitions[rand.Next() % ItemDefinition.Definitions.Count];
 
 				//Create item and add it to the inventory
 				var item = new Item(def);

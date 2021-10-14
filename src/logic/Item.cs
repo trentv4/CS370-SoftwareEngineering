@@ -63,6 +63,9 @@ namespace Project.Items {
 
 	/// <summary>Characteristics of an <see cref="Item"/>. Loaded by <see cref="ItemManager"/>.</summary>
 	public class ItemDefinition {
+		public static string DefinitionsFolderPath = @".\assets\definitions\";
+		public static List<ItemDefinition> Definitions = new List<ItemDefinition>();
+
 		public string Name;
 		public int Weight;
 		public int Damage;
@@ -71,53 +74,17 @@ namespace Project.Items {
 		public ItemUseFlags Uses;
 		public ConsumeEffects OnConsume;
 		public string KeyType;
-
 		public string TextureName;
 
 		public bool Consumeable => (Uses & ItemUseFlags.Consume) == ItemUseFlags.Consume;
 		public bool IsKey => (Uses & ItemUseFlags.Key) == ItemUseFlags.Key;
 
-		public override string ToString() {
-			string result = "ItemDefinition:\n";
-			result += $"    Name: {Name}\n";
-			result += $"    Weight: {Weight}\n";
-			result += $"    Damage: {Damage}\n";
-			result += $"    Armor: {Armor}\n";
-			result += $"    Uses: \n";
-			result += $"        NumUses: {NumUses}\n";
-			if ((Uses & ItemUseFlags.Consume) == ItemUseFlags.Consume) {
-				result += $"        Consumable:\n";
-				result += $"            Health: {OnConsume.Health}\n";
-				result += $"            Mana: {OnConsume.Mana}\n";
-				result += $"            CarryWeight: {OnConsume.CarryWeight}\n";
-				result += $"            Armor: {OnConsume.Armor}\n";
-				result += $"            MaxHealth: {OnConsume.MaxHealth}\n";
-				result += $"            MaxMana: {OnConsume.MaxMana}\n";
-			}
-			if ((Uses & ItemUseFlags.Key) == ItemUseFlags.Key) {
-				result += $"        Key:\n";
-				result += $"            Type: {KeyType}\n";
-			}
-			return result;
-		}
-	}
-
-	/// <summary>Loads <see cref="ItemDefinition"/>s from xml files. Automatically reloads them if the file changes.</summary>
-	public static class ItemManager {
-		public static string DefinitionsFolderPath = @".\assets\definitions\";
-		public static List<ItemDefinition> Definitions = new List<ItemDefinition>();
-
 		public static void LoadDefinitions() {
-
 			//Load definitions from xml files in assets/definitions/
 			if (Directory.Exists(DefinitionsFolderPath)) {
 				foreach (var file in Directory.EnumerateFiles(DefinitionsFolderPath, "*.xml"))
 					LoadDefinitionsFromFile(file);
 			}
-		}
-
-		public static void CheckForReload() {
-
 		}
 
 		public static bool LoadDefinitionsFromFile(string path) {

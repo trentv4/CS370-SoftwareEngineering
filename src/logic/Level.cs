@@ -329,7 +329,7 @@ namespace Project.Levels {
 				int numItemsToAdd = rand.Next(0, 5);
 				for (int i = 0; i < numItemsToAdd; i++) {
 					//Pick random item and add it to the room
-					var def = ItemManager.Definitions[rand.Next(ItemManager.Definitions.Count)];
+					var def = ItemDefinition.Definitions[rand.Next(ItemDefinition.Definitions.Count)];
 					var item = new Item(def);
 					room.Items.Add(item);
 
