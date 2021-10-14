@@ -4,7 +4,6 @@ using Project.Levels;
 using System;
 using OpenTK.Graphics.OpenGL4;
 using Project.Items;
-using System.Linq;
 
 namespace Project.Render {
 	/// <summary> Primary rendering root that stores custom references to track important objects in the rendering hierarchy. </summary>
@@ -98,34 +97,35 @@ namespace Project.Render {
 		}
 
 		public RenderableNode BuildInGameInterface(GameState state) {
+			RenderableNode node = new RenderableNode();
 			Vector2 screenSize = Renderer.INSTANCE.Size;
 			Inventory inventory = state.Level.Player.Inventory;
 
-			Item current = null;
-			Item left = null;
-			Item right = null;
-			if (inventory.Position < inventory.Items.Count && inventory.Items.Count > 0) {
-				current = inventory.Items[inventory.Position];
+			int currentIndex = inventory.Position;
+			if (inventory.Items.Count > 0) {
+				InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f / 2);
+				currentItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}");
+				node.Children.Add(currentItem);
 			}
-			if (inventory.Position - 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position - 1 >= 0) {
-				left = inventory.Items[inventory.Position - 1];
-			}
-			if (inventory.Position + 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position + 1 >= 0) {
-				right = inventory.Items[inventory.Position + 1];
+			if (inventory.Items.Count > 1) {
+				int rightIndex = currentIndex + 1;
+				if (rightIndex == inventory.Items.Count)
+					rightIndex = 0;
+				InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) + 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
+				rightItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}");
+				node.Children.Add(rightItem);
 			}
 
-			InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f / 2);
-			InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-			InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) + 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-			if (current != null)
-				currentItem.AlbedoTexture = new Texture($"assets/textures/{current.Definition.TextureName}");
-			if (left != null)
-				leftItem.AlbedoTexture = new Texture($"assets/textures/{left.Definition.TextureName}");
-			if (right != null)
-				rightItem.AlbedoTexture = new Texture($"assets/textures/{right.Definition.TextureName}");
+			if (inventory.Items.Count > 2) {
+				int leftIndex = currentIndex - 1;
+				if (leftIndex == -1)
+					leftIndex = inventory.Items.Count - 1;
+				InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
+				leftItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}");
+				node.Children.Add(leftItem);
+			}
 
-			RenderableNode node = new RenderableNode();
-			node.Children.AddRange(new[] { currentItem, leftItem, rightItem });
+
 			return node;
 		}
 

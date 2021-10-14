@@ -193,9 +193,15 @@ namespace Project {
 			//Update inventory position selector
 			if(Input.IsKeyPressed(Keys.Q)) {
 				inventory.Position--;
+				if (inventory.Position == -1) {
+					inventory.Position = inventory.Items.Count - 1;
+				}
 			}
 			if(Input.IsKeyPressed(Keys.E)) {
 				inventory.Position++;
+				if (inventory.Position == inventory.Items.Count) {
+					inventory.Position = 0;
+				}
 			}
 			//Ensure inventory position is in valid range
 			inventory.Position = MathUtil.MinMax(inventory.Position, 0, Math.Max(inventory.Items.Count - 1, 0));
@@ -218,6 +224,7 @@ namespace Project {
 				if (item != null && item.UsesRemaining == 0 && used) {
 					Console.WriteLine($"{item.Definition.Name} was removed from the inventory since it has 0 uses left.");
 					inventory.Items.Remove(item);
+					inventory.Position = Math.Max(0, inventory.Position - 1);
 				}
 			}
 		}
