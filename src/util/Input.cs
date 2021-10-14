@@ -8,7 +8,7 @@ namespace Project.Util {
 		private static int[] _keyDownStates = new int[(int)Keys.LastKey];
 
 		///<summary>Returns the state of the mouse (e.g. position, button state).</summary>
-        public static MouseState MouseState => Program.INSTANCE.MouseState;
+		public static MouseState MouseState => Renderer.INSTANCE.MouseState;
 
 		///<summary>The state of the mouse last frame</summary>
 		private static MouseState _lastMouseState = null;
@@ -24,7 +24,7 @@ namespace Project.Util {
 
 		///<summary>Updates key states</summary>
         public static void Update() {
-			var keyboardState = Program.INSTANCE.KeyboardState;
+			var keyboardState = Renderer.INSTANCE.KeyboardState;
 			for (int i = 0; i < _keyDownStates.Length; i++)
 				if (keyboardState.IsKeyDown((Keys)i))
 					_keyDownStates[i]++;
@@ -32,7 +32,7 @@ namespace Project.Util {
 					_keyDownStates[i] = 0;
 
 			//Calculate mouse position delta since last frame
-			MouseState mouseState = Program.INSTANCE.MouseState.GetSnapshot();
+			MouseState mouseState = Renderer.INSTANCE.MouseState.GetSnapshot();
 			if(_lastMouseState != null) {
 				MouseDeltaX = mouseState.Position.X - _lastMouseState.Position.X;
 				MouseDeltaY = mouseState.Position.Y - _lastMouseState.Position.Y;
@@ -54,13 +54,13 @@ namespace Project.Util {
 
 		///<summary>Returns true if the key is currently down</summary>
 		public static bool IsKeyDown(Keys key) {
-			var keyboardState = Program.INSTANCE.KeyboardState;
+			var keyboardState = Renderer.INSTANCE.KeyboardState;
 			return keyboardState.IsKeyDown(key);
 		}
 
 		///<summary>Returns true if the key isn't down</summary>
 		public static bool IsKeyReleased(Keys key) {
-			var keyboardState = Program.INSTANCE.KeyboardState;
+			var keyboardState = Renderer.INSTANCE.KeyboardState;
 			return keyboardState.IsKeyReleased(key);
 		}
 	}
