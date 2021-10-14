@@ -14,14 +14,13 @@ namespace Project.Render {
 			public Vector2 PositionOffset;
 			public Vector2 Size;
 		}
+		private static readonly Dictionary<string, FontAtlas> _loadedFonts = new Dictionary<string, FontAtlas>();
 
 		public readonly Texture AtlasTexture;
 		public readonly string FontName;
 		public readonly float Size;
 
 		private readonly Glyph[] Glyphs;
-		/// <summary> FontAtlas cache to prevent reloading and allows multiple font access from one method. </summary>
-		private static readonly Dictionary<string, FontAtlas> _loadedFonts = new Dictionary<string, FontAtlas>();
 
 		private FontAtlas(Glyph[] glyphs, string fontName, Texture atlasTexture, float size) {
 			this.AtlasTexture = atlasTexture;

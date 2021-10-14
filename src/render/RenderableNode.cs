@@ -23,22 +23,23 @@ namespace Project.Render {
 		protected virtual void RenderSelf() { }
 	}
 
+	/// <summary> Container class for a 3d model containing vertices and indices that exist on the GPU. </summary>
 	public class Model : RenderableNode {
+		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
+
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
 		public Vector3 Scale { get; private set; } = Vector3.One;
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public bool IsFog { get; private set; } = false;
-
 		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
 
-		private int IndexLength;
-		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
+		private int _indexLength;
 
-		/// <summary> Creates a Model given vertex data and indices. </summary>
+		/// <summary> Creates a Model given vertex data and indices. The data is sent to the GPU and then discarded on main memory. </summary>
 		public Model(float[] vertexData, uint[] indices) {
-			IndexLength = indices.Length;
+			_indexLength = indices.Length;
 
 			ElementBufferArray_ID = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
@@ -51,12 +52,12 @@ namespace Project.Render {
 
 		/// <summary> Private constructor used when cached models are loaded. </summary>
 		private Model(Model copy) {
-			this.IndexLength = copy.IndexLength;
+			this._indexLength = copy._indexLength;
 			this.ElementBufferArray_ID = copy.ElementBufferArray_ID;
 			this.VertexBufferObject_ID = copy.VertexBufferObject_ID;
 		}
 
-		/// <summary> Creates a copy of an existing model that was cached with a name.</summary>
+		/// <summary> Creates a copy of an existing model that was cached with a name. </summary>
 		public static Model GetCachedModel(string modelName) {
 			System.Diagnostics.Debug.Assert(_cachedModels.ContainsKey(modelName), $"Tried to load cached model {modelName} and was unable to find it!");
 			return new Model(_cachedModels.GetValueOrDefault(modelName));
@@ -69,9 +70,11 @@ namespace Project.Render {
 			return this;
 		}
 
+		/// <summary> Renders this model. It will be drawn in the correct render pass depending on if it is a fog model or real model. </summary>
 		protected override void RenderSelf() {
-			if (IsFog != (Renderer.INSTANCE.CurrentProgram.GetType() == typeof(ShaderProgramFog)))
+			if (IsFog != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
 				return;
+
 			Matrix4 modelMatrix = Matrix4.Identity;
 			modelMatrix *= Matrix4.CreateScale(Scale);
 			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
@@ -79,23 +82,19 @@ namespace Project.Render {
 
 			if (IsFog) {
 				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
-
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 			} else {
 				GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
-
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
 				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
 				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
-
-				GL.ActiveTexture(TextureUnit.Texture0);
-				GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+				GL.BindTextureUnit(0, AlbedoTexture.TextureID);
 			}
 
-			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}
 
 		/// <summary> Chainable method to set the scale of this object. </summary>
@@ -204,28 +203,31 @@ namespace Project.Render {
 		}
 	}
 
+	/// <summary> Container class for a 2d model containing text, font, and model transforms for text rendering.. </summary>
 	public class InterfaceString : RenderableNode {
 		public string TextContent { get; private set; }
-		public float Width { get; private set; }
-		private FontAtlas Font;
-
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
+		public float Width { get; private set; }
 		public float Opacity { get; private set; } = 1.0f;
 
-		private readonly int ElementBufferArray_ID;
-		private readonly int VertexBufferObject_ID;
-		private int IndexLength;
+		private readonly int _elementBufferArrayID;
+		private readonly int _vertexBufferObjectID;
+		private FontAtlas _font;
+		private int _indexLength;
 
+		/// <summary> Creates a new InterfaceString and handles sending data to the GPU. </summary>
 		public InterfaceString(string font, string TextContent) {
-			Font = FontAtlas.GetFont(font);
+			_font = FontAtlas.GetFont(font);
+			_elementBufferArrayID = GL.GenBuffer();
+			_vertexBufferObjectID = GL.GenBuffer();
+
 			this.TextContent = TextContent;
-			ElementBufferArray_ID = GL.GenBuffer();
-			VertexBufferObject_ID = GL.GenBuffer();
 
 			UpdateStringOnGPU(TextContent);
 		}
 
+		/// <summary> Updates the vertex and index lists on the GPU for the new text. </summary>
 		private void UpdateStringOnGPU(string text) {
 			List<float> vertices = new List<float>();
 			List<uint> indices = new List<uint>();
@@ -238,7 +240,7 @@ namespace Project.Render {
 			}
 			float cursor = 0;
 			for (int i = 0; i < unicodeList.Count; i++) {
-				FontAtlas.Glyph g = Font.GetGlyph(unicodeList[i]);
+				FontAtlas.Glyph g = _font.GetGlyph(unicodeList[i]);
 				vertices.AddRange(new float[] {
 					cursor + g.PositionOffset.X, 0 + g.PositionOffset.Y,
 					g.UVs[0].X, g.UVs[0].Y,
@@ -255,14 +257,16 @@ namespace Project.Render {
 
 			float[] vert = vertices.ToArray();
 			uint[] ind = indices.ToArray();
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferArrayID);
 			GL.BufferData(BufferTarget.ElementArrayBuffer, ind.Length * sizeof(uint), ind, BufferUsageHint.StaticDraw);
-			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObjectID);
 			GL.BufferData(BufferTarget.ArrayBuffer, vert.Length * sizeof(float), vert, BufferUsageHint.StaticDraw);
-			IndexLength = ind.Length;
+
+			_indexLength = ind.Length;
 			Width = cursor;
 		}
 
+		/// <summary> Draws the font on the GPU. This is done with the Interface shader, but the use of the font uniform causes this to be a text box. </summary>
 		protected override void RenderSelf() {
 			Matrix4 modelMatrix = Matrix4.Identity;
 			modelMatrix *= Matrix4.CreateScale(new Vector3(Scale.X, Scale.Y, 1f));
@@ -272,14 +276,13 @@ namespace Project.Render {
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 1);
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformOpacity, Opacity);
 
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
-			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(2 * sizeof(float)), 4 * sizeof(float));
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferArrayID);
+			GL.BindVertexBuffer(0, _vertexBufferObjectID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
+			GL.BindVertexBuffer(1, _vertexBufferObjectID, (IntPtr)(2 * sizeof(float)), 4 * sizeof(float));
 
-			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, Font.AtlasTexture.TextureID);
+			GL.BindTextureUnit(0, _font.AtlasTexture.TextureID);
 
-			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, IndexLength, DrawElementsType.UnsignedInt, 0);
+			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}
 
 		/// <summary> Chainable method to set the scale of this object. </summary>
@@ -305,9 +308,10 @@ namespace Project.Render {
 		}
 	}
 
+	/// <summary> Container class for a 2d model containing a textured quad. </summary>
 	public class InterfaceModel : RenderableNode {
-		public readonly int ElementBufferArray_ID;
-		public readonly int VertexBufferObject_ID;
+		private static readonly Dictionary<string, InterfaceModel> _cachedModels = new Dictionary<string, InterfaceModel>();
+
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
@@ -315,26 +319,27 @@ namespace Project.Render {
 		public float Opacity { get; private set; } = 1.0f;
 
 		private int _indexLength;
-		private static readonly Dictionary<string, InterfaceModel> _cachedModels = new Dictionary<string, InterfaceModel>();
+		private readonly int _elementBufferArrayID;
+		private readonly int _vertexBufferObjectID;
 
 		/// <summary> Creates an InterfaceModel given vertex data and indices. </summary>
 		public InterfaceModel(float[] vertexData, uint[] indices) {
 			_indexLength = indices.Length;
 
-			ElementBufferArray_ID = GL.GenBuffer();
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			_elementBufferArrayID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferArrayID);
 			GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
 
-			VertexBufferObject_ID = GL.GenBuffer();
-			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			_vertexBufferObjectID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObjectID);
 			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
 		}
 
 		/// <summary> Private constructor used when cached models are loaded. </summary>
 		private InterfaceModel(InterfaceModel copy) {
 			this._indexLength = copy._indexLength;
-			this.ElementBufferArray_ID = copy.ElementBufferArray_ID;
-			this.VertexBufferObject_ID = copy.VertexBufferObject_ID;
+			this._elementBufferArrayID = copy._elementBufferArrayID;
+			this._vertexBufferObjectID = copy._vertexBufferObjectID;
 		}
 
 		/// <summary> Creates a copy of an existing model that was cached with a name.</summary>
@@ -350,6 +355,7 @@ namespace Project.Render {
 			return this;
 		}
 
+		/// <summary> Draws this interface quad. The font uniform is set to false in this pass allowing use of traditional textures. </summary>
 		protected override void RenderSelf() {
 			Matrix4 modelMatrix = Matrix4.Identity;
 			modelMatrix *= Matrix4.CreateScale(new Vector3(Scale.X, Scale.Y, 1f));
@@ -360,12 +366,11 @@ namespace Project.Render {
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformIsFont, 0);
 			GL.Uniform1(Renderer.INSTANCE.InterfaceProgram.UniformOpacity, Opacity);
 
-			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
-			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(2 * sizeof(float)), 4 * sizeof(float));
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferArrayID);
+			GL.BindVertexBuffer(0, _vertexBufferObjectID, (IntPtr)(0 * sizeof(float)), 4 * sizeof(float));
+			GL.BindVertexBuffer(1, _vertexBufferObjectID, (IntPtr)(2 * sizeof(float)), 4 * sizeof(float));
 
-			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			GL.BindTextureUnit(0, AlbedoTexture.TextureID);
 
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}

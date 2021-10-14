@@ -40,6 +40,9 @@ void main() {
 	float alpha = texture.w;
 	if(alpha < 0.001f)
 		alpha = albedo.w;
+	
+	if(alpha == 0)
+		discard;
 
 	FragColor = vec4(outputColor, alpha);
 }

@@ -2,6 +2,7 @@
 
 out vec2 uv;
 
+// This abomination of a method is simply the code for drawing a fullscreen triangle with a simple DrawArrays(..., 0, 3) call.
 void main() {
 	float x = -1.0 + float((gl_VertexID & 1) << 2);
 	float y = -1.0 + float((gl_VertexID & 2) << 1);
