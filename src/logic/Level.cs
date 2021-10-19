@@ -428,7 +428,7 @@ namespace Project.Levels {
 		/// <summary>If the player is stepping on an item and there's enough room in their inventory the item is picked up.</summary>
 		void CheckIfPlayerOnItem() {
             float itemRadius = 0.6f;
-			foreach (Item item in CurrentRoom.Items) {
+			foreach (Item item in CurrentRoom.Items.ToList()) { //Iterate over a copy of the list so we can safely remove items while iterating
 				var itemPos = new Vector2(item.Position.X, item.Position.Y);
                 float playerItemDistance = (itemPos - Player.Position).Length;
 
