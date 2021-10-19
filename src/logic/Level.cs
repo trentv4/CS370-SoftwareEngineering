@@ -353,7 +353,12 @@ namespace Project.Levels {
 			Player = new Player(new Vector2(0.0f, 0.0f));
 			CurrentRoom = startRoom;
 			PreviousRoom = startRoom;
-			
+
+			CurrentRoom.Visited = Room.VisitedState.Visited;
+			foreach (Room c in CurrentRoom.ConnectedRooms) {
+				c.Visited = Room.VisitedState.Seen;
+			}
+
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
 			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			return true;
@@ -390,6 +395,12 @@ namespace Project.Levels {
                     CurrentRoom = r;
                     Score += 100;
                     Player.Position = new Vector2(0.0f, 0.0f);
+					CurrentRoom.Visited = Room.VisitedState.Visited;
+					foreach (Room c in CurrentRoom.ConnectedRooms) {
+						if (c.Visited == Room.VisitedState.NotSeen) {
+							c.Visited = Room.VisitedState.Seen;
+						}
+					}
                     Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate scene
                     break;
                 }
@@ -424,6 +435,13 @@ namespace Project.Levels {
 	}
 
 	public class Room {
+		public enum VisitedState {
+			NotSeen,
+			Seen,
+			Visited
+		}
+		public VisitedState Visited = VisitedState.NotSeen;
+
 		public Vector2 Position;
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();

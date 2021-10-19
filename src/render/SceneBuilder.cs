@@ -38,12 +38,15 @@ namespace Project.Render {
 			// Wall
 			models.Add(Model.GetCachedModel("unit_cylinder").SetFoggy(true).SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(roomSize, 10f, roomSize)));
 
+			//try/catch is a temporary fix.
+			try {
 			// Items on the floor
 			foreach (Item i in currentRoom.Items) {
 				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(i.Position.X, 0, i.Position.Y)).SetRotation(new Vector3(20.0f, 0, 0));
 				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}
+			} catch (Exception e) { }
 
 			// Room connectors (doorways)
 			foreach (Room r in currentRoom.ConnectedRooms) {
@@ -128,6 +131,8 @@ namespace Project.Render {
 					tex = new Texture("assets/textures/interface/circle_final_room.png");
 				} else if (connection == state.Level.StartRoom) {
 					tex = new Texture("assets/textures/interface/circle_start_room.png");
+				} else if (connection.Visited == Room.VisitedState.Seen) {
+					tex = new Texture("assets/textures/interface/circle_not_visited.png");
 				}
 
 				Vector2 connectionPosition = centerPosition + new Vector2((float)Math.Cos(angle) * 75, (float)Math.Sin(angle) * 75);
@@ -143,7 +148,6 @@ namespace Project.Render {
 					.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF));
 			}
 
-			node.Children.AddRange(new RenderableNode[] { });
 			node.Children.AddRange(connectionModels);
 			node.Children.AddRange(circles);
 
@@ -225,6 +229,8 @@ namespace Project.Render {
 			Vector2 screenMax = new Vector2(screenSize.X - (screenSize.X / 1.25f), screenSize.Y - (screenSize.Y / 1.25f));
 
 			foreach (Room current in rooms) {
+				if (current.Visited == Room.VisitedState.NotSeen)
+					continue;
 				Vector2 screenSpacePosition = new Vector2(
 					screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
 					screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
@@ -237,12 +243,15 @@ namespace Project.Render {
 					circle.SetTexture(new Texture("assets/textures/interface/circle_start_room.png"));
 				} else if (current == state.Level.PreviousRoom) {
 					circle.SetTexture(new Texture("assets/textures/interface/circle_previous_room.png"));
+				} else if (current.Visited == Room.VisitedState.Seen) {
+					circle.SetTexture(new Texture("assets/textures/interface/circle_not_visited.png"));
 				}
 				circle.SetScale(40f);
 				roomNodes.Add(circle);
 
 				foreach (Room connection in current.ConnectedRooms) {
 					if (current.Position.X < connection.Position.X) continue;
+					if (connection.Visited == Room.VisitedState.NotSeen) continue;
 					Vector2 positionA = screenSpacePosition;
 					Vector2 positionB = new Vector2(
 						screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
