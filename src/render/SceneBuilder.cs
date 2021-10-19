@@ -46,7 +46,7 @@ namespace Project.Render {
 				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}
-			} catch (Exception e) { }
+			} catch (Exception e) { Console.WriteLine(e.ToString()); }
 
 			// Room connectors (doorways)
 			foreach (Room r in currentRoom.ConnectedRooms) {
@@ -232,8 +232,8 @@ namespace Project.Render {
 				if (current.Visited == Room.VisitedState.NotSeen)
 					continue;
 				Vector2 screenSpacePosition = new Vector2(
-					screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-					screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+					screenSize.X - (screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+					screenSize.Y - (screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 				);
 				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(screenSpacePosition);
 				circle.SetTexture(new Texture("assets/textures/interface/circle_blank.png"));
@@ -254,8 +254,8 @@ namespace Project.Render {
 					if (connection.Visited == Room.VisitedState.NotSeen) continue;
 					Vector2 positionA = screenSpacePosition;
 					Vector2 positionB = new Vector2(
-						screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-						screenMin.Y + (connection.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+						screenSize.X - (screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+						screenSize.Y - (screenMin.Y + (connection.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 					);
 					Vector2 positionBNormalized = positionB - positionA;
 
@@ -270,8 +270,8 @@ namespace Project.Render {
 
 			Vector2 currentRoom = state.Level.CurrentRoom.Position;
 			Vector2 pointerPosition = new Vector2(
-				screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-				screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+				screenSize.X - (screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+				screenSize.Y - (screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 			);
 
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
