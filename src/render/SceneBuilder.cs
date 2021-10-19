@@ -108,13 +108,11 @@ namespace Project.Render {
 					.SetScale(150f / 2)
 					.SetTexture(new Texture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
 
-				InterfaceString u = new InterfaceString("calibri", "U");
-				u.SetScale(40f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 45));
+				InterfaceString u = new InterfaceString("calibri", "[ U ]");
+				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 40f));
 
-				InterfaceString toUse = new InterfaceString("calibri", "Use item");
-				toUse.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((toUse.Width / 2) * toUse.Scale.X), 20));
 
-				node.Children.AddRange(new RenderableNode[] { currentItem, u, toUse });
+				node.Children.AddRange(new RenderableNode[] { currentItem, u });
 			}
 			if (inventory.Items.Count > 1) {
 				int rightIndex = currentIndex + 1;
@@ -127,13 +125,10 @@ namespace Project.Render {
 					.SetOpacity(0.5f)
 					.SetTexture(new Texture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}"));
 
-				InterfaceString e = new InterfaceString("calibri", "E");
-				e.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((e.Width / 2) * e.Scale.X) + 150, 180));
+				InterfaceString spinRight = new InterfaceString("calibri", "[E]");
+				spinRight.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 150, 165));
 
-				InterfaceString spinRight = new InterfaceString("calibri", "Inventory ->");
-				spinRight.SetScale(25f).SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 160, 160));
-
-				node.Children.AddRange(new RenderableNode[] { rightItem, e, spinRight });
+				node.Children.AddRange(new RenderableNode[] { rightItem, spinRight });
 			}
 
 			if (inventory.Items.Count > 2) {
@@ -146,13 +141,10 @@ namespace Project.Render {
 					.SetOpacity(0.5f)
 					.SetTexture(new Texture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}"));
 
-				InterfaceString q = new InterfaceString("calibri", "Q");
-				q.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((q.Width / 2) * q.Scale.X) - 150, 180));
+				InterfaceString spinLeft = new InterfaceString("calibri", "[Q]");
+				spinLeft.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 150, 165));
 
-				InterfaceString spinLeft = new InterfaceString("calibri", "<- Inventory");
-				spinLeft.SetScale(25f).SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 160, 160));
-
-				node.Children.AddRange(new RenderableNode[] { leftItem, q, spinLeft });
+				node.Children.AddRange(new RenderableNode[] { leftItem, spinLeft });
 			}
 
 			return node;
