@@ -7,7 +7,7 @@ using System.Xml;
 
 namespace Project.Items {
 	/// <summary> An instance of an item in the game world. Uses ItemDefinition to determine its behavior. </summary>
-	public class Item {
+	public class Item : ICloneable {
         public ItemDefinition Definition;
         public uint UsesRemaining;
 		public Vector2 Position;
@@ -16,6 +16,14 @@ namespace Project.Items {
             Definition = definition;
             UsesRemaining = definition.NumUses;
         }
+
+		/// <summary>Make a deep copy</summary>
+		public object Clone() {
+			Item copy = new Item(Definition);
+			copy.UsesRemaining = UsesRemaining;
+			copy.Position = Position;
+			return copy;
+		}
 
 		/// <summary> Consume the item if it's consumable and call OnConsume() on the target. </summary>
 		public void Consume(Player target) {

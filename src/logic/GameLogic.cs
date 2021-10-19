@@ -75,7 +75,7 @@ namespace Project {
 
 			State.PlayerX = Level.Player.Position.X;
 			State.PlayerY = Level.Player.Position.Y;
-			State.Level = Level;
+			State.Level = (Level)Level.Clone();
 			State.IsViewingMap = IsViewingMap;
 			State.Score = (GameTick / 600) + ((int)Level.Score);
 			State.CameraPitch = CameraPitch;

@@ -1,16 +1,11 @@
-using System;
 using System.Collections.Generic;
 using Project.Items;
 using System.Linq;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using Project.Render;
-using Project.Util;
+using System;
 
 namespace Project {
 	///<summary>Manages item instances carried by an entity</summary>
-	public class Inventory {
+	public class Inventory : ICloneable {
 		///<summary>Entity that's carrying this inventory around</summary>
 		public Player Owner = null;
 		public List<Item> Items = new List<Item>();
@@ -24,6 +19,18 @@ namespace Project {
 
 		public Inventory(Player owner) {
 			Owner = owner;
+		}
+
+		/// <summary>Make a deep copy</summary>
+		public object Clone() {
+			Inventory copy = new Inventory(null);
+			copy.Owner = null; //Player ICloneable.Clone() implementation sets this after copying
+			copy.Items = new List<Item>();
+			foreach (Item item in Items)
+				copy.Items.Add((Item)item.Clone());
+
+			copy.Position = Position;
+			return copy;
 		}
 
 		///<summary>Add item to inventory if it doesn't go over the max weight</summary>

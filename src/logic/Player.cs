@@ -1,8 +1,9 @@
 using OpenTK.Mathematics;
+using System;
 
 namespace Project {
 	///<summary>All state of the player character.</summary>
-	public class Player {
+	public class Player : ICloneable {
 		public Inventory Inventory;
 		public int Health = 10;
 		public int MaxHealth = 10;
@@ -17,8 +18,18 @@ namespace Project {
 			Inventory = new Inventory(this);
 		}
 
-		public void Update() {
-			
+		/// <summary>Make a deep copy</summary>
+		public object Clone() {
+			Player copy = new Player(Position);
+			copy.Inventory = (Inventory)Inventory.Clone();
+			copy.Inventory.Owner = copy;
+			copy.Health = Health;
+			copy.MaxHealth = MaxHealth;
+			copy.Mana = Mana;
+			copy.MaxMana = MaxMana;
+			copy.Armor = Armor;
+			copy.CarryWeight = CarryWeight;
+			return copy;
 		}
 	}
 }

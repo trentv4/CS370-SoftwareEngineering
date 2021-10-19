@@ -8,7 +8,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Linq;
 
 namespace Project.Levels {
-	public class Level {
+	public class Level : ICloneable {
 		private readonly Random Random = new System.Random();
 
 		///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
@@ -35,6 +35,37 @@ namespace Project.Levels {
 
 		public Level() {
 			TryGenerateLevel(1000);
+		}
+
+		/// <summary>Make a deep copy</summary>
+		public object Clone() {
+			Level copy = new Level();
+			copy.Score = Score;
+			copy.Player = (Player)Player.Clone();
+			copy.Rooms = (Room[])Rooms.Clone();
+
+			//Find room indices and set them for the clone
+			List<Room> tempRooms = Rooms.ToList(); //Temporary list since it has .IndexOf() and arrays don't
+			if (CurrentRoom != null) {
+				int currentRoomIndex = tempRooms.IndexOf(CurrentRoom);
+				copy.CurrentRoom = copy.Rooms[currentRoomIndex];
+			}
+			if (PreviousRoom != null) {
+				int previousRoomIndex = tempRooms.IndexOf(PreviousRoom);
+				copy.PreviousRoom = copy.Rooms[previousRoomIndex];
+			}
+			if (StartRoom != null) {
+				int startRoomIndex = tempRooms.IndexOf(StartRoom);
+				copy.StartRoom = copy.Rooms[startRoomIndex];
+			}
+			if (EndRoom != null) {
+				int endRoomIndex = tempRooms.IndexOf(EndRoom);
+				copy.EndRoom = copy.Rooms[endRoomIndex];
+			}
+
+			copy.CurrentLevel = CurrentLevel;
+			copy.LevelSeed = LevelSeed;
+			return copy;
 		}
 
 		/// <summary> Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail. </summary>
@@ -360,8 +391,6 @@ namespace Project.Levels {
 		}
 
 		public void Update() {
-			Player.Update();
-
 			//Print out score and generate a new level if player completes this one
 			if (CurrentRoom == EndRoom) {
 				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
