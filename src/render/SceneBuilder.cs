@@ -186,8 +186,6 @@ namespace Project.Render {
 					circle.SetTexture(new Texture("assets/textures/green.png"));
 				} else if (current == state.Level.StartRoom) {
 					circle.SetTexture(new Texture("assets/textures/blue.png"));
-				} else if (current == state.Level.CurrentRoom) {
-					circle.SetTexture(new Texture("assets/textures/gold.png"));
 				} else {
 					circle.SetTexture(new Texture("assets/textures/red.png"));
 				}
@@ -237,9 +235,10 @@ namespace Project.Render {
 				.SetRotation(state.CameraYaw + 90);
 
 			RenderableNode interfaceNode = new RenderableNode();
+			interfaceNode.Children.AddRange(new RenderableNode[] { mapBackground, mapLabel, score });
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
-			interfaceNode.Children.AddRange(new RenderableNode[] { mapBackground, mapLabel, score, pointer });
+			interfaceNode.Children.Add(pointer);
 			return interfaceNode;
 		}
 	}
