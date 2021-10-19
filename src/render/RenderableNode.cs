@@ -315,7 +315,7 @@ namespace Project.Render {
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
-		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
+		public Texture AlbedoTexture { get; private set; } = new Texture("assets/textures/null.png");
 		public float Opacity { get; private set; } = 1.0f;
 
 		private int _indexLength;
@@ -400,6 +400,11 @@ namespace Project.Render {
 		/// <summary> Chainable method to set the position of this object. </summary>
 		public InterfaceModel SetPosition(Vector2 position) {
 			this.Position = position;
+			return this;
+		}
+
+		public InterfaceModel SetTexture(Texture texture) {
+			this.AlbedoTexture = texture;
 			return this;
 		}
 

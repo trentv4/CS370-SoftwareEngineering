@@ -103,12 +103,17 @@ namespace Project.Render {
 
 			int currentIndex = inventory.Position;
 			if (inventory.Items.Count > 0) {
-				InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f / 2);
-				currentItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}");
-				InterfaceString u = new InterfaceString("calibri", "U").SetScale(40f);
-				u.SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 45));
-				InterfaceString toUse = new InterfaceString("calibri", "Use item").SetScale(30f);
-				toUse.SetPosition(new Vector2((screenSize.X / 2) - ((toUse.Width / 2) * toUse.Scale.X), 20));
+				InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2(screenSize.X / 2, 150))
+					.SetScale(150f / 2)
+					.SetTexture(new Texture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
+
+				InterfaceString u = new InterfaceString("calibri", "U");
+				u.SetScale(40f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 45));
+
+				InterfaceString toUse = new InterfaceString("calibri", "Use item");
+				toUse.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((toUse.Width / 2) * toUse.Scale.X), 20));
+
 				node.Children.AddRange(new RenderableNode[] { currentItem, u, toUse });
 			}
 			if (inventory.Items.Count > 1) {
@@ -116,12 +121,18 @@ namespace Project.Render {
 				if (rightIndex == inventory.Items.Count)
 					rightIndex = 0;
 
-				InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) + 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-				rightItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}");
-				InterfaceString e = new InterfaceString("calibri", "E").SetScale(30f);
-				e.SetPosition(new Vector2((screenSize.X / 2) - ((e.Width / 2) * e.Scale.X) + 150, 180));
-				InterfaceString spinRight = new InterfaceString("calibri", "Inventory ->").SetScale(25f);
-				spinRight.SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 160, 160));
+				InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2((screenSize.X / 2) + 150, 100))
+					.SetScale(100f / 2)
+					.SetOpacity(0.5f)
+					.SetTexture(new Texture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}"));
+
+				InterfaceString e = new InterfaceString("calibri", "E");
+				e.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((e.Width / 2) * e.Scale.X) + 150, 180));
+
+				InterfaceString spinRight = new InterfaceString("calibri", "Inventory ->");
+				spinRight.SetScale(25f).SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 160, 160));
+
 				node.Children.AddRange(new RenderableNode[] { rightItem, e, spinRight });
 			}
 
@@ -129,16 +140,20 @@ namespace Project.Render {
 				int leftIndex = currentIndex - 1;
 				if (leftIndex == -1)
 					leftIndex = inventory.Items.Count - 1;
-				InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-				leftItem.AlbedoTexture = new Texture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}");
+				InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2((screenSize.X / 2) - 150, 100))
+					.SetScale(100f / 2)
+					.SetOpacity(0.5f)
+					.SetTexture(new Texture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}"));
 
-				InterfaceString q = new InterfaceString("calibri", "Q").SetScale(30f);
-				q.SetPosition(new Vector2((screenSize.X / 2) - ((q.Width / 2) * q.Scale.X) - 150, 180));
-				InterfaceString spinLeft = new InterfaceString("calibri", "<- Inventory").SetScale(25f);
-				spinLeft.SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 160, 160));
+				InterfaceString q = new InterfaceString("calibri", "Q");
+				q.SetScale(30f).SetPosition(new Vector2((screenSize.X / 2) - ((q.Width / 2) * q.Scale.X) - 150, 180));
+
+				InterfaceString spinLeft = new InterfaceString("calibri", "<- Inventory");
+				spinLeft.SetScale(25f).SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 160, 160));
+
 				node.Children.AddRange(new RenderableNode[] { leftItem, q, spinLeft });
 			}
-
 
 			return node;
 		}
@@ -168,13 +183,13 @@ namespace Project.Render {
 				);
 				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(screenSpacePosition);
 				if (current == state.Level.EndRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/green.png");
+					circle.SetTexture(new Texture("assets/textures/green.png"));
 				} else if (current == state.Level.StartRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/blue.png");
+					circle.SetTexture(new Texture("assets/textures/blue.png"));
 				} else if (current == state.Level.CurrentRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/gold.png");
+					circle.SetTexture(new Texture("assets/textures/gold.png"));
 				} else {
-					circle.AlbedoTexture = new Texture("assets/textures/red.png");
+					circle.SetTexture(new Texture("assets/textures/red.png"));
 				}
 				circle.SetScale(40f);
 				roomNodes.Add(circle);
@@ -188,44 +203,43 @@ namespace Project.Render {
 					);
 					Vector2 positionBNormalized = positionB - positionA;
 
-					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
-					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f));
-					connector.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
+					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle")
+						.SetPosition((positionA + positionB) / 2)
+						.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f))
+						.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
 
 					connectorNodes.Add(connector);
 				}
 			}
 
-			InterfaceModel mapBackground = InterfaceModel.GetCachedModel("unit_rectangle");
-			mapBackground.AlbedoTexture = new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest);
-			mapBackground.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f));
-			mapBackground.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2));
+			InterfaceModel mapBackground = InterfaceModel.GetCachedModel("unit_rectangle")
+				.SetTexture(new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest))
+				.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f))
+				.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2));
 
-			InterfaceString mapLabel = new InterfaceString("calibri", "Map (known)");
-			mapLabel.SetScale(50f);
-			mapLabel.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f));
+			InterfaceString mapLabel = new InterfaceString("calibri", "Map (known)")
+				.SetScale(50f)
+				.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f));
 
-			InterfaceString score = new InterfaceString("calibri", $"Score: {state.Level.Score}");
-			score.SetScale(50f);
-			score.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
+			InterfaceString score = new InterfaceString("calibri", $"Score: {state.Level.Score}")
+				.SetScale(50f)
+				.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
 
 			Vector2 currentRoom = state.Level.CurrentRoom.Position;
 			Vector2 pointerPosition = new Vector2(
 				screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
 				screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
 			);
-			InterfaceModel pointer = InterfaceModel.GetCachedModel("pointer").SetScale(50f);
-			pointer.AlbedoTexture = new Texture("assets/textures/gold.png");
-			pointer.SetPosition(pointerPosition);
-			pointer.SetRotation(state.CameraYaw + 90);
+			InterfaceModel pointer = InterfaceModel.GetCachedModel("pointer")
+				.SetScale(50f)
+				.SetTexture(new Texture("assets/textures/gold.png"))
+				.SetPosition(pointerPosition)
+				.SetRotation(state.CameraYaw + 90);
 
 			RenderableNode interfaceNode = new RenderableNode();
-			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
-			interfaceNode.Children.Add(mapLabel);
-			interfaceNode.Children.Add(score);
-			interfaceNode.Children.Add(pointer);
+			interfaceNode.Children.AddRange(new RenderableNode[] { mapBackground, mapLabel, score, pointer });
 			return interfaceNode;
 		}
 	}
