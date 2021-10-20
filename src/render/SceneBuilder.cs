@@ -34,7 +34,7 @@ namespace Project.Render {
 
 			// Floor
 			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(40f);
-			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
+			plane.AlbedoTexture = Texture.CreateTexture("assets/textures/plane.png");
 			models.Add(plane);
 
 			//try/catch is a temporary fix.
@@ -42,7 +42,7 @@ namespace Project.Render {
 			// Items on the floor
 			foreach (Item i in currentRoom.Items) {
 				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(i.Position.X, 0, i.Position.Y)).SetRotation(new Vector3(20.0f, 0, 0));
-				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
+					itemModel.AlbedoTexture = Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}");
 				models.Add(itemModel);
 			}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
@@ -56,7 +56,7 @@ namespace Project.Render {
 									  .SetPosition(doorPosition)
 									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
 									  .SetScale(new Vector3(2f, 4f, 1f));
-				door.AlbedoTexture = new Texture("assets/textures/door0.png");
+				door.AlbedoTexture = Texture.CreateTexture("assets/textures/door0.png");
 				//models.Add(door);
 			}
 
@@ -156,27 +156,27 @@ namespace Project.Render {
 
 			Vector2 centerPosition = new Vector2(screenSize.X / 2, screenSize.Y - (250f / 2f));
 			circles.Add(InterfaceModel.GetCachedModel("unit_circle")
-				.SetTexture(new Texture("assets/textures/interface/circle_blank.png", TextureMinFilter.Nearest))
+				.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_blank.png", TextureMinFilter.Nearest))
 				.SetScale(30f)
 				.SetPosition(centerPosition));
 
 			circles.Add(InterfaceModel.GetCachedModel("pointer")
 				.SetScale(30f)
-				.SetTexture(new Texture("assets/textures/gold.png"))
+				.SetTexture(Texture.CreateTexture("assets/textures/gold.png"))
 				.SetPosition(centerPosition)
 				.SetRotation(state.CameraYaw - 90));
 
 			foreach (Room connection in currentLevel.ConnectedRooms) {
 				float angle = currentLevel.AngleToRoom(connection);
-				Texture tex = new Texture("assets/textures/interface/circle_blank.png");
+				Texture tex = Texture.CreateTexture("assets/textures/interface/circle_blank.png");
 				if (connection == state.Level.PreviousRoom)
-					tex = new Texture("assets/textures/interface/circle_previous_room.png");
+					tex = Texture.CreateTexture("assets/textures/interface/circle_previous_room.png");
 				else if (connection == state.Level.EndRoom) {
-					tex = new Texture("assets/textures/interface/circle_final_room.png");
+					tex = Texture.CreateTexture("assets/textures/interface/circle_final_room.png");
 				} else if (connection == state.Level.StartRoom) {
-					tex = new Texture("assets/textures/interface/circle_start_room.png");
+					tex = Texture.CreateTexture("assets/textures/interface/circle_start_room.png");
 				} else if (connection.Visited == Room.VisitedState.Seen) {
-					tex = new Texture("assets/textures/interface/circle_not_visited.png");
+					tex = Texture.CreateTexture("assets/textures/interface/circle_not_visited.png");
 				}
 
 				Vector2 connectionPosition = centerPosition + new Vector2((float)Math.Cos(angle) * 75, (float)Math.Sin(angle) * 75);
@@ -202,7 +202,7 @@ namespace Project.Render {
 				InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle")
 					.SetPosition(new Vector2(screenSize.X / 2, 150))
 					.SetScale(150f / 2)
-					.SetTexture(new Texture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
 				InterfaceString u = new InterfaceString("calibri", "[ U ]");
 				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 40f));
 				node.Children.AddRange(new RenderableNode[] { currentItem, u });
@@ -216,7 +216,7 @@ namespace Project.Render {
 					.SetPosition(new Vector2((screenSize.X / 2) + 150, 100))
 					.SetScale(100f / 2)
 					.SetOpacity(0.5f)
-					.SetTexture(new Texture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}"));
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}"));
 				InterfaceString spinRight = new InterfaceString("calibri", "[E]");
 				spinRight.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 150, 165));
 				node.Children.AddRange(new RenderableNode[] { rightItem, spinRight });
@@ -230,7 +230,7 @@ namespace Project.Render {
 					.SetPosition(new Vector2((screenSize.X / 2) - 150, 100))
 					.SetScale(100f / 2)
 					.SetOpacity(0.5f)
-					.SetTexture(new Texture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}"));
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}"));
 				InterfaceString spinLeft = new InterfaceString("calibri", "[Q]");
 				spinLeft.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 150, 165));
 				node.Children.AddRange(new RenderableNode[] { leftItem, spinLeft });
@@ -248,7 +248,7 @@ namespace Project.Render {
 			Vector2 screenSize = Renderer.INSTANCE.Size;
 
 			interfaceNode.Children.Add(InterfaceModel.GetCachedModel("unit_rectangle")
-				.SetTexture(new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest))
+				.SetTexture(Texture.CreateTexture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest))
 				.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f))
 				.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2)));
 
@@ -280,15 +280,15 @@ namespace Project.Render {
 					screenSize.Y - (screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 				);
 				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(screenSpacePosition);
-				circle.SetTexture(new Texture("assets/textures/interface/circle_blank.png"));
+				circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_blank.png"));
 				if (current == state.Level.EndRoom) {
-					circle.SetTexture(new Texture("assets/textures/interface/circle_final_room.png"));
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_final_room.png"));
 				} else if (current == state.Level.StartRoom) {
-					circle.SetTexture(new Texture("assets/textures/interface/circle_start_room.png"));
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_start_room.png"));
 				} else if (current == state.Level.PreviousRoom) {
-					circle.SetTexture(new Texture("assets/textures/interface/circle_previous_room.png"));
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_previous_room.png"));
 				} else if (current.Visited == Room.VisitedState.Seen) {
-					circle.SetTexture(new Texture("assets/textures/interface/circle_not_visited.png"));
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_not_visited.png"));
 				}
 				circle.SetScale(40f);
 				roomNodes.Add(circle);
@@ -323,7 +323,7 @@ namespace Project.Render {
 
 			interfaceNode.Children.Add(InterfaceModel.GetCachedModel("unit_circle")
 				.SetScale(30f)
-				.SetTexture(new Texture("assets/textures/gold.png"))
+				.SetTexture(Texture.CreateTexture("assets/textures/gold.png"))
 				.SetPosition(pointerPosition));
 
 			return interfaceNode;

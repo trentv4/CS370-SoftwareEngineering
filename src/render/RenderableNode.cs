@@ -33,7 +33,7 @@ namespace Project.Render {
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public bool IsFog { get; private set; } = false;
-		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
+		public Texture AlbedoTexture = Texture.CreateTexture("assets/textures/null.png");
 
 		private int _indexLength;
 
@@ -329,7 +329,7 @@ namespace Project.Render {
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
-		public Texture AlbedoTexture { get; private set; } = new Texture("assets/textures/null.png");
+		public Texture AlbedoTexture { get; private set; } = Texture.CreateTexture("assets/textures/null.png");
 		public float Opacity { get; private set; } = 1.0f;
 
 		private int _indexLength;
