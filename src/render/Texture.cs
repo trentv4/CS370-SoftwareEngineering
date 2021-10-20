@@ -35,6 +35,7 @@ namespace Project.Render {
 				return new Texture(_textureCache[cacheName]);
 			}
 
+			StbImage.stbi__vertically_flip_on_load = 1;
 			ImageResult image;
 			using (FileStream stream = File.OpenRead(diskLocation)) {
 				image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
