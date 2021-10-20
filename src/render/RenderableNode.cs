@@ -126,6 +126,20 @@ namespace Project.Render {
 			return this;
 		}
 
+		public Model SetVertices(float[] vertexData) {
+			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+			return this;
+		}
+
+		public Model SetIndices(uint[] indexData) {
+			_indexLength = indexData.Length;
+
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, indexData.Length * sizeof(uint), indexData, BufferUsageHint.StaticDraw);
+			return this;
+		}
+
 		public static void CreateUnitModels() {
 			// Unit rectangle (2 dimensional)
 			new Model(new float[] {

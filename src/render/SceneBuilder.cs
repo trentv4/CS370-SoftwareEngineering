@@ -13,6 +13,8 @@ namespace Project.Render {
 		/// <summary> Specific reference to the player model, rendered after the scene is rendered, but in the same world space. </summary>
 		public Model PlayerModel;
 
+		private Model _fogWall;
+
 		/// <summary> Creates one-time objects, in particular the player model. </summary>
 		public void Build() {
 			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
@@ -31,12 +33,9 @@ namespace Project.Render {
 			float roomSize = 10.0f;
 
 			// Floor
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(25f);
+			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(40f);
 			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
 			models.Add(plane);
-
-			// Wall
-			models.Add(Model.GetCachedModel("unit_cylinder").SetFoggy(true).SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(roomSize, 10f, roomSize)));
 
 			//try/catch is a temporary fix.
 			try {
@@ -58,11 +57,56 @@ namespace Project.Render {
 									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
 									  .SetScale(new Vector3(2f, 4f, 1f));
 				door.AlbedoTexture = new Texture("assets/textures/door0.png");
-				models.Add(door);
+				//models.Add(door);
 			}
+
+			// Room connectors (doorways)
+			List<float> connectionAngles = new List<float>();
+			foreach (Room r in currentRoom.ConnectedRooms) {
+				float angle = currentRoom.AngleToRoom(r);
+				if (angle < 0) angle = (360 * Renderer.RCF) + angle;
+				connectionAngles.Add(angle);
+			}
+			uint density = 360;
+			if (_fogWall == null) {
+				List<uint> indices = new List<uint>();
+				for (uint g = 0; g < density * 2 - 2; g++) {
+					indices.AddRange(new uint[] { g, g + 1, g + 2 });
+				}
+				indices.AddRange(new uint[] { density * 2 - 2, density * 2 - 1, 0, density * 2 - 1, 0, 1 });
+				_fogWall = new Model(new float[] { 0 }, indices.ToArray())
+					.SetFoggy(true)
+					.SetPosition(new Vector3(0f, -1f, 00f))
+					.SetScale(new Vector3(roomSize, 10f, roomSize));
+			}
+
+			List<float> vc = new List<float>();
+			float transparency = 1.0f;
+			for (uint g = 0; g < density; g++) {
+				float angle = ((float)g) * Renderer.RCF;
+
+				float minDistance = 360;
+				foreach (float a in connectionAngles) {
+					float x = Math.Min(Math.Abs(angle - a), 6.28f - Math.Abs((angle - a)));
+					minDistance = Math.Min(minDistance, x);
+				}
+
+				float depth = 0.5f + (1 / (minDistance * 20));
+				depth = Math.Min(depth, 3);
+				float color = minDistance;
+				float cos = depth * (float)Math.Sin(angle);
+				float sin = depth * (float)Math.Cos(angle);
+				vc.AddRange(new[] { cos, 0.0f, sin });
+				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
+				vc.AddRange(new[] { cos, 1.0f, sin });
+				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
+			}
+
+			_fogWall.SetVertices(vc.ToArray());
 
 			RenderableNode Scene = new RenderableNode();
 			Scene.Children.AddRange(models);
+			Scene.Children.Add(_fogWall);
 			return Scene;
 		}
 	}
