@@ -130,7 +130,8 @@ namespace Project.Render {
 			// Draw front faces of fog objects
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			FogProgram.Use();
-			GL.BindTextureUnit(0, _fogDepthTextureID);
+			GL.ActiveTexture(TextureUnit.Texture0);
+			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
