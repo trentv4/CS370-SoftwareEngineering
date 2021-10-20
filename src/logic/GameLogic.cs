@@ -175,7 +175,21 @@ namespace Project {
 						Level.CurrentRoom = nextRoom;
 						Level.Score += 100;
 						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+
+						Level.CurrentRoom.Visited = Room.VisitedState.Visited;
+						foreach (Room c in Level.CurrentRoom.ConnectedRooms) {
+							if (c.Visited == Room.VisitedState.NotSeen) {
+								c.Visited = Room.VisitedState.Seen;
+							}
+						}
 					}
+				}
+			}
+
+			//Debug full level visibility
+			if (Input.IsKeyPressed(Keys.V)) {
+				foreach (Room room in Level.Rooms) {
+					room.Visited = Room.VisitedState.Seen;
 				}
 			}
 		}
