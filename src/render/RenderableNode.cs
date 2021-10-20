@@ -33,7 +33,7 @@ namespace Project.Render {
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public bool IsFog { get; private set; } = false;
-		public Texture AlbedoTexture = Texture.CreateTexture("assets/textures/null.png");
+		public Texture AlbedoTexture { get; private set; } = Texture.CreateTexture("assets/textures/null.png");
 
 		private int _indexLength;
 
@@ -123,6 +123,11 @@ namespace Project.Render {
 		/// <summary> Sets the fog status. If true, the object will be rendered as volumetric fog. Be sure that your backfaces are actually back faces! </summary>
 		public Model SetFoggy(bool isFoggy) {
 			this.IsFog = isFoggy;
+			return this;
+		}
+
+		public Model SetTexture(Texture texture) {
+			this.AlbedoTexture = texture;
 			return this;
 		}
 

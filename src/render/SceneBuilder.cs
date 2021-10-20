@@ -12,10 +12,11 @@ namespace Project.Render {
 		public RenderableNode Scene;
 		/// <summary> Specific reference to the player model, rendered after the scene is rendered, but in the same world space. </summary>
 		public Model PlayerModel;
-
+		/// <summary> Cached reference to the fog wall surrounding a room. This reuses the same vertex buffers on the GPU, and only new vertices
+		/// are uploaded to the GPU to update instead of creating new objects for every room. This object is stored in the scene hierarchy automatically. </summary>
 		private Model _fogWall;
 
-		/// <summary> Creates one-time objects, in particular the player model. </summary>
+		/// <summary> Creates one-time objects. </summary>
 		public void Build() {
 			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
 		}
@@ -28,46 +29,41 @@ namespace Project.Render {
 
 		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
 		public RenderableNode BuildRoom(Room currentRoom) {
-			List<Model> models = new List<Model>();
+			RenderableNode Scene = new RenderableNode();
 
 			float roomSize = 10.0f;
 
 			// Floor
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(40f);
-			plane.AlbedoTexture = Texture.CreateTexture("assets/textures/plane.png");
-			models.Add(plane);
+			Scene.Children.Add(Model.GetCachedModel("unit_circle")
+				.SetPosition(new Vector3(0, -1f, 0))
+				.SetRotation(new Vector3(0f, 90f, 0))
+				.SetScale(roomSize * 4)
+				.SetTexture(Texture.CreateTexture("assets/textures/plane.png")));
 
 			//try/catch is a temporary fix.
 			try {
-			// Items on the floor
-			foreach (Item i in currentRoom.Items) {
-				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(i.Position.X, 0, i.Position.Y)).SetRotation(new Vector3(20.0f, 0, 0));
-					itemModel.AlbedoTexture = Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}");
-				models.Add(itemModel);
-			}
+				// Items on the floor
+				foreach (Item i in currentRoom.Items) {
+					Scene.Children.Add(Model.GetCachedModel("unit_rectangle")
+						.SetPosition(new Vector3(i.Position.X, 0, i.Position.Y))
+						.SetRotation(new Vector3(20.0f, 0, 0))
+						.SetTexture(Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}")));
+				}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
 
 			// Room connectors (doorways)
-			foreach (Room r in currentRoom.ConnectedRooms) {
-				float angle = currentRoom.AngleToRoom(r);
-				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * (roomSize - 0.1f);
 
-				Model door = Model.GetCachedModel("unit_rectangle")
-									  .SetPosition(doorPosition)
-									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
-									  .SetScale(new Vector3(2f, 4f, 1f));
-				door.AlbedoTexture = Texture.CreateTexture("assets/textures/door0.png");
-				//models.Add(door);
-			}
-
-			// Room connectors (doorways)
+			// Creates a list of angles pointing towards neighboring room connections
 			List<float> connectionAngles = new List<float>();
 			foreach (Room r in currentRoom.ConnectedRooms) {
 				float angle = currentRoom.AngleToRoom(r);
 				if (angle < 0) angle = (360 * Renderer.RCF) + angle;
 				connectionAngles.Add(angle);
 			}
+
 			uint density = 360;
+
+			// If the fog wall is null, generate the indices and create the model.
 			if (_fogWall == null) {
 				List<uint> indices = new List<uint>();
 				for (uint g = 0; g < density * 2 - 2; g++) {
@@ -81,32 +77,24 @@ namespace Project.Render {
 			}
 
 			List<float> vc = new List<float>();
-			float transparency = 1.0f;
 			for (uint g = 0; g < density; g++) {
-				float angle = ((float)g) * Renderer.RCF;
+				float angle = (float)g * Renderer.RCF;
 
 				float minDistance = 360;
 				foreach (float a in connectionAngles) {
-					float x = Math.Min(Math.Abs(angle - a), 6.28f - Math.Abs((angle - a)));
-					minDistance = Math.Min(minDistance, x);
+					minDistance = Math.Min(minDistance, Math.Min(Math.Abs(angle - a), (360f * Renderer.RCF) - Math.Abs((angle - a))));
 				}
 
-				float depth = 0.5f + (1 / (minDistance * 20));
-				depth = Math.Min(depth, 3);
-				float color = minDistance;
-				float cos = depth * (float)Math.Sin(angle);
+				float depth = Math.Min(0.5f + (1 / (minDistance * 20)), 3);
+				float cos = depth * (float)Math.Sin(angle); // just ignore the mismatch... legacy code
 				float sin = depth * (float)Math.Cos(angle);
-				vc.AddRange(new[] { cos, 0.0f, sin });
-				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
-				vc.AddRange(new[] { cos, 1.0f, sin });
-				vc.AddRange(new[] { 0f, 0f, 0f, color, color, color, transparency, 0.0f, 0.0f });
+				vc.AddRange(new[] { cos, 0.0f, sin, 0f, 0f, 0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f });
+				vc.AddRange(new[] { cos, 1.0f, sin, 0f, 0f, 0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f });
 			}
 
 			_fogWall.SetVertices(vc.ToArray());
-
-			RenderableNode Scene = new RenderableNode();
-			Scene.Children.AddRange(models);
 			Scene.Children.Add(_fogWall);
+
 			return Scene;
 		}
 	}
@@ -117,24 +105,19 @@ namespace Project.Render {
 		public RenderableNode Map;
 		/// <summary> Unimplemented. </summary>
 		public RenderableNode MainMenu;
-		/// <summary> Unimplemented. </summary>
+		/// <summary> Interface show during primary gameplay. Contains the inventory and compass. </summary>
 		public RenderableNode InGameInterface;
 
-		/// <summary> Creates one-time objects, in particular the main menu and in-game interface shell. </summary>
-		public InterfaceRoot Build() {
-			return this;
-		}
-
 		public InterfaceRoot Rebuild(GameState state) {
-			Map = BuildMapInterface(state);
-			InGameInterface = BuildInGameInterface(state);
+			BuildMapInterface(state);
+			BuildInGameInterface(state);
 			return this;
 		}
 
 		/// <summary> Draws different interface nodes based on the current game state. </summary>
 		public void Render(GameState state) {
 			if (state.IsInGame) {
-				InGameInterface = BuildInGameInterface(state);
+				BuildInGameInterface(state);
 				InGameInterface.Render();
 				if (state.IsViewingMap)
 					Map.Render();
@@ -143,7 +126,7 @@ namespace Project.Render {
 			}
 		}
 
-		public RenderableNode BuildInGameInterface(GameState state) {
+		public void BuildInGameInterface(GameState state) {
 			RenderableNode node = new RenderableNode();
 			Room currentLevel = state.Level.CurrentRoom;
 			Vector2 screenSize = Renderer.INSTANCE.Size;
@@ -236,11 +219,11 @@ namespace Project.Render {
 				node.Children.AddRange(new RenderableNode[] { leftItem, spinLeft });
 			}
 
-			return node;
+			InGameInterface = node;
 		}
 
 		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
-		public RenderableNode BuildMapInterface(GameState state) {
+		public void BuildMapInterface(GameState state) {
 			RenderableNode interfaceNode = new RenderableNode();
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
@@ -326,7 +309,7 @@ namespace Project.Render {
 				.SetTexture(Texture.CreateTexture("assets/textures/gold.png"))
 				.SetPosition(pointerPosition));
 
-			return interfaceNode;
+			Map = interfaceNode;
 		}
 	}
 }
