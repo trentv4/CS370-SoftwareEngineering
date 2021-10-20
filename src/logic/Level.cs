@@ -33,13 +33,14 @@ namespace Project.Levels {
 				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 4, MinRoomsPerPath = 3, MaxRoomsPerPath = 7, PruneChance = 0.5f, SecondaryPathChance = 0.5f },
 			};
 
-		public Level() {
-			TryGenerateLevel(1000);
+		public Level(bool generateLevel = true) {
+			if (generateLevel)
+				TryGenerateLevel(1000);
 		}
 
 		/// <summary>Make a deep copy</summary>
 		public object Clone() {
-			Level copy = new Level();
+			Level copy = new Level(false);
 			copy.Score = Score;
 			copy.Player = (Player)Player.Clone();
 			copy.Rooms = (Room[])Rooms.Clone();
