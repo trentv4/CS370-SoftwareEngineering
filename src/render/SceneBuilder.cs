@@ -4,7 +4,6 @@ using Project.Levels;
 using System;
 using OpenTK.Graphics.OpenGL4;
 using Project.Items;
-using System.Linq;
 
 namespace Project.Render {
 	/// <summary> Primary rendering root that stores custom references to track important objects in the rendering hierarchy. </summary>
@@ -13,8 +12,11 @@ namespace Project.Render {
 		public RenderableNode Scene;
 		/// <summary> Specific reference to the player model, rendered after the scene is rendered, but in the same world space. </summary>
 		public Model PlayerModel;
+		/// <summary> Cached reference to the fog wall surrounding a room. This reuses the same vertex buffers on the GPU, and only new vertices
+		/// are uploaded to the GPU to update instead of creating new objects for every room. This object is stored in the scene hierarchy automatically. </summary>
+		private Model _fogWall;
 
-		/// <summary> Creates one-time objects, in particular the player model. </summary>
+		/// <summary> Creates one-time objects. </summary>
 		public void Build() {
 			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
 		}
@@ -27,40 +29,72 @@ namespace Project.Render {
 
 		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
 		public RenderableNode BuildRoom(Room currentRoom) {
-			List<Model> models = new List<Model>();
+			RenderableNode Scene = new RenderableNode();
 
 			float roomSize = 10.0f;
 
 			// Floor
-			Model plane = Model.GetCachedModel("unit_circle").SetPosition(new Vector3(0, -1f, 0)).SetRotation(new Vector3(0f, 90f, 0)).SetScale(25f);
-			plane.AlbedoTexture = new Texture("assets/textures/plane.png");
-			models.Add(plane);
+			Scene.Children.Add(Model.GetCachedModel("unit_circle")
+				.SetPosition(new Vector3(0, -1f, 0))
+				.SetRotation(new Vector3(0f, 90f, 0))
+				.SetScale(roomSize * 4)
+				.SetTexture(Texture.CreateTexture("assets/textures/plane.png")));
 
-			// Wall
-			models.Add(Model.GetCachedModel("unit_cylinder").SetFoggy(true).SetPosition(new Vector3(0f, -1f, 00f)).SetScale(new Vector3(roomSize, 10f, roomSize)));
-
-			// Items on the floor
-			foreach (Item i in currentRoom.Items) {
-				Model itemModel = Model.GetCachedModel("unit_rectangle").SetPosition(new Vector3(i.Position.X, 0, i.Position.Y)).SetRotation(new Vector3(20.0f, 0, 0));
-				itemModel.AlbedoTexture = new Texture($"assets/textures/{i.Definition.TextureName}");
-				models.Add(itemModel);
-			}
+			//try/catch is a temporary fix.
+			try {
+				// Items on the floor
+				foreach (Item i in currentRoom.Items) {
+					Scene.Children.Add(Model.GetCachedModel("unit_rectangle")
+						.SetPosition(new Vector3(i.Position.X, 0, i.Position.Y))
+						.SetRotation(new Vector3(20.0f, 0, 0))
+						.SetTexture(Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}")));
+				}
+			} catch (Exception e) { Console.WriteLine(e.ToString()); }
 
 			// Room connectors (doorways)
+
+			// Creates a list of angles pointing towards neighboring room connections
+			List<float> connectionAngles = new List<float>();
 			foreach (Room r in currentRoom.ConnectedRooms) {
 				float angle = currentRoom.AngleToRoom(r);
-				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), 0, (float)Math.Cos(angle)) * (roomSize - 0.1f);
-
-				Model door = Model.GetCachedModel("unit_rectangle")
-									  .SetPosition(doorPosition)
-									  .SetRotation(new Vector3(0, angle / Renderer.RCF, 0))
-									  .SetScale(new Vector3(2f, 4f, 1f));
-				door.AlbedoTexture = new Texture("assets/textures/door0.png");
-				models.Add(door);
+				if (angle < 0) angle = (360 * Renderer.RCF) + angle;
+				connectionAngles.Add(angle);
 			}
 
-			RenderableNode Scene = new RenderableNode();
-			Scene.Children.AddRange(models);
+			uint density = 360;
+
+			// If the fog wall is null, generate the indices and create the model.
+			if (_fogWall == null) {
+				List<uint> indices = new List<uint>();
+				for (uint g = 0; g < density * 2 - 2; g++) {
+					indices.AddRange(new uint[] { g, g + 1, g + 2 });
+				}
+				indices.AddRange(new uint[] { density * 2 - 2, density * 2 - 1, 0, density * 2 - 1, 0, 1 });
+				_fogWall = new Model(new float[] { 0 }, indices.ToArray())
+					.SetFoggy(true)
+					.SetPosition(new Vector3(0f, -1f, 00f))
+					.SetScale(new Vector3(roomSize, 10f, roomSize));
+			}
+
+			List<float> vc = new List<float>();
+			for (uint g = 0; g < density; g++) {
+				float angle = (float)g * Renderer.RCF;
+
+				float minDistance = 360;
+				foreach (float a in connectionAngles) {
+					minDistance = Math.Min(minDistance, Math.Min(Math.Abs(angle - a), (360f * Renderer.RCF) - Math.Abs((angle - a))));
+				}
+
+				float depth = Math.Min(0.5f + (1 / (minDistance * 20)), 3);
+				float cos = depth * (float)Math.Sin(angle); // just ignore the mismatch... legacy code
+				float sin = depth * (float)Math.Cos(angle);
+				vc.AddRange(new[] { cos, 0.0f, sin, 0f, 0f, 0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f });
+				vc.AddRange(new[] { cos, 1.0f, sin, 0f, 0f, 0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f });
+			}
+
+			_fogWall.SetVertices(vc.ToArray());
+			Scene.Children.Add(_fogWall);
+
 			return Scene;
 		}
 	}
@@ -71,24 +105,19 @@ namespace Project.Render {
 		public RenderableNode Map;
 		/// <summary> Unimplemented. </summary>
 		public RenderableNode MainMenu;
-		/// <summary> Unimplemented. </summary>
+		/// <summary> Interface show during primary gameplay. Contains the inventory and compass. </summary>
 		public RenderableNode InGameInterface;
 
-		/// <summary> Creates one-time objects, in particular the main menu and in-game interface shell. </summary>
-		public InterfaceRoot Build() {
-			return this;
-		}
-
 		public InterfaceRoot Rebuild(GameState state) {
-			Map = BuildMapInterface(state);
-			InGameInterface = BuildInGameInterface(state);
+			BuildMapInterface(state);
+			BuildInGameInterface(state);
 			return this;
 		}
 
 		/// <summary> Draws different interface nodes based on the current game state. </summary>
 		public void Render(GameState state) {
 			if (state.IsInGame) {
-				InGameInterface = BuildInGameInterface(state);
+				BuildInGameInterface(state);
 				InGameInterface.Render();
 				if (state.IsViewingMap)
 					Map.Render();
@@ -97,45 +126,124 @@ namespace Project.Render {
 			}
 		}
 
-		public RenderableNode BuildInGameInterface(GameState state) {
+		public void BuildInGameInterface(GameState state) {
+			RenderableNode node = new RenderableNode();
+			Room currentLevel = state.Level.CurrentRoom;
 			Vector2 screenSize = Renderer.INSTANCE.Size;
 			Inventory inventory = state.Level.Player.Inventory;
 
-			Item current = null;
-			Item left = null;
-			Item right = null;
-			if (inventory.Position < inventory.Items.Count && inventory.Items.Count > 0) {
-				current = inventory.Items[inventory.Position];
-			}
-			if (inventory.Position - 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position - 1 >= 0) {
-				left = inventory.Items[inventory.Position - 1];
-			}
-			if (inventory.Position + 1 < inventory.Items.Count && inventory.Items.Count > 1 && inventory.Position + 1 >= 0) {
-				right = inventory.Items[inventory.Position + 1];
+			// Minimap "rear view mirror"
+
+			List<InterfaceModel> circles = new List<InterfaceModel>();
+			List<InterfaceModel> connectionModels = new List<InterfaceModel>();
+
+			Vector2 centerPosition = new Vector2(screenSize.X / 2, screenSize.Y - (250f / 2f));
+			circles.Add(InterfaceModel.GetCachedModel("unit_circle")
+				.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_blank.png", TextureMinFilter.Nearest))
+				.SetScale(30f)
+				.SetPosition(centerPosition));
+
+			circles.Add(InterfaceModel.GetCachedModel("pointer")
+				.SetScale(30f)
+				.SetTexture(Texture.CreateTexture("assets/textures/gold.png"))
+				.SetPosition(centerPosition)
+				.SetRotation(state.CameraYaw - 90));
+
+			foreach (Room connection in currentLevel.ConnectedRooms) {
+				float angle = currentLevel.AngleToRoom(connection);
+				Texture tex = Texture.CreateTexture("assets/textures/interface/circle_blank.png");
+				if (connection == state.Level.PreviousRoom)
+					tex = Texture.CreateTexture("assets/textures/interface/circle_previous_room.png");
+				else if (connection == state.Level.EndRoom) {
+					tex = Texture.CreateTexture("assets/textures/interface/circle_final_room.png");
+				} else if (connection == state.Level.StartRoom) {
+					tex = Texture.CreateTexture("assets/textures/interface/circle_start_room.png");
+				} else if (connection.Visited == Room.VisitedState.Seen) {
+					tex = Texture.CreateTexture("assets/textures/interface/circle_not_visited.png");
+				}
+
+				Vector2 connectionPosition = centerPosition + new Vector2((float)Math.Cos(angle) * 75, (float)Math.Sin(angle) * 75);
+				circles.Add(InterfaceModel.GetCachedModel("unit_circle")
+					.SetTexture(tex)
+					.SetScale(20f)
+					.SetPosition(connectionPosition));
+
+				Vector2 positionBNormalized = connectionPosition - centerPosition;
+				connectionModels.Add(InterfaceModel.GetCachedModel("unit_rectangle")
+					.SetPosition((connectionPosition + centerPosition) / 2)
+					.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f))
+					.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF));
 			}
 
-			InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2(screenSize.X / 2, 150)).SetScale(150f / 2);
-			InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) - 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-			InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle").SetPosition(new Vector2((screenSize.X / 2) + 150, 100)).SetScale(100f / 2).SetOpacity(0.5f);
-			if (current != null)
-				currentItem.AlbedoTexture = new Texture($"assets/textures/{current.Definition.TextureName}");
-			if (left != null)
-				leftItem.AlbedoTexture = new Texture($"assets/textures/{left.Definition.TextureName}");
-			if (right != null)
-				rightItem.AlbedoTexture = new Texture($"assets/textures/{right.Definition.TextureName}");
+			node.Children.AddRange(connectionModels);
+			node.Children.AddRange(circles);
 
-			RenderableNode node = new RenderableNode();
-			node.Children.AddRange(new[] { currentItem, leftItem, rightItem });
-			return node;
+			// Inventory wheel
+
+			int currentIndex = inventory.Position;
+			if (inventory.Items.Count > 0) {
+				InterfaceModel currentItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2(screenSize.X / 2, 150))
+					.SetScale(150f / 2)
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
+				InterfaceString u = new InterfaceString("calibri", "[ U ]");
+				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 40f));
+				node.Children.AddRange(new RenderableNode[] { currentItem, u });
+			}
+			if (inventory.Items.Count > 1) {
+				int rightIndex = currentIndex + 1;
+				if (rightIndex == inventory.Items.Count)
+					rightIndex = 0;
+
+				InterfaceModel rightItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2((screenSize.X / 2) + 150, 100))
+					.SetScale(100f / 2)
+					.SetOpacity(0.5f)
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[rightIndex].Definition.TextureName}"));
+				InterfaceString spinRight = new InterfaceString("calibri", "[E]");
+				spinRight.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinRight.Width / 2) * spinRight.Scale.X) + 150, 165));
+				node.Children.AddRange(new RenderableNode[] { rightItem, spinRight });
+			}
+
+			if (inventory.Items.Count > 2) {
+				int leftIndex = currentIndex - 1;
+				if (leftIndex == -1)
+					leftIndex = inventory.Items.Count - 1;
+				InterfaceModel leftItem = InterfaceModel.GetCachedModel("unit_circle")
+					.SetPosition(new Vector2((screenSize.X / 2) - 150, 100))
+					.SetScale(100f / 2)
+					.SetOpacity(0.5f)
+					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[leftIndex].Definition.TextureName}"));
+				InterfaceString spinLeft = new InterfaceString("calibri", "[Q]");
+				spinLeft.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((spinLeft.Width / 2) * spinLeft.Scale.X) - 150, 165));
+				node.Children.AddRange(new RenderableNode[] { leftItem, spinLeft });
+			}
+
+			InGameInterface = node;
 		}
 
 		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
-		public RenderableNode BuildMapInterface(GameState state) {
+		public void BuildMapInterface(GameState state) {
+			RenderableNode interfaceNode = new RenderableNode();
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
 			Room[] rooms = state.Level.Rooms;
-
 			Vector2 screenSize = Renderer.INSTANCE.Size;
+
+			interfaceNode.Children.Add(InterfaceModel.GetCachedModel("unit_rectangle")
+				.SetTexture(Texture.CreateTexture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest))
+				.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f))
+				.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2)));
+
+			interfaceNode.Children.Add(new InterfaceString("calibri", "Map (known)")
+				.SetScale(50f)
+				.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f)));
+
+			interfaceNode.Children.Add(new InterfaceString("calibri", $"Score: {state.Level.Score}")
+				.SetScale(50f)
+				.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f)));
+
+
 			Vector2 min = new Vector2(10000, 10000);
 			Vector2 max = new Vector2(0, 0);
 			foreach (Room r in rooms) {
@@ -148,71 +256,60 @@ namespace Project.Render {
 			Vector2 screenMax = new Vector2(screenSize.X - (screenSize.X / 1.25f), screenSize.Y - (screenSize.Y / 1.25f));
 
 			foreach (Room current in rooms) {
+				if (current.Visited == Room.VisitedState.NotSeen)
+					continue;
 				Vector2 screenSpacePosition = new Vector2(
-					screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-					screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+					screenSize.X - (screenMin.X + (current.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+					screenSize.Y - (screenMin.Y + (current.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 				);
 				InterfaceModel circle = InterfaceModel.GetCachedModel("unit_circle").SetPosition(screenSpacePosition);
+				circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_blank.png"));
 				if (current == state.Level.EndRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/green.png");
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_final_room.png"));
 				} else if (current == state.Level.StartRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/blue.png");
-				} else if (current == state.Level.CurrentRoom) {
-					circle.AlbedoTexture = new Texture("assets/textures/gold.png");
-				} else {
-					circle.AlbedoTexture = new Texture("assets/textures/red.png");
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_start_room.png"));
+				} else if (current == state.Level.PreviousRoom) {
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_previous_room.png"));
+				} else if (current.Visited == Room.VisitedState.Seen) {
+					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_not_visited.png"));
 				}
 				circle.SetScale(40f);
 				roomNodes.Add(circle);
 
 				foreach (Room connection in current.ConnectedRooms) {
 					if (current.Position.X < connection.Position.X) continue;
+					if (connection.Visited == Room.VisitedState.NotSeen) continue;
 					Vector2 positionA = screenSpacePosition;
 					Vector2 positionB = new Vector2(
-						screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-						screenMin.Y + (connection.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+						screenSize.X - (screenMin.X + (connection.Position.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+						screenSize.Y - (screenMin.Y + (connection.Position.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 					);
 					Vector2 positionBNormalized = positionB - positionA;
 
-					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle").SetPosition((positionA + positionB) / 2);
-					connector.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f));
-					connector.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
+					InterfaceModel connector = InterfaceModel.GetCachedModel("unit_rectangle")
+						.SetPosition((positionA + positionB) / 2)
+						.SetScale(new Vector2(Vector2.Distance(Vector2.Zero, positionBNormalized), 10f))
+						.SetRotation((float)Math.Atan2(positionBNormalized.Y, positionBNormalized.X) / Renderer.RCF);
 
 					connectorNodes.Add(connector);
 				}
 			}
 
-			InterfaceModel mapBackground = InterfaceModel.GetCachedModel("unit_rectangle");
-			mapBackground.AlbedoTexture = new Texture("assets/textures/interface/map_background.png", TextureMinFilter.Nearest);
-			mapBackground.SetScale(new Vector2(screenSize.X / 1.25f, screenSize.Y / 1.25f));
-			mapBackground.SetPosition(new Vector2(screenSize.X / 2, screenSize.Y / 2));
-
-			InterfaceString mapLabel = new InterfaceString("calibri", "Map (known)");
-			mapLabel.SetScale(50f);
-			mapLabel.SetPosition(new Vector2(screenSize.X / 8.5f, screenSize.Y / 1.2f));
-
-			InterfaceString score = new InterfaceString("calibri", $"Score: {state.Level.Score}");
-			score.SetScale(50f);
-			score.SetPosition(new Vector2(screenSize.X / 1.4f, screenSize.Y / 1.2f));
-
 			Vector2 currentRoom = state.Level.CurrentRoom.Position;
 			Vector2 pointerPosition = new Vector2(
-				screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X),
-				screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y)
+				screenSize.X - (screenMin.X + (currentRoom.X - min.X) * (screenMax.X - screenMin.X) / (max.X - min.X)),
+				screenSize.Y - (screenMin.Y + (currentRoom.Y - min.Y) * (screenMax.Y - screenMin.Y) / (max.Y - min.Y))
 			);
-			InterfaceModel pointer = InterfaceModel.GetCachedModel("pointer").SetScale(50f);
-			pointer.AlbedoTexture = new Texture("assets/textures/gold.png");
-			pointer.SetPosition(pointerPosition);
-			pointer.SetRotation(state.CameraYaw + 90);
 
-			RenderableNode interfaceNode = new RenderableNode();
-			interfaceNode.Children.Add(mapBackground);
 			interfaceNode.Children.AddRange(connectorNodes.ToArray());
 			interfaceNode.Children.AddRange(roomNodes.ToArray());
-			interfaceNode.Children.Add(mapLabel);
-			interfaceNode.Children.Add(score);
-			interfaceNode.Children.Add(pointer);
-			return interfaceNode;
+
+			interfaceNode.Children.Add(InterfaceModel.GetCachedModel("unit_circle")
+				.SetScale(30f)
+				.SetTexture(Texture.CreateTexture("assets/textures/gold.png"))
+				.SetPosition(pointerPosition));
+
+			Map = interfaceNode;
 		}
 	}
 }

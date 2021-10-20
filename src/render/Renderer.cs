@@ -165,7 +165,7 @@ namespace Project.Render {
 				bool result = EventQueue.TryDequeue(out eventString);
 				switch (eventString) {
 					case "LevelRegenerated":
-						_interfaceRoot.Map = _interfaceRoot.BuildMapInterface(state);
+						_interfaceRoot.BuildMapInterface(state);
 						_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
 						break;
 					default:

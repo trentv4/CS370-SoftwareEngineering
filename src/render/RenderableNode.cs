@@ -33,7 +33,7 @@ namespace Project.Render {
 		public Vector3 Rotation { get; private set; } = Vector3.Zero;
 		public Vector3 Position { get; private set; } = Vector3.Zero;
 		public bool IsFog { get; private set; } = false;
-		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
+		public Texture AlbedoTexture { get; private set; } = Texture.CreateTexture("assets/textures/null.png");
 
 		private int _indexLength;
 
@@ -123,6 +123,25 @@ namespace Project.Render {
 		/// <summary> Sets the fog status. If true, the object will be rendered as volumetric fog. Be sure that your backfaces are actually back faces! </summary>
 		public Model SetFoggy(bool isFoggy) {
 			this.IsFog = isFoggy;
+			return this;
+		}
+
+		public Model SetTexture(Texture texture) {
+			this.AlbedoTexture = texture;
+			return this;
+		}
+
+		public Model SetVertices(float[] vertexData) {
+			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+			return this;
+		}
+
+		public Model SetIndices(uint[] indexData) {
+			_indexLength = indexData.Length;
+
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, indexData.Length * sizeof(uint), indexData, BufferUsageHint.StaticDraw);
 			return this;
 		}
 
@@ -315,7 +334,7 @@ namespace Project.Render {
 		public Vector2 Scale { get; private set; } = Vector2.One;
 		public float Rotation { get; private set; } = 0.0f;
 		public Vector2 Position { get; private set; } = Vector2.Zero;
-		public Texture AlbedoTexture = new Texture("assets/textures/null.png");
+		public Texture AlbedoTexture { get; private set; } = Texture.CreateTexture("assets/textures/null.png");
 		public float Opacity { get; private set; } = 1.0f;
 
 		private int _indexLength;
@@ -400,6 +419,11 @@ namespace Project.Render {
 		/// <summary> Chainable method to set the position of this object. </summary>
 		public InterfaceModel SetPosition(Vector2 position) {
 			this.Position = position;
+			return this;
+		}
+
+		public InterfaceModel SetTexture(Texture texture) {
+			this.AlbedoTexture = texture;
 			return this;
 		}
 
