@@ -71,18 +71,22 @@ namespace Project.Render {
 			if(ShaderProgram_ID != -1) //Delete existing shader when reloading
 				GL.DeleteProgram(ShaderProgram_ID);
 			ShaderProgram_ID = newShaderProgram_ID;
+			SetConstantUniforms();
 		}
 
 		/// <summary> Chainable method to change state to this program, and bind appropriate state or uniforms. </summary>
 		public ShaderProgram Use() {
+			TryReload();
 			GL.UseProgram(ShaderProgram_ID);
 			GL.BindVertexArray(VertexArrayObject_ID);
 			Renderer.INSTANCE.CurrentProgram = this;
 			return this;
 		}
 
+		protected virtual void SetConstantUniforms() { }
+
 		/// <summary> Reload the shader if its file(s) were changed </summary>
-		public bool TryReload() {
+		private bool TryReload() {
 			bool twoFiles = _shaderPath0 != null && _shaderPath1 != null;
 			if (twoFiles) { //Separate shader files
 				if (_lastWriteTime0 != File.GetLastWriteTime(_shaderPath0) || _lastWriteTime1 != File.GetCreationTime(_shaderPath1)) {
@@ -193,7 +197,6 @@ namespace Project.Render {
 		public readonly int UniformView_ID;
 		public readonly int UniformPerspective_ID;
 		public readonly int UniformDepth_ID;
-		public readonly int UniformScreenSize_ID;
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/FogShader.
 		/// The purpose of this shader is a fancy fog shader, calculating fog depth via backface to frontface distance. </summary>
@@ -202,7 +205,10 @@ namespace Project.Render {
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformDepth_ID = GL.GetUniformLocation(ShaderProgram_ID, "depth");
-			UniformScreenSize_ID = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
+		}
+
+		protected override void SetConstantUniforms() {
+			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
 		}
 	}
 
@@ -210,14 +216,16 @@ namespace Project.Render {
 	/// Uniforms: vec2 screenSize, float vignetteStrength <br/>
 	/// Attribs: none </summary>
 	public class ShaderProgramVignette : ShaderProgram {
-		public readonly int UniformScreenSize_ID;
 		public readonly int UniformVignetteStrength_ID;
 
 		/// <summary> Creates a ShaderProgram with uniforms configured for src/render/shaders/VignetteShader.
 		/// The purpose of this shader is to create the fullscreen vignette effect, at configurable at runtime strength. </summary>
 		public ShaderProgramVignette(string unifiedPath) : base(unifiedPath) {
-			UniformScreenSize_ID = GL.GetUniformLocation(ShaderProgram_ID, "screenSize");
 			UniformVignetteStrength_ID = GL.GetUniformLocation(ShaderProgram_ID, "vignetteStrength");
+		}
+
+		protected override void SetConstantUniforms() {
+			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
 		}
 	}
 }

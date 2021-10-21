@@ -60,9 +60,7 @@ namespace Project.Render {
 			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
-			GL.Uniform2(FogProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
-			GL.Uniform2(VignetteProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 
 			// Fog depth-only framebuffer and framebuffer texture creation
 			_fogFramebufferID = GL.GenFramebuffer();
@@ -110,7 +108,6 @@ namespace Project.Render {
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-			ForwardProgram.TryReload();
 			ForwardProgram.Use();
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
@@ -130,8 +127,6 @@ namespace Project.Render {
 			GL.Disable(EnableCap.CullFace);
 			// Draw front faces of fog objects
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-			if (FogProgram.TryReload())
-				GL.Uniform2(FogProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 			FogProgram.Use();
 			GL.ActiveTexture(TextureUnit.Texture0);
 			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
@@ -143,7 +138,6 @@ namespace Project.Render {
 			DebugGroup("Interface");
 			_interfaceRoot.Rebuild(state);
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-			InterfaceProgram.TryReload();
 			InterfaceProgram.Use();
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
@@ -153,7 +147,6 @@ namespace Project.Render {
 			DebugGroupEnd();
 
 			DebugGroup("Vignette");
-			VignetteProgram.TryReload();
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
