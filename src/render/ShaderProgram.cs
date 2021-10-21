@@ -61,6 +61,7 @@ namespace Project.Render {
 				//Otherwise just keep using the existing program and delete the new shaders
 				GL.DeleteShader(vertexShaderID);
 				GL.DeleteShader(fragmentShaderID);
+				GL.DeleteProgram(newShaderProgram_ID);
 				return;
 			}
 			GL.UseProgram(newShaderProgram_ID);
