@@ -72,7 +72,7 @@ namespace Project.Render {
 			if(ShaderProgram_ID != -1) //Delete existing shader when reloading
 				GL.DeleteProgram(ShaderProgram_ID);
 			ShaderProgram_ID = newShaderProgram_ID;
-			SetConstantUniforms();
+			SetUniforms();
 		}
 
 		/// <summary> Chainable method to change state to this program, and bind appropriate state or uniforms. </summary>
@@ -84,7 +84,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		protected virtual void SetConstantUniforms() { }
+		protected virtual void SetUniforms() { }
 
 		/// <summary> Reload the shader if its file(s) were changed </summary>
 		private bool TryReload() {
@@ -153,14 +153,17 @@ namespace Project.Render {
 	/// Uniforms:  mat4 model, mat4 view, mat4 perspective, sampler2D albedoTexture<br/>
 	/// Attribs: vec3 _position, vec3 _normal, vec4 _albedo, vec2 _uv </summary>
 	public class ShaderProgramForwardRenderer : ShaderProgram {
-		public readonly int UniformModel_ID;
-		public readonly int UniformView_ID;
-		public readonly int UniformPerspective_ID;
-		public readonly int UniformTextureAlbedo_ID;
+		public ShaderProgramForwardRenderer(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramForwardRenderer(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
+
+		public int UniformModel_ID { get; private set; }
+		public int UniformView_ID { get; private set; }
+		public int UniformPerspective_ID { get; private set; }
+		public int UniformTextureAlbedo_ID { get; private set; }
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/ForwardShader.
 		/// The purpose of this shader is a simpistic forward-renderer (as opposed to a deferred). </summary>
-		public ShaderProgramForwardRenderer(string unifiedPath) : base(unifiedPath) {
+		protected override void SetUniforms() {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
@@ -172,16 +175,19 @@ namespace Project.Render {
 	/// Uniforms:  mat4 model, mat4 perspective, sampler2D albedoTexture, bool isFont, float opacity<br/>
 	/// Attribs: vec2 _position, vec2 _uv </summary>
 	public class ShaderProgramInterface : ShaderProgram {
-		public readonly int UniformModel_ID;
-		public readonly int UniformPerspective_ID;
-		public readonly int UniformTextureAlbedo_ID;
-		public readonly int UniformIsFont;
-		public readonly int UniformOpacity;
+		public ShaderProgramInterface(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramInterface(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
+
+		public int UniformModel_ID { get; private set; }
+		public int UniformPerspective_ID { get; private set; }
+		public int UniformTextureAlbedo_ID { get; private set; }
+		public int UniformIsFont { get; private set; }
+		public int UniformOpacity { get; private set; }
 
 		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/InterfaceShader.
 		/// The purpose of this shader is a simpistic interface renderer. Primarily operates on textured quads. Can also support
 		/// advanced font rendering with signed distance fields when configured correctly and provided MDSDF textures. </summary>
-		public ShaderProgramInterface(string unifiedPath) : base(unifiedPath) {
+		protected override void SetUniforms() {
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
@@ -190,42 +196,39 @@ namespace Project.Render {
 		}
 	}
 
-	/// <summary> ShaderProgram for fog rendering.<br/>
+	/// <summary> ShaderProgram for fog rendering. Found at src/render/shaders/FogShader. 
+	/// The purpose of this shader is a fancy fog shader, calculating fog depth via backface to frontface distance. <br/>
 	/// Uniforms:  mat4 model, mat4 view, mat4 perspective, sampler2D depth, vec2 screenSize<br/>
 	/// Attribs: vec3 _position </summary>
 	public class ShaderProgramFog : ShaderProgram {
-		public readonly int UniformModel_ID;
-		public readonly int UniformView_ID;
-		public readonly int UniformPerspective_ID;
-		public readonly int UniformDepth_ID;
+		public ShaderProgramFog(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramFog(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
 
-		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/FogShader.
-		/// The purpose of this shader is a fancy fog shader, calculating fog depth via backface to frontface distance. </summary>
-		public ShaderProgramFog(string unifiedPath) : base(unifiedPath) {
+		public int UniformModel_ID { get; private set; }
+		public int UniformView_ID { get; private set; }
+		public int UniformPerspective_ID { get; private set; }
+		public int UniformDepth_ID { get; private set; }
+
+		protected override void SetUniforms() {
+			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
 			UniformDepth_ID = GL.GetUniformLocation(ShaderProgram_ID, "depth");
 		}
-
-		protected override void SetConstantUniforms() {
-			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
-		}
 	}
 
-	/// <summary> ShaderProgram for the vignette full-screen effect. <br/>
+	/// <summary> ShaderProgram for the vignette full-screen effect. Found at src/render/shaders/VignetteShader. <br/>
 	/// Uniforms: vec2 screenSize, float vignetteStrength <br/>
 	/// Attribs: none </summary>
 	public class ShaderProgramVignette : ShaderProgram {
-		public readonly int UniformVignetteStrength_ID;
+		public ShaderProgramVignette(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramVignette(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
 
-		/// <summary> Creates a ShaderProgram with uniforms configured for src/render/shaders/VignetteShader.
-		/// The purpose of this shader is to create the fullscreen vignette effect, at configurable at runtime strength. </summary>
-		public ShaderProgramVignette(string unifiedPath) : base(unifiedPath) {
+		public int UniformVignetteStrength_ID { get; private set; }
+
+		protected override void SetUniforms() {
 			UniformVignetteStrength_ID = GL.GetUniformLocation(ShaderProgram_ID, "vignetteStrength");
-		}
-
-		protected override void SetConstantUniforms() {
 			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
 		}
 	}
