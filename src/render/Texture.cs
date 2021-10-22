@@ -18,6 +18,19 @@ namespace Project.Render {
 			this.TextureID = TextureID;
 		}
 
+		public void Bind() {
+			Bind(TextureUnit.Texture0);
+		}
+
+		public void Bind(int unit) {
+			Bind(TextureUnit.Texture0 + unit);
+		}
+
+		public void Bind(TextureUnit unit) {
+			GL.ActiveTexture(unit);
+			GL.BindTexture(TextureTarget.Texture2D, TextureID);
+		}
+
 		/// <summary> Creates a texture with an image loaded from disk. The result is cached. </summary>
 		public static Texture CreateTexture(string diskLocation) {
 			return CreateTexture(diskLocation, TextureMinFilter.LinearMipmapLinear, TextureWrapMode.Repeat);

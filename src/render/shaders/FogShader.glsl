@@ -30,7 +30,7 @@ void main() {
 	vec2 uvs = vec2(gl_FragCoord.x / screenSize.x, gl_FragCoord.y / screenSize.y);
 	float fogFar = LinearizeDepth(texture(depthMap, uvs).x);
 	float fogNear = LinearizeDepth(gl_FragCoord.z);
-	float fogDepth = (fogFar - fogNear)/4;
-
-	FragColor = vec4(0.7, 0.7, 0.7, fogDepth);
+	float fogDepth = (fogFar - fogNear)/10;
+	fogDepth = pow(fogDepth, 0.7);
+	gl_FragDepth = 1 - fogDepth;
 }

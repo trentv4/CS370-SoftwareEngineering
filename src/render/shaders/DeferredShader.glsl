@@ -28,8 +28,8 @@ in vec3 normal;
 in vec4 albedo;
 in vec2 uv;
 
-layout (location = 0) out vec4 gNormal;
-layout (location = 1) out vec4 gAlbedoSpec;
+layout (location = 0) out vec4 gAlbedoSpec;
+layout (location = 1) out vec4 gNormal;
 
 uniform sampler2D albedoTexture;
 

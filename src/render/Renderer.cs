@@ -29,6 +29,7 @@ namespace Project.Render {
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
 		public ShaderProgramVignette VignetteProgram { get; private set; } // Vignette renderer
+		public ShaderProgramCompositor CompositorShader { get; private set; }
 		public ShaderProgram CurrentProgram;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
@@ -39,6 +40,8 @@ namespace Project.Render {
 		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
 		private static Framebuffer _fogFramebuffer;
 		private static Framebuffer _gBuffer;
+		private static Framebuffer _interfaceBuffer;
+		private static Framebuffer _fogOutputFramebuffer;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -63,15 +66,22 @@ namespace Project.Render {
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
+			CompositorShader = new ShaderProgramCompositor("src/render/shaders/CompositorShader.glsl");
 
 			// Fog depth-only framebuffer and framebuffer texture creation
 			_fogFramebuffer = new Framebuffer();
-			_fogFramebuffer.SetDepthBuffer();
+			_fogFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
+
+			_fogOutputFramebuffer = new Framebuffer();
+			_fogOutputFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
 
 			_gBuffer = new Framebuffer();
-			_gBuffer.SetDepthBuffer();
-			_gBuffer.SetAttachment(0, PixelInternalFormat.Srgb8Alpha8, PixelFormat.Rgba);
-			_gBuffer.SetAttachment(1, PixelInternalFormat.Rgba, PixelFormat.Rgba);
+			_gBuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
+			_gBuffer.SetAttachment(0);
+			_gBuffer.SetAttachment(1);
+
+			_interfaceBuffer = new Framebuffer();
+			_interfaceBuffer.SetAttachment(0, PixelInternalFormat.Rgba, PixelFormat.Rgba);
 
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
@@ -99,17 +109,19 @@ namespace Project.Render {
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
-			DebugGroup("Geometry pass");
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
+			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
+			/*	
+			DebugGroup("Geometry pass");
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			ForwardProgram.Use();
-			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
+			*/
 
 			DebugGroup("Deferred g-buffer pass");
 			_gBuffer.Use();
@@ -120,9 +132,12 @@ namespace Project.Render {
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
+
 			DebugGroup("Fog");
 			// Blit existing depth buffer to fog depth buffer
-			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
+			_fogFramebuffer.Use();
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _gBuffer.FramebufferID);
 			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebuffer.FramebufferID);
 			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
 			// Draw depth of back faces of fog to fog depth buffer
@@ -131,10 +146,10 @@ namespace Project.Render {
 			_sceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
 			// Draw front faces of fog objects
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fogOutputFramebuffer.FramebufferID);
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 			FogProgram.Use();
-			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, _fogFramebuffer.Depth.TextureID);
+			_fogFramebuffer.Depth.Bind();
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
@@ -142,16 +157,27 @@ namespace Project.Render {
 
 			DebugGroup("Interface");
 			_interfaceRoot.Rebuild(state);
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			_interfaceBuffer.Use();
 			InterfaceProgram.Use();
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
-			GL.Disable(EnableCap.DepthTest);
 			_interfaceRoot.Render(state);
-			GL.Enable(EnableCap.DepthTest);
+			DebugGroupEnd();
+
+			DebugGroup("Compositor");
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			CompositorShader.Use();
+			// Importing data from other buffers
+			_gBuffer.GetAttachment(0).Bind(0);
+			_fogOutputFramebuffer.Depth.Bind(1);
+			// lighting bind 2
+			_interfaceBuffer.GetAttachment(0).Bind(3);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
 			DebugGroup("Vignette");
+			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);

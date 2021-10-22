@@ -20,16 +20,24 @@ namespace Project.Render {
 			Use();
 		}
 
-		public Framebuffer SetDepthBuffer() {
+		public Framebuffer SetDepthBuffer(PixelInternalFormat depthComponent) {
 			Depth = new Texture(GL.GenTexture());
 			GL.BindTexture(TextureTarget.Texture2D, Depth.TextureID);
-			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, Renderer.INSTANCE.Size.X,
+			GL.TexImage2D(TextureTarget.Texture2D, 0, depthComponent, Renderer.INSTANCE.Size.X,
 						Renderer.INSTANCE.Size.Y, 0, PixelFormat.DepthComponent, PixelType.UnsignedByte, new byte[0]);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
 			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
 			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
 									TextureTarget.Texture2D, Depth.TextureID, 0);
 			return this;
+		}
+
+		public Texture GetAttachment(int attachment) {
+			return _bufferTextures[attachment];
+		}
+
+		public Framebuffer SetAttachment(int attachment) {
+			return SetAttachment(attachment, PixelInternalFormat.Rgba, PixelFormat.Rgba);
 		}
 
 		public Framebuffer SetAttachment(int attachment, PixelInternalFormat internalFormat, PixelFormat externalFormat) {

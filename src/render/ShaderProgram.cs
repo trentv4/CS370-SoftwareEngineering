@@ -251,4 +251,16 @@ namespace Project.Render {
 			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
 		}
 	}
+
+	public class ShaderProgramCompositor : ShaderProgram {
+		public ShaderProgramCompositor(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramCompositor(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
+
+		protected override void SetUniforms() {
+			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_world"), 0);
+			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_fog"), 1);
+			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_lighting"), 2);
+			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_interface"), 3);
+		}
+	}
 }
