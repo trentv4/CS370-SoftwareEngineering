@@ -59,6 +59,8 @@ namespace Project.Render {
 
 		/// <summary> Creates a copy of an existing model that was cached with a name. </summary>
 		public static Model GetCachedModel(string modelName) {
+			if (_cachedModels.Count == 0)
+				CreateUnitModels();
 			System.Diagnostics.Debug.Assert(_cachedModels.ContainsKey(modelName), $"Tried to load cached model {modelName} and was unable to find it!");
 			return new Model(_cachedModels.GetValueOrDefault(modelName));
 		}
@@ -146,7 +148,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		public static void CreateUnitModels() {
+		private static void CreateUnitModels() {
 			// Unit rectangle (2 dimensional)
 			new Model(new float[] {
 					-0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
@@ -365,6 +367,8 @@ namespace Project.Render {
 
 		/// <summary> Creates a copy of an existing model that was cached with a name.</summary>
 		public static InterfaceModel GetCachedModel(string modelName) {
+			if (_cachedModels.Count == 0)
+				CreateUnitModels();
 			System.Diagnostics.Debug.Assert(_cachedModels.ContainsKey(modelName), $"Tried to load cached model {modelName} and was unable to find it!");
 			return new InterfaceModel(_cachedModels.GetValueOrDefault(modelName));
 		}
@@ -430,7 +434,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		public static void CreateUnitModels() {
+		private static void CreateUnitModels() {
 			// Unit rectangle (2 dimensional)
 			new InterfaceModel(new float[] {
 					-0.5f, -0.5f, 0.0f, 0.0f,
