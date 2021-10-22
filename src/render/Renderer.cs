@@ -25,6 +25,7 @@ namespace Project.Render {
 
 		// Render
 		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
+		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; } // Deferred rendering technique
 		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
 		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
 		public ShaderProgramVignette VignetteProgram { get; private set; } // Vignette renderer
@@ -37,6 +38,7 @@ namespace Project.Render {
 
 		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
 		private static Framebuffer _fogFramebuffer;
+		private static Framebuffer _gBuffer;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -57,6 +59,7 @@ namespace Project.Render {
 
 			// Shader program creation
 			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl");
+			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
@@ -64,6 +67,11 @@ namespace Project.Render {
 			// Fog depth-only framebuffer and framebuffer texture creation
 			_fogFramebuffer = new Framebuffer();
 			_fogFramebuffer.SetDepthBuffer();
+
+			_gBuffer = new Framebuffer();
+			_gBuffer.SetDepthBuffer();
+			_gBuffer.SetAttachment(0, PixelInternalFormat.Srgb8Alpha8, PixelFormat.Rgba);
+			_gBuffer.SetAttachment(1, PixelInternalFormat.Rgba, PixelFormat.Rgba);
 
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
@@ -75,6 +83,7 @@ namespace Project.Render {
 
 			// Shorthand for setting vertex shader attribs
 			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
+			DeferredProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			InterfaceProgram.SetVertexAttribPointers(new[] { 2, 2 });
 			FogProgram.SetVertexAttribPointers(new[] { 3 });
 		}
@@ -99,6 +108,15 @@ namespace Project.Render {
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
 			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
+			_sceneHierarchy.Render();
+			DebugGroupEnd();
+
+			DebugGroup("Deferred g-buffer pass");
+			_gBuffer.Use();
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			DeferredProgram.Use();
+			GL.UniformMatrix4(DeferredProgram.UniformView_ID, true, ref View);
+			GL.UniformMatrix4(DeferredProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
 

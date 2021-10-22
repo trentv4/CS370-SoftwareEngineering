@@ -232,4 +232,23 @@ namespace Project.Render {
 			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
 		}
 	}
+
+	public class ShaderProgramDeferredRenderer : ShaderProgram {
+		public ShaderProgramDeferredRenderer(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramDeferredRenderer(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
+
+		public int UniformModel_ID { get; private set; }
+		public int UniformView_ID { get; private set; }
+		public int UniformPerspective_ID { get; private set; }
+		public int UniformTextureAlbedo_ID { get; private set; }
+
+		/// <summary> Creates a ShaderProgram with vertex attribs and uniforms configured for src/render/shaders/ForwardShader.
+		/// The purpose of this shader is a simpistic forward-renderer (as opposed to a deferred). </summary>
+		protected override void SetUniforms() {
+			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
+			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
+			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
+			UniformTextureAlbedo_ID = GL.GetUniformLocation(ShaderProgram_ID, "albedoTexture");
+		}
+	}
 }
