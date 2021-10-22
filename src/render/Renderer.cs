@@ -36,8 +36,7 @@ namespace Project.Render {
 		private static InterfaceRoot _interfaceRoot = new InterfaceRoot();
 
 		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
-		private static int _fogFramebufferID;
-		private static int _fogDepthTextureID;
+		private static Framebuffer _fogFramebuffer;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -63,22 +62,10 @@ namespace Project.Render {
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
 
 			// Fog depth-only framebuffer and framebuffer texture creation
-			_fogFramebufferID = GL.GenFramebuffer();
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fogFramebufferID);
-			_fogDepthTextureID = GL.GenTexture();
-			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
-			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, Size.X, Size.Y,
-						  0, PixelFormat.DepthComponent, PixelType.UnsignedByte, new byte[0]);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
-			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-									TextureTarget.Texture2D, _fogDepthTextureID, 0);
+			_fogFramebuffer = new Framebuffer();
+			_fogFramebuffer.SetDepthBuffer();
 
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
-			// Creates "unit" models - models specified in code that are manipulated with model matrices
-			Model.CreateUnitModels();
-			InterfaceModel.CreateUnitModels();
 
 			// Builds the scene. Includes player, interface, and world.
 			_sceneHierarchy.Build();
@@ -118,7 +105,7 @@ namespace Project.Render {
 			DebugGroup("Fog");
 			// Blit existing depth buffer to fog depth buffer
 			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebufferID);
+			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebuffer.FramebufferID);
 			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
 			// Draw depth of back faces of fog to fog depth buffer
 			GL.Enable(EnableCap.CullFace);
@@ -129,7 +116,7 @@ namespace Project.Render {
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 			FogProgram.Use();
 			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
+			GL.BindTexture(TextureTarget.Texture2D, _fogFramebuffer.Depth.TextureID);
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
