@@ -43,6 +43,15 @@ namespace Project.Render {
 			return this;
 		}
 
+		public Framebuffer AddAttachments(string[] labeledBuffers) {
+			for (int i = 0; i < labeledBuffers.Length; i++) {
+				string label = labeledBuffers[i];
+				AddAttachment();
+				GL.ObjectLabel(ObjectLabelIdentifier.Texture, GetAttachment(i).TextureID, label.Length, label);
+			}
+			return this;
+		}
+
 		public Framebuffer AddAttachment(PixelInternalFormat internalFormat, PixelFormat externalFormat) {
 			int attachment = _bufferTextures.Count;
 			Texture buffer = new Texture(GL.GenTexture());

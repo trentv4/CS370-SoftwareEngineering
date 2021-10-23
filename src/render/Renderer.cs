@@ -4,8 +4,6 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using System.Runtime.InteropServices;
-using Project.Levels;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 
 namespace Project.Render {
@@ -74,9 +72,11 @@ namespace Project.Render {
 			_gBuffer = new Framebuffer();
 			_gBuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
 			_gBuffer.AddAttachments(3);
+			_gBuffer.AddAttachments(new[] { "GB: Albedo", "GB: Normals/specular", "GB: Fog" });
 
 			_interfaceBuffer = new Framebuffer();
 			_interfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
+			Label(ObjectLabelIdentifier.Texture, _interfaceBuffer.GetAttachment(0).TextureID, "Interface");
 
 			_defaultFramebuffer = new Framebuffer(0);
 
@@ -158,7 +158,6 @@ namespace Project.Render {
 			_interfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
-
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;
 		}
@@ -197,6 +196,10 @@ namespace Project.Render {
 		/// <summary> Ends the current debug group on the GPU. </summary>
 		private static void DebugGroupEnd() {
 			GL.PopDebugGroup();
+		}
+
+		private static void Label(ObjectLabelIdentifier type, int id, string label) {
+			GL.ObjectLabel(type, id, label.Length, label);
 		}
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering. </summary>
