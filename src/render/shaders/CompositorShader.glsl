@@ -24,7 +24,9 @@ uniform sampler2D sampler_interface;
 out vec4 FragColor;
 
 vec4 blend(vec4 base, vec4 new) {
-	return (new * new.w) + (base * (1 - new.w));
+	vec4 blended = (new * new.w) + (base * (1 - new.w));
+	blended.w = base.w;
+	return blended;
 }
 
 void main() {
