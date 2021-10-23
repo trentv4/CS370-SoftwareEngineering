@@ -87,7 +87,7 @@ namespace Project.Render {
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 			} else {
-				GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
+				GL.UniformMatrix4(Renderer.INSTANCE.DeferredProgram.UniformModel_ID, true, ref modelMatrix);
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
@@ -187,7 +187,7 @@ namespace Project.Render {
 			List<float> vc = new List<float>();
 			List<uint> ic = new List<uint>();
 
-			float transparency = 0.1f;
+			float transparency = 1f;
 			float color = 1.0f;
 			for (uint g = 0; g < dc; g++) {
 				float angle = Renderer.RCF * g * (360.0f / (float)dc) * 2;

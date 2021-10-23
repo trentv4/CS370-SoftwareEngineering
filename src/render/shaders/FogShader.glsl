@@ -16,7 +16,7 @@ void main() {
 uniform sampler2D depthMap;
 uniform vec2 screenSize;
 
-out vec4 FragColor;
+layout (location = 2) out vec4 fogOut;
   
 float LinearizeDepth(float depth) 
 {
@@ -32,5 +32,6 @@ void main() {
 	float fogNear = LinearizeDepth(gl_FragCoord.z);
 	float fogDepth = (fogFar - fogNear)/10;
 	fogDepth = pow(fogDepth, 0.7);
-	gl_FragDepth = 1 - fogDepth;
+
+	fogOut = vec4(fogDepth, gl_FragCoord.z, 0, 1);
 }

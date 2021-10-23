@@ -66,6 +66,7 @@ namespace Project.Render {
 		}
 
 		public Framebuffer Use() {
+			Renderer.INSTANCE.CurrentBuffer = this;
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);
 			return this;
 		}

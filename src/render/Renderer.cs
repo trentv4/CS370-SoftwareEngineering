@@ -23,26 +23,25 @@ namespace Project.Render {
 		/// <summary> Radian Conversion Factor (used for degree-radian conversions). Equal to pi/180. </summary>
 		internal const float RCF = 0.017453293f;
 
-		// Render
-		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
-		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; } // Deferred rendering technique
-		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
-		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
-		public ShaderProgramVignette VignetteProgram { get; private set; } // Vignette renderer
-		public ShaderProgramCompositor CompositorShader { get; private set; }
+		// Trackers
 		public ShaderProgram CurrentProgram;
+		public Framebuffer CurrentBuffer;
+
+		// Render
+		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; }
+		public ShaderProgramInterface InterfaceProgram { get; private set; }
+		public ShaderProgramFog FogProgram { get; private set; }
+		public ShaderProgramVignette VignetteProgram { get; private set; }
+		public ShaderProgramCompositor CompositorShader { get; private set; }
+
+		private static Framebuffer _gBuffer;
+		private static Framebuffer _fogFramebuffer;
+		private static Framebuffer _interfaceBuffer;
+		private static Framebuffer _defaultFramebuffer;
 
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
-
 		private static GameRoot _sceneHierarchy = new GameRoot();
 		private static InterfaceRoot _interfaceRoot = new InterfaceRoot();
-
-		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
-		private static Framebuffer _fogFramebuffer;
-		private static Framebuffer _gBuffer;
-		private static Framebuffer _interfaceBuffer;
-		private static Framebuffer _fogOutputFramebuffer;
-		private static Framebuffer _defaultFramebuffer;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -52,12 +51,13 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
 			GL.Enable(EnableCap.DepthTest);
-			VSync = VSyncMode.On;
+			GL.Enable(EnableCap.Blend);
+			GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrcAlpha);
 			GL.Viewport(0, 0, Size.X, Size.Y);
 			GL.ClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+			VSync = VSyncMode.On;
 
 			// Shader program creation
-			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl"); // Unused
 			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
@@ -68,28 +68,23 @@ namespace Project.Render {
 			_fogFramebuffer = new Framebuffer();
 			_fogFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
 
-			_fogOutputFramebuffer = new Framebuffer();
-			_fogOutputFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
-
 			// Buffer 0: Albedo (RGBA)
 			// Buffer 1: normal XYZ, specular component
+			// Buffer 2: fog strength, fog depth, unused, unused
 			_gBuffer = new Framebuffer();
 			_gBuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
-			_gBuffer.AddAttachments(2);
+			_gBuffer.AddAttachments(3);
 
 			_interfaceBuffer = new Framebuffer();
 			_interfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
 
 			_defaultFramebuffer = new Framebuffer(0);
 
-			// Builds the scene. Includes player, interface, and world.
+			// Initializers
 			_sceneHierarchy.Build();
-
-			// Loads all fonts
 			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
 
 			// Shorthand for setting vertex shader attribs
-			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			DeferredProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			InterfaceProgram.SetVertexAttribPointers(new[] { 2, 2 });
 			FogProgram.SetVertexAttribPointers(new[] { 3 });
@@ -132,8 +127,7 @@ namespace Project.Render {
 			_sceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
 			// Draw front faces of fog objects
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fogOutputFramebuffer.FramebufferID);
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			_gBuffer.Use();
 			FogProgram.Use();
 			_fogFramebuffer.Depth.Bind();
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
@@ -149,28 +143,21 @@ namespace Project.Render {
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			_interfaceRoot.Render(state);
 			DebugGroupEnd();
-
-
-			DebugGroup("Compositor");
-			_defaultFramebuffer.Use().Reset();
-			CompositorShader.Use();
-			//CompositorShader.Draw(_gBuffer.GetAttachment(0));
-			// Importing data from other buffers
-			_gBuffer.GetAttachment(0).Bind(0);         // G buffer: albedo [RGBA]
-			_fogOutputFramebuffer.Depth.Bind(1);       // Fog depth 
-													   // lighting
-			_interfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
-			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-			DebugGroupEnd();
-
-
 			DebugGroup("Vignette");
-			_defaultFramebuffer.Use();
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
+
+			DebugGroup("Compositor");
+			_defaultFramebuffer.Use().Reset();
+			CompositorShader.Use();
+			_gBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
+			_gBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth
+			_interfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			DebugGroupEnd();
 
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;
