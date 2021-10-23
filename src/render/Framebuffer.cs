@@ -74,6 +74,15 @@ namespace Project.Render {
 			return this;
 		}
 
+		public Framebuffer BlitFrom(Framebuffer from, ClearBufferMask mask) {
+			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, from.FramebufferID);
+			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FramebufferID);
+			GL.BlitFramebuffer(0, 0, Renderer.INSTANCE.Size.X, Renderer.INSTANCE.Size.Y, 0, 0, Renderer.INSTANCE.Size.X, Renderer.INSTANCE.Size.Y,
+								mask, BlitFramebufferFilter.Nearest);
+			return this;
+
+		}
+
 		public Framebuffer Use() {
 			Renderer.INSTANCE.CurrentBuffer = this;
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);

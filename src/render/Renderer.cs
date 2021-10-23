@@ -49,6 +49,7 @@ namespace Project.Render {
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
 			GL.Enable(EnableCap.DepthTest);
+			GL.CullFace(CullFaceMode.Front);
 			GL.Enable(EnableCap.Blend);
 			GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrcAlpha);
 			GL.Viewport(0, 0, Size.X, Size.Y);
@@ -62,7 +63,7 @@ namespace Project.Render {
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
 			CompositorShader = new ShaderProgramCompositor("src/render/shaders/CompositorShader.glsl");
 
-			// Fog depth-only framebuffer and framebuffer texture creation
+			// Fog temporary buffer to hold back-face + scene depths
 			_fogFramebuffer = new Framebuffer();
 			_fogFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
 
@@ -71,13 +72,14 @@ namespace Project.Render {
 			// Buffer 2: fog strength, fog depth, unused, unused
 			_gBuffer = new Framebuffer();
 			_gBuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
-			_gBuffer.AddAttachments(3);
 			_gBuffer.AddAttachments(new[] { "GB: Albedo", "GB: Normals/specular", "GB: Fog" });
 
+			// Interface buffer (both for UI and for fx like vignettes)
 			_interfaceBuffer = new Framebuffer();
 			_interfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
 			Label(ObjectLabelIdentifier.Texture, _interfaceBuffer.GetAttachment(0).TextureID, "Interface");
 
+			// Wrap the default framebuffer but don't assign anything new to it
 			_defaultFramebuffer = new Framebuffer(0);
 
 			// Initializers
@@ -114,19 +116,15 @@ namespace Project.Render {
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
-
 			DebugGroup("Fog");
-			// Blit existing depth buffer to fog depth buffer
+			// Blit existing g-buffer depth to fog depth buffer
 			_fogFramebuffer.Use().Reset();
-			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _gBuffer.FramebufferID);
-			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebuffer.FramebufferID);
-			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
+			_fogFramebuffer.BlitFrom(_gBuffer, ClearBufferMask.DepthBufferBit);
 			// Draw depth of back faces of fog to fog depth buffer
 			GL.Enable(EnableCap.CullFace);
-			GL.CullFace(CullFaceMode.Front);
 			_sceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
-			// Draw front faces of fog objects
+			// Draw front faces, use it to calculate fog strength, write to g-buffer
 			_gBuffer.Use();
 			FogProgram.Use();
 			_fogFramebuffer.Depth.Bind();
@@ -134,7 +132,6 @@ namespace Project.Render {
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
-
 
 			DebugGroup("Interface");
 			_interfaceRoot.Rebuild(state);
@@ -149,7 +146,6 @@ namespace Project.Render {
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
-
 			DebugGroup("Compositor");
 			_defaultFramebuffer.Use().Reset();
 			CompositorShader.Use();
@@ -158,6 +154,7 @@ namespace Project.Render {
 			_interfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
+
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;
 		}
