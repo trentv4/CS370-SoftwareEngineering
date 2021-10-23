@@ -14,8 +14,21 @@ namespace Project.Render {
 		/// <summary> Parameter controlling texture anisotropic filtering. This is set to 16 all the time, if supported by the GPU. </summary>
 		private static readonly float _anisotropicLevel = MathHelper.Clamp(16, 1f, GL.GetFloat((GetPName)All.MaxTextureMaxAnisotropy));
 
-		private Texture(int TextureID) {
+		public Texture(int TextureID) {
 			this.TextureID = TextureID;
+		}
+
+		public void Bind() {
+			Bind(TextureUnit.Texture0);
+		}
+
+		public void Bind(int unit) {
+			Bind(TextureUnit.Texture0 + unit);
+		}
+
+		public void Bind(TextureUnit unit) {
+			GL.ActiveTexture(unit);
+			GL.BindTexture(TextureTarget.Texture2D, TextureID);
 		}
 
 		/// <summary> Creates a texture with an image loaded from disk. The result is cached. </summary>
