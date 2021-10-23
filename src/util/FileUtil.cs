@@ -20,12 +20,9 @@ namespace Project.Util {
 		/// <summary> Attempts to read a file to a string. If it fails, it returns false. If it succeeds it provides the string via an out argument </summary>
 		public static bool TryReadFile(string filePath, out string contents) {
 			contents = null;
-			if (IsFileLocked(filePath))
-				return false;
-
 			try {
 				//Open file
-				FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None);
+				FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Write);
 				StreamReader reader = new StreamReader(stream);
 
 				//Lock file to prevent other processes from editing it, and read it

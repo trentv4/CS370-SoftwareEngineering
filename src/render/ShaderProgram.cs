@@ -12,11 +12,11 @@ namespace Project.Render {
 	public class ShaderProgram {
 		public int ShaderProgram_ID { get; private set; } = -1;
 		public readonly int VertexArrayObject_ID;
-		private ShaderData _shaders;
+		private ShaderFileData _shaders;
 
 		/// <summary> Loads a vertex and a fragment shader from disk, compiles them, links, and creates a ShaderProgram. </summary>
 		public ShaderProgram(string vertexShaderPath, string fragmentShaderPath) {
-			_shaders = new ShaderData(vertexShaderPath, fragmentShaderPath);
+			_shaders = new ShaderFileData(vertexShaderPath, fragmentShaderPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
 			LoadShaders(true);
@@ -25,7 +25,7 @@ namespace Project.Render {
 		/// <summary> Loads a unified shader (vertex + fragment shaders in same file split by a split keyword), compiles them,
 		/// links, and creates the ShaderProgram. </summary>
 		public ShaderProgram(string unifiedPath) {
-			_shaders = new ShaderData(unifiedPath);
+			_shaders = new ShaderFileData(unifiedPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
 			LoadShaders(true);
@@ -96,30 +96,30 @@ namespace Project.Render {
 		}
 
 		/// <summary> Additional data for the shaders that make up an OpenGL program. </summary>
-		private class ShaderData {
+		private class ShaderFileData {
 			public readonly string[] Paths;
-			public DateTime[] WriteTimes;
+			public DateTime[] LastWriteTimes;
 			public readonly int[] IDs;
 			///<summary> If true, there's only one shader file </summary>
 			public readonly bool Unified;
 
-			public ShaderData(string vertexShaderPath, string fragmentShaderPath) {
+			public ShaderFileData(string vertexShaderPath, string fragmentShaderPath) {
 				Paths = new string[] { vertexShaderPath, fragmentShaderPath };
-				WriteTimes = new DateTime[] { File.GetLastWriteTime(vertexShaderPath), File.GetLastWriteTime(fragmentShaderPath) };
+				LastWriteTimes = new DateTime[] { File.GetLastWriteTime(vertexShaderPath), File.GetLastWriteTime(fragmentShaderPath) };
 				IDs = new int[] { GL.CreateShader(ShaderType.VertexShader), GL.CreateShader(ShaderType.FragmentShader) };
 				Unified = false;
 				Load(true);
 			}
 
-			public ShaderData(string unifiedPath) {
+			public ShaderFileData(string unifiedPath) {
 				Paths = new string[] { unifiedPath };
-				WriteTimes = new DateTime[] { File.GetLastWriteTime(unifiedPath) };
+				LastWriteTimes = new DateTime[] { File.GetLastWriteTime(unifiedPath) };
 				IDs = new int[] { GL.CreateShader(ShaderType.VertexShader), GL.CreateShader(ShaderType.FragmentShader) };
 				Unified = true;
 				Load(true);
 			}
 
-			~ShaderData() {
+			~ShaderFileData() {
 				foreach (int id in IDs)
 					GL.DeleteShader(id);
 			}
@@ -127,7 +127,7 @@ namespace Project.Render {
 			/// <summary> Returns true if any of the shader files have changed since last reload </summary>
 			public bool Changed() {
 				for (int i = 0; i < Paths.Length; i++)
-					if (WriteTimes[i] != File.GetLastWriteTime(Paths[i]))
+					if (LastWriteTimes[i] != File.GetLastWriteTime(Paths[i]))
 						return true;
 
 				return false;
@@ -141,7 +141,7 @@ namespace Project.Render {
 
 				//Update write times
 				for (int i = 0; i < Paths.Length; i++)
-					WriteTimes[i] = File.GetLastWriteTime(Paths[i]);
+					LastWriteTimes[i] = File.GetLastWriteTime(Paths[i]);
 
 				//Compile shader source
 				for (int i = 0; i < sources.Length; i++) {
@@ -174,20 +174,15 @@ namespace Project.Render {
 				if (Unified) {
 					//Load unified file and split into individual shaders
 					if (!FileUtil.TryReadFile(Paths[0], out string source)) {
-						Console.WriteLine($"Failed to read shader file '{Paths[0]}'. File is locked.");
 						return false;
 					}
 					sourceList.AddRange(source.Split("<split>"));
 
 					//Ensure required shaders are present
 					if (sourceList.Count != 2) {
-						Console.WriteLine($"Shader at {Paths[0]} is not a unified glsl file. Halting load.");
 					 	return false;
 					}
-					//Todo: ^^Fix this. This check exists because sometimes the shader file is empty when loaded. 
-					//		I suspect this happens when VSCode saves while the game is loading the shader. 
-					//		However, FileUtil.TryReadFile() locks the file before reading it so this shouldn't happen
-				}  else {
+				} else {
 					//Load separate shader files
 					if (!FileUtil.TryReadFile(Paths[0], out string vertSource) || !FileUtil.TryReadFile(Paths[1], out string fragSource)) {
 						Console.WriteLine($"Failed to read '{Paths[0]}' and '{Paths[1]}'. Files are locked.");
