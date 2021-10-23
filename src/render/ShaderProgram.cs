@@ -17,7 +17,6 @@ namespace Project.Render {
 		/// <summary> Loads a vertex and a fragment shader from disk, compiles them, links, and creates a ShaderProgram. </summary>
 		public ShaderProgram(string vertexShaderPath, string fragmentShaderPath) {
 			_shaders = new ShaderFileData(vertexShaderPath, fragmentShaderPath);
-			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
 			TryLoadShaders();
 		}
@@ -26,7 +25,6 @@ namespace Project.Render {
 		/// links, and creates the ShaderProgram. </summary>
 		public ShaderProgram(string unifiedPath) {
 			_shaders = new ShaderFileData(unifiedPath);
-			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
 			TryLoadShaders();
 		}
@@ -34,6 +32,8 @@ namespace Project.Render {
 		/// <summary> Create vertex and fragment shaders from strings </summary>
 		private void TryLoadShaders() {
 			bool firstLoad = (ShaderProgram_ID == -1);
+			if(firstLoad)
+				ShaderProgram_ID = GL.CreateProgram();
 			if(!_shaders.Changed() && !firstLoad)
 				return;
 			if(!_shaders.TryLoad())
