@@ -42,6 +42,7 @@ namespace Project.Render {
 		private static Framebuffer _gBuffer;
 		private static Framebuffer _interfaceBuffer;
 		private static Framebuffer _fogOutputFramebuffer;
+		private static Framebuffer _defaultFramebuffer;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -50,18 +51,13 @@ namespace Project.Render {
 			GL.DebugMessageCallback(_debugCallback, IntPtr.Zero);
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
-			GL.Enable(EnableCap.Blend);
-			// A: new color, B: existing color
-			// This isn't correct and it influences render order, but..... it works?
-			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-			GL.BlendEquation(BlendEquationMode.FuncAdd);
 			GL.Enable(EnableCap.DepthTest);
 			VSync = VSyncMode.On;
 			GL.Viewport(0, 0, Size.X, Size.Y);
-			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			GL.ClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
 			// Shader program creation
-			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl");
+			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl"); // Unused
 			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
@@ -75,15 +71,16 @@ namespace Project.Render {
 			_fogOutputFramebuffer = new Framebuffer();
 			_fogOutputFramebuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
 
+			// Buffer 0: Albedo (RGBA)
+			// Buffer 1: normal XYZ, specular component
 			_gBuffer = new Framebuffer();
 			_gBuffer.SetDepthBuffer(PixelInternalFormat.DepthComponent24);
-			_gBuffer.SetAttachment(0);
-			_gBuffer.SetAttachment(1);
+			_gBuffer.AddAttachments(2);
 
 			_interfaceBuffer = new Framebuffer();
-			_interfaceBuffer.SetAttachment(0, PixelInternalFormat.Rgba, PixelFormat.Rgba);
+			_interfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
 
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			_defaultFramebuffer = new Framebuffer(0);
 
 			// Builds the scene. Includes player, interface, and world.
 			_sceneHierarchy.Build();
@@ -101,7 +98,6 @@ namespace Project.Render {
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
-
 			ProcessEventsFromQueue(state);
 
 			// Setting player model location according to logic thread player location
@@ -109,23 +105,14 @@ namespace Project.Render {
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
+			// Camera and perspective matrices required for different passes
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
-			/*	
-			DebugGroup("Geometry pass");
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-			ForwardProgram.Use();
-			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
-			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
-			_sceneHierarchy.Render();
-			DebugGroupEnd();
-			*/
+			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 
-			DebugGroup("Deferred g-buffer pass");
-			_gBuffer.Use();
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			DebugGroup("G-Buffer");
+			_gBuffer.Use().Reset();
 			DeferredProgram.Use();
 			GL.UniformMatrix4(DeferredProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(DeferredProgram.UniformPerspective_ID, true, ref Perspective3D);
@@ -135,8 +122,7 @@ namespace Project.Render {
 
 			DebugGroup("Fog");
 			// Blit existing depth buffer to fog depth buffer
-			_fogFramebuffer.Use();
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			_fogFramebuffer.Use().Reset();
 			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, _gBuffer.FramebufferID);
 			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebuffer.FramebufferID);
 			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
@@ -155,33 +141,36 @@ namespace Project.Render {
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
+
 			DebugGroup("Interface");
 			_interfaceRoot.Rebuild(state);
-			_interfaceBuffer.Use();
+			_interfaceBuffer.Use().Reset();
 			InterfaceProgram.Use();
-			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			_interfaceRoot.Render(state);
 			DebugGroupEnd();
 
+
 			DebugGroup("Compositor");
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			_defaultFramebuffer.Use().Reset();
 			CompositorShader.Use();
+			//CompositorShader.Draw(_gBuffer.GetAttachment(0));
 			// Importing data from other buffers
-			_gBuffer.GetAttachment(0).Bind(0);
-			_fogOutputFramebuffer.Depth.Bind(1);
-			// lighting bind 2
-			_interfaceBuffer.GetAttachment(0).Bind(3);
+			_gBuffer.GetAttachment(0).Bind(0);         // G buffer: albedo [RGBA]
+			_fogOutputFramebuffer.Depth.Bind(1);       // Fog depth 
+													   // lighting
+			_interfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
+
 			DebugGroup("Vignette");
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			_defaultFramebuffer.Use();
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
+
 
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;

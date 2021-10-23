@@ -262,5 +262,10 @@ namespace Project.Render {
 			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_lighting"), 2);
 			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "sampler_interface"), 3);
 		}
+
+		public void Draw(Texture framebufferTexture) {
+			framebufferTexture.Bind(0);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+		}
 	}
 }

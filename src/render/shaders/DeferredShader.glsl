@@ -48,6 +48,6 @@ void main() {
 		discard;
 	
 	gAlbedoSpec = vec4(outputColor, alpha);
-	gNormal = vec4(outputColor.z, outputColor.y, outputColor.z, 1.0);
+	gNormal = vec4(normal, 1.0);
 }
 

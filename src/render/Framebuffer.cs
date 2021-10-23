@@ -1,22 +1,19 @@
-using System;
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using System.Runtime.InteropServices;
-using Project.Levels;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 
 namespace Project.Render {
 	public class Framebuffer {
 		public int FramebufferID { get; private set; }
 		public Texture Depth { get; private set; } = null;
-		private List<DrawBuffersEnum> _colorAttachments = new List<DrawBuffersEnum>();
 		private List<Texture> _bufferTextures = new List<Texture>();
 
 		public Framebuffer() {
 			FramebufferID = GL.GenFramebuffer();
+			Use();
+		}
+
+		public Framebuffer(int id) {
+			FramebufferID = id;
 			Use();
 		}
 
@@ -36,11 +33,18 @@ namespace Project.Render {
 			return _bufferTextures[attachment];
 		}
 
-		public Framebuffer SetAttachment(int attachment) {
-			return SetAttachment(attachment, PixelInternalFormat.Rgba, PixelFormat.Rgba);
+		public Framebuffer AddAttachment() {
+			return AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
 		}
 
-		public Framebuffer SetAttachment(int attachment, PixelInternalFormat internalFormat, PixelFormat externalFormat) {
+		public Framebuffer AddAttachments(int count) {
+			for (int i = 0; i < count; i++)
+				AddAttachment();
+			return this;
+		}
+
+		public Framebuffer AddAttachment(PixelInternalFormat internalFormat, PixelFormat externalFormat) {
+			int attachment = _bufferTextures.Count;
 			Texture buffer = new Texture(GL.GenTexture());
 			GL.BindTexture(TextureTarget.Texture2D, buffer.TextureID);
 			GL.TexImage2D(TextureTarget.Texture2D, 0, internalFormat, Renderer.INSTANCE.Size.X,
@@ -50,20 +54,25 @@ namespace Project.Render {
 			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0 + attachment,
 									TextureTarget.Texture2D, buffer.TextureID, 0);
 
-			if (_bufferTextures.Count > attachment) {
-				_bufferTextures[attachment] = buffer;
-				_colorAttachments[attachment] = DrawBuffersEnum.ColorAttachment0 + attachment;
-			} else {
-				_bufferTextures.Add(buffer);
-				_colorAttachments.Add(DrawBuffersEnum.ColorAttachment0 + attachment);
+			_bufferTextures.Add(buffer);
+
+			DrawBuffersEnum[] colorAttachments = new DrawBuffersEnum[_bufferTextures.Count];
+			for (int i = 0; i < _bufferTextures.Count; i++) {
+				colorAttachments[i] = DrawBuffersEnum.ColorAttachment0 + i;
 			}
 
-			GL.DrawBuffers(_colorAttachments.Count, _colorAttachments.ToArray());
+			GL.DrawBuffers(colorAttachments.Length, colorAttachments);
 			return this;
 		}
 
-		public void Use() {
+		public Framebuffer Use() {
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);
+			return this;
+		}
+
+		public Framebuffer Reset() {
+			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			return this;
 		}
 	}
 }
