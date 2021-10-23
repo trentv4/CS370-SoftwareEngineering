@@ -19,7 +19,7 @@ namespace Project.Render {
 			_shaders = new ShaderFileData(vertexShaderPath, fragmentShaderPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
-			TryLoadShaders(true);
+			TryLoadShaders();
 		}
 
 		/// <summary> Loads a unified shader (vertex + fragment shaders in same file split by a split keyword), compiles them,
@@ -28,14 +28,15 @@ namespace Project.Render {
 			_shaders = new ShaderFileData(unifiedPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
-			TryLoadShaders(true);
+			TryLoadShaders();
 		}
 
 		/// <summary> Create vertex and fragment shaders from strings </summary>
-		private void TryLoadShaders(bool firstLoad = false) {
+		private void TryLoadShaders() {
+			bool firstLoad = (ShaderProgram_ID == -1);
 			if(!_shaders.Changed() && !firstLoad)
 				return;
-			if(!_shaders.Load())
+			if(!_shaders.TryLoad())
 				return;
 
 			//Link shaders on first load
@@ -91,7 +92,7 @@ namespace Project.Render {
 				LastWriteTimes = new DateTime[] { File.GetLastWriteTime(vertexShaderPath), File.GetLastWriteTime(fragmentShaderPath) };
 				IDs = new int[] { GL.CreateShader(ShaderType.VertexShader), GL.CreateShader(ShaderType.FragmentShader) };
 				Unified = false;
-				Load(true);
+				TryLoad();
 			}
 
 			public ShaderFileData(string unifiedPath) {
@@ -99,7 +100,7 @@ namespace Project.Render {
 				LastWriteTimes = new DateTime[] { File.GetLastWriteTime(unifiedPath) };
 				IDs = new int[] { GL.CreateShader(ShaderType.VertexShader), GL.CreateShader(ShaderType.FragmentShader) };
 				Unified = true;
-				Load(true);
+				TryLoad();
 			}
 
 			/// <summary> Returns true if any of the shader files have changed since last reload </summary>
@@ -112,9 +113,9 @@ namespace Project.Render {
 			}
 
 			/// <summary> Load and compile shader files </summary>
-			public bool Load(bool firstLoad = false) {
+			public bool TryLoad() {
 				//Load shader sources
-				if (!LoadShaderSources(out string[] sources))
+				if (!TryLoadShaderSources(out string[] sources))
 					return false;
 
 				//Update write times
@@ -140,20 +141,17 @@ namespace Project.Render {
 			}
 
 			/// <summary> Load shader source strings from their files </summary>
-			private bool LoadShaderSources(out string[] sources) {
+			private bool TryLoadShaderSources(out string[] sources) {
 				sources = null;
 
 				List<string> sourceList = new List<string>();
 				if (Unified) {
 					//Load unified file and split into individual shaders
-					if (!FileUtil.TryReadFile(Paths[0], out string source)) {
+					if (!FileUtil.TryReadFile(Paths[0], out string source))
 						return false;
-					}
 
 					//Split shaders
 					sourceList.AddRange(source.Split("<split>"));
-					if (sourceList.Count != 2)
-					 	return false;
 				} else {
 					//Load separate shader files
 					if (!FileUtil.TryReadFile(Paths[0], out string vertSource) || !FileUtil.TryReadFile(Paths[1], out string fragSource))
@@ -162,6 +160,8 @@ namespace Project.Render {
 					sourceList.Add(vertSource);
 					sourceList.Add(fragSource);
 				}
+				if (sourceList.Count != 2)
+				 	return false;
 
 				sources = sourceList.ToArray();
 				return true;
