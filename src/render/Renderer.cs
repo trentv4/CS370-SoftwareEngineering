@@ -4,40 +4,39 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using System.Runtime.InteropServices;
-using Project.Levels;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 
 namespace Project.Render {
 	/// <summary> Primary rendering class, instantiated in Program and continuously executed. OpenGL is only referenced from here and related classes. </summary>
 	public class Renderer : GameWindow {
 		public Renderer(GameWindowSettings gws, NativeWindowSettings nws) : base(gws, nws) { }
-		public static readonly GameLogic LogicThread = new GameLogic();
-		public static Renderer INSTANCE;
-
-		// OpenGL error callback
-		private static DebugProc _debugCallback = DebugCallback;
-		private static GCHandle _debugCallbackHandle;
-		private static int _debugGroupTracker = 0;
 
 		/// <summary> Radian Conversion Factor (used for degree-radian conversions). Equal to pi/180. </summary>
 		internal const float RCF = 0.017453293f;
 
-		// Render
-		public ShaderProgramForwardRenderer ForwardProgram { get; private set; } // Forward rendering technique
-		public ShaderProgramInterface InterfaceProgram { get; private set; } // Interface renderer (z=0)
-		public ShaderProgramFog FogProgram { get; private set; } // Fog renderer
-		public ShaderProgramVignette VignetteProgram { get; private set; } // Vignette renderer
-		public ShaderProgram CurrentProgram;
-
+		public static readonly GameLogic LogicThread = new GameLogic();
+		public static Renderer INSTANCE;
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 
-		private static GameRoot _sceneHierarchy = new GameRoot();
-		private static InterfaceRoot _interfaceRoot = new InterfaceRoot();
+		private static DebugProc _debugCallback = DebugCallback;
+		private static GCHandle _debugCallbackHandle;
 
-		// These are both required for fog rendering, and are used to provide back-face depths to find the distance between front and back faces for fog occlusion.
-		private static int _fogFramebufferID;
-		private static int _fogDepthTextureID;
+		public ShaderProgram CurrentProgram; // Handled automatically by ShaderProgram
+		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; }
+		public ShaderProgramInterface InterfaceProgram { get; private set; }
+		public ShaderProgramFog FogProgram { get; private set; }
+		public ShaderProgramVignette VignetteProgram { get; private set; }
+		public ShaderProgramCompositor CompositorShader { get; private set; }
+
+		public Framebuffer CurrentBuffer; // Handled automatically by Framebuffer
+		public Framebuffer GBuffer;
+		public Framebuffer FogFramebuffer;
+		public Framebuffer InterfaceBuffer;
+		public Framebuffer DefaultFramebuffer;
+
+		private GameRoot _sceneHierarchy = new GameRoot();
+		private InterfaceRoot _interfaceRoot = new InterfaceRoot();
+		private int _debugGroupTracker = 0;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -46,50 +45,46 @@ namespace Project.Render {
 			GL.DebugMessageCallback(_debugCallback, IntPtr.Zero);
 			GL.Enable(EnableCap.DebugOutput);
 			GL.Enable(EnableCap.DebugOutputSynchronous);
-			GL.Enable(EnableCap.Blend);
-			// A: new color, B: existing color
-			// This isn't correct and it influences render order, but..... it works?
-			GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-			GL.BlendEquation(BlendEquationMode.FuncAdd);
 			GL.Enable(EnableCap.DepthTest);
-			VSync = VSyncMode.On;
+			GL.CullFace(CullFaceMode.Front);
+			GL.Enable(EnableCap.Blend);
+			GL.BlendFuncSeparate(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha, BlendingFactorSrc.One, BlendingFactorDest.OneMinusSrcAlpha);
 			GL.Viewport(0, 0, Size.X, Size.Y);
-			GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+			VSync = VSyncMode.On;
 
 			// Shader program creation
-			ForwardProgram = new ShaderProgramForwardRenderer("src/render/shaders/ForwardShader.glsl");
+			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
 			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
 			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
-			GL.Uniform2(FogProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
 			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
-			GL.Uniform2(VignetteProgram.UniformScreenSize_ID, (float)Size.X, (float)Size.Y);
+			CompositorShader = new ShaderProgramCompositor("src/render/shaders/CompositorShader.glsl");
 
-			// Fog depth-only framebuffer and framebuffer texture creation
-			_fogFramebufferID = GL.GenFramebuffer();
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, _fogFramebufferID);
-			_fogDepthTextureID = GL.GenTexture();
-			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
-			GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent24, Size.X, Size.Y,
-						  0, PixelFormat.DepthComponent, PixelType.UnsignedByte, new byte[0]);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
-			GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
-									TextureTarget.Texture2D, _fogDepthTextureID, 0);
+			// Fog temporary buffer to hold back-face + scene depths
+			FogFramebuffer = new Framebuffer();
+			FogFramebuffer.AddDepthBuffer(PixelInternalFormat.DepthComponent24);
 
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			// Buffer 0: Albedo (RGBA)
+			// Buffer 1: normal XYZ, specular component
+			// Buffer 2: fog strength, fog depth, unused, unused
+			GBuffer = new Framebuffer();
+			GBuffer.AddDepthBuffer(PixelInternalFormat.DepthComponent24);
+			GBuffer.AddAttachments(new[] { "GB: Albedo", "GB: Normals/specular", "GB: Fog" });
 
-			// Creates "unit" models - models specified in code that are manipulated with model matrices
-			Model.CreateUnitModels();
-			InterfaceModel.CreateUnitModels();
+			// Interface buffer (both for UI and for fx like vignettes)
+			InterfaceBuffer = new Framebuffer();
+			InterfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
+			DebugLabel(ObjectLabelIdentifier.Texture, InterfaceBuffer.GetAttachment(0).TextureID, "Interface");
 
-			// Builds the scene. Includes player, interface, and world.
+			// Wrap the default framebuffer but don't assign anything new to it
+			DefaultFramebuffer = new Framebuffer(0);
+
+			// Initializers
 			_sceneHierarchy.Build();
-
-			// Loads all fonts
 			FontAtlas.Load("calibri", "assets/fonts/calibri.png", "assets/fonts/calibri.json");
 
 			// Shorthand for setting vertex shader attribs
-			ForwardProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
+			DeferredProgram.SetVertexAttribPointers(new[] { 3, 3, 4, 2 });
 			InterfaceProgram.SetVertexAttribPointers(new[] { 2, 2 });
 			FogProgram.SetVertexAttribPointers(new[] { 3 });
 		}
@@ -97,7 +92,6 @@ namespace Project.Render {
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
-
 			ProcessEventsFromQueue(state);
 
 			// Setting player model location according to logic thread player location
@@ -105,33 +99,32 @@ namespace Project.Render {
 			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
 			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
 
-			DebugGroup("Geometry pass");
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			// Camera and perspective matrices required for different passes
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
-			GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-			ForwardProgram.Use();
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
-			GL.UniformMatrix4(ForwardProgram.UniformView_ID, true, ref View);
-			GL.UniformMatrix4(ForwardProgram.UniformPerspective_ID, true, ref Perspective3D);
+			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
+
+			DebugGroup("G-Buffer");
+			GBuffer.Use().Reset();
+			DeferredProgram.Use();
+			GL.UniformMatrix4(DeferredProgram.UniformView_ID, true, ref View);
+			GL.UniformMatrix4(DeferredProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
 			DebugGroupEnd();
 
 			DebugGroup("Fog");
-			// Blit existing depth buffer to fog depth buffer
-			GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
-			GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, _fogFramebufferID);
-			GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
+			// Blit existing g-buffer depth to fog depth buffer
+			FogFramebuffer.Use().Reset();
+			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit);
 			// Draw depth of back faces of fog to fog depth buffer
 			GL.Enable(EnableCap.CullFace);
-			GL.CullFace(CullFaceMode.Front);
 			_sceneHierarchy.Render();
 			GL.Disable(EnableCap.CullFace);
-			// Draw front faces of fog objects
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			// Draw front faces, use it to calculate fog strength, write to g-buffer
+			GBuffer.Use();
 			FogProgram.Use();
-			GL.ActiveTexture(TextureUnit.Texture0);
-			GL.BindTexture(TextureTarget.Texture2D, _fogDepthTextureID);
+			FogFramebuffer.Depth.Bind();
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
@@ -139,18 +132,23 @@ namespace Project.Render {
 
 			DebugGroup("Interface");
 			_interfaceRoot.Rebuild(state);
-			GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+			InterfaceBuffer.Use().Reset();
 			InterfaceProgram.Use();
-			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
-			GL.Disable(EnableCap.DepthTest);
 			_interfaceRoot.Render(state);
-			GL.Enable(EnableCap.DepthTest);
 			DebugGroupEnd();
-
 			DebugGroup("Vignette");
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			DebugGroupEnd();
+
+			DebugGroup("Compositor");
+			DefaultFramebuffer.Use().Reset();
+			CompositorShader.Use();
+			GBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
+			GBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth
+			InterfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			DebugGroupEnd();
 
@@ -159,8 +157,7 @@ namespace Project.Render {
 		}
 
 		/// <summary> Processes all events sent over from the GPU, typically for regenerating levels and maps. </summary>
-		private static void ProcessEventsFromQueue(GameState state) {
-			// Process event queue
+		private void ProcessEventsFromQueue(GameState state) {
 			while (!EventQueue.IsEmpty) {
 				string eventString;
 				bool result = EventQueue.TryDequeue(out eventString);
@@ -185,13 +182,18 @@ namespace Project.Render {
 		}
 
 		/// <summary> Starts a GPU debug group, used for grouping operations together into one section for debugging in RenderDoc. </summary>
-		private static void DebugGroup(string title) {
+		private void DebugGroup(string title) {
 			GL.PushDebugGroup(DebugSourceExternal.DebugSourceApplication, _debugGroupTracker++, title.Length, title);
 		}
 
 		/// <summary> Ends the current debug group on the GPU. </summary>
-		private static void DebugGroupEnd() {
+		private void DebugGroupEnd() {
 			GL.PopDebugGroup();
+		}
+
+		/// <summary> Assigns a debug label to a specified GL object - useful in debugging tools similar to debug groups. </summary>
+		private static void DebugLabel(ObjectLabelIdentifier type, int id, string label) {
+			GL.ObjectLabel(type, id, label.Length, label);
 		}
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering. </summary>

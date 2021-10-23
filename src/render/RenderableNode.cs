@@ -59,6 +59,8 @@ namespace Project.Render {
 
 		/// <summary> Creates a copy of an existing model that was cached with a name. </summary>
 		public static Model GetCachedModel(string modelName) {
+			if (_cachedModels.Count == 0)
+				CreateUnitModels();
 			System.Diagnostics.Debug.Assert(_cachedModels.ContainsKey(modelName), $"Tried to load cached model {modelName} and was unable to find it!");
 			return new Model(_cachedModels.GetValueOrDefault(modelName));
 		}
@@ -85,7 +87,7 @@ namespace Project.Render {
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 			} else {
-				GL.UniformMatrix4(Renderer.INSTANCE.ForwardProgram.UniformModel_ID, true, ref modelMatrix);
+				GL.UniformMatrix4(Renderer.INSTANCE.DeferredProgram.UniformModel_ID, true, ref modelMatrix);
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
 				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
@@ -146,7 +148,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		public static void CreateUnitModels() {
+		private static void CreateUnitModels() {
 			// Unit rectangle (2 dimensional)
 			new Model(new float[] {
 					-0.5f, -0.5f, 0.0f, 1.0f,1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
@@ -185,7 +187,7 @@ namespace Project.Render {
 			List<float> vc = new List<float>();
 			List<uint> ic = new List<uint>();
 
-			float transparency = 0.1f;
+			float transparency = 1f;
 			float color = 1.0f;
 			for (uint g = 0; g < dc; g++) {
 				float angle = Renderer.RCF * g * (360.0f / (float)dc) * 2;
@@ -365,6 +367,8 @@ namespace Project.Render {
 
 		/// <summary> Creates a copy of an existing model that was cached with a name.</summary>
 		public static InterfaceModel GetCachedModel(string modelName) {
+			if (_cachedModels.Count == 0)
+				CreateUnitModels();
 			System.Diagnostics.Debug.Assert(_cachedModels.ContainsKey(modelName), $"Tried to load cached model {modelName} and was unable to find it!");
 			return new InterfaceModel(_cachedModels.GetValueOrDefault(modelName));
 		}
@@ -430,7 +434,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		public static void CreateUnitModels() {
+		private static void CreateUnitModels() {
 			// Unit rectangle (2 dimensional)
 			new InterfaceModel(new float[] {
 					-0.5f, -0.5f, 0.0f, 0.0f,
