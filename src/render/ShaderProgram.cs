@@ -19,7 +19,7 @@ namespace Project.Render {
 			_shaders = new ShaderFileData(vertexShaderPath, fragmentShaderPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
-			LoadShaders(true);
+			TryLoadShaders(true);
 		}
 
 		/// <summary> Loads a unified shader (vertex + fragment shaders in same file split by a split keyword), compiles them,
@@ -28,11 +28,13 @@ namespace Project.Render {
 			_shaders = new ShaderFileData(unifiedPath);
 			ShaderProgram_ID = GL.CreateProgram();
 			VertexArrayObject_ID = GL.GenVertexArray();
-			LoadShaders(true);
+			TryLoadShaders(true);
 		}
 
 		/// <summary> Create vertex and fragment shaders from strings </summary>
-		private void LoadShaders(bool firstLoad = false) {
+		private void TryLoadShaders(bool firstLoad = false) {
+			if(!_shaders.Changed() && !firstLoad)
+				return;
 			if(!_shaders.Load())
 				return;
 
@@ -43,25 +45,16 @@ namespace Project.Render {
 					GL.AttachShader(ShaderProgram_ID, shaderID);
 				}
 			}
+
+			//Link and use shader
 			GL.LinkProgram(ShaderProgram_ID);
-
-			//Check for link errors
-			if (GL.GetProgramInfoLog(ShaderProgram_ID) != System.String.Empty) {
-				Console.WriteLine($"Error while linking shaders: {GL.GetProgramInfoLog(ShaderProgram_ID)}");
-				if (firstLoad) //Throw if a valid fallback shader isn't already loaded
-					throw new Exception($"\tError in shader program linkage: \n{GL.GetProgramInfoLog(ShaderProgram_ID)}");
-
-				return;
-			}
-
-			//Success. Bind program and update uniforms
 			GL.UseProgram(ShaderProgram_ID);
 			SetUniforms();
 		}
 
 		/// <summary> Chainable method to change state to this program, and bind appropriate state or uniforms. </summary>
 		public ShaderProgram Use() {
-			TryReload();
+			TryLoadShaders();
 			GL.UseProgram(ShaderProgram_ID);
 			GL.BindVertexArray(VertexArrayObject_ID);
 			Renderer.INSTANCE.CurrentProgram = this;
@@ -69,16 +62,6 @@ namespace Project.Render {
 		}
 
 		protected virtual void SetUniforms() { }
-
-		/// <summary> Reload the shader if its file(s) were changed </summary>
-		private bool TryReload() {
-			if(_shaders.Changed()) {
-				LoadShaders();
-				return true;
-			}
-
-			return false;
-		}
 
 		/// <summary> Assigns the pre-determined vertex attrib information to attrib pointers. This is called once after
 		/// creating at least one VBO in this format. Provide the attribs as a series of ints specifying attrib size.
@@ -95,7 +78,7 @@ namespace Project.Render {
 			return this;
 		}
 
-		/// <summary> Additional data for the shaders that make up an OpenGL program. </summary>
+		/// <summary> Additional data for the shaders files that make up an OpenGL program. </summary>
 		private class ShaderFileData {
 			public readonly string[] Paths;
 			public DateTime[] LastWriteTimes;
@@ -117,11 +100,6 @@ namespace Project.Render {
 				IDs = new int[] { GL.CreateShader(ShaderType.VertexShader), GL.CreateShader(ShaderType.FragmentShader) };
 				Unified = true;
 				Load(true);
-			}
-
-			~ShaderFileData() {
-				foreach (int id in IDs)
-					GL.DeleteShader(id);
 			}
 
 			/// <summary> Returns true if any of the shader files have changed since last reload </summary>
@@ -151,13 +129,8 @@ namespace Project.Render {
 					GL.ShaderSource(id, source);
 					GL.CompileShader(id);
 
-					//Check for errors
+					//Log any errors
 					if (GL.GetShaderInfoLog(id) != System.String.Empty) {
-						//Throw if no existing shader is loaded
-						if (firstLoad)
-							throw new Exception($"\tError in \"{source}\" shader: \n{GL.GetShaderInfoLog(id)}");
-
-						//Otherwise log the error
 						Console.WriteLine($"Error compiling shader {Paths[0]}:{i}: {GL.GetShaderInfoLog(id)}");
 						return false;
 					}
@@ -176,18 +149,16 @@ namespace Project.Render {
 					if (!FileUtil.TryReadFile(Paths[0], out string source)) {
 						return false;
 					}
-					sourceList.AddRange(source.Split("<split>"));
 
-					//Ensure required shaders are present
-					if (sourceList.Count != 2) {
+					//Split shaders
+					sourceList.AddRange(source.Split("<split>"));
+					if (sourceList.Count != 2)
 					 	return false;
-					}
 				} else {
 					//Load separate shader files
-					if (!FileUtil.TryReadFile(Paths[0], out string vertSource) || !FileUtil.TryReadFile(Paths[1], out string fragSource)) {
-						Console.WriteLine($"Failed to read '{Paths[0]}' and '{Paths[1]}'. Files are locked.");
+					if (!FileUtil.TryReadFile(Paths[0], out string vertSource) || !FileUtil.TryReadFile(Paths[1], out string fragSource))
 						return false;
-					}
+					
 					sourceList.Add(vertSource);
 					sourceList.Add(fragSource);
 				}
