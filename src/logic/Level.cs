@@ -4,7 +4,6 @@ using Project.Items;
 using OpenTK.Mathematics;
 using Project.Render;
 using Project.Util;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Linq;
 
 namespace Project.Levels {

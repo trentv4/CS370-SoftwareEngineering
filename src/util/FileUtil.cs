@@ -3,19 +3,6 @@ using System.IO;
 namespace Project.Util {
 	/// <summary> Provides miscellaneous file IO functions </summary>
 	public static class FileUtil {
-		/// <summary> Returns true if the file is being locked by another process </summary>
-		public static bool IsFileLocked(string filePath) {
-			try {
-				using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
-					stream.Close();
-				}
-			} catch (IOException) {
-				return true;
-			}
-
-			return false;
-		}
-
 		/// <summary> Attempts to read a file to a string. If it fails, it returns false. If it succeeds it provides the string via an out argument </summary>
 		public static bool TryReadFile(string filePath, out string contents) {
 			contents = null;
@@ -32,7 +19,6 @@ namespace Project.Util {
 			} catch (IOException) {
 				return false;
 			}
-
 	 		return true;
 		}
 	}
