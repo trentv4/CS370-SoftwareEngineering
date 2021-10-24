@@ -24,6 +24,8 @@ namespace Project {
 			}
 			Console.WriteLine($"Initializing in game mode: {_mode.ToString()}");
 
+			Assimp.Unmanaged.AssimpLibrary.Instance.LoadLibrary();
+
 			GameWindowSettings gameSettings = new GameWindowSettings() {
 				IsMultiThreaded = true,
 				UpdateFrequency = 60

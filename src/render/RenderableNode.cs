@@ -2,6 +2,8 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
+using Assimp;
+using System.IO;
 
 namespace Project.Render {
 	/// <summary> Superclass for all renderable objects. This node is essentially a "container" and does nothing when rendered,
@@ -26,6 +28,7 @@ namespace Project.Render {
 	/// <summary> Container class for a 3d model containing vertices and indices that exist on the GPU. </summary>
 	public class Model : RenderableNode {
 		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
+		private static readonly AssimpContext _assimp = new AssimpContext();
 
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
@@ -146,6 +149,36 @@ namespace Project.Render {
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BufferData(BufferTarget.ElementArrayBuffer, indexData.Length * sizeof(uint), indexData, BufferUsageHint.StaticDraw);
 			return this;
+		}
+
+		public static Model LoadModelFromFile(string file) {
+			Console.WriteLine($"Loading model from file: \"{file}\", exists: {File.Exists(file)}");
+			Scene scene = _assimp.ImportFile(file, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
+
+			Model a = null;
+			if (scene.HasMeshes) {
+				//TODO(trent): Implement properly (children)
+				foreach (Mesh m in scene.Meshes) {
+					Vector3D[] vertices = m.Vertices.ToArray();
+					Vector3D[] normals = m.Normals.ToArray();
+					Vector3D[] uvs = m.TextureCoordinateChannels[0].ToArray();
+					Material mat = scene.Materials[m.MaterialIndex];
+
+					List<float> vertexData = new List<float>(vertices.Length * 12);
+					for (int i = 0; i < vertices.Length; i++) {
+						vertexData.AddRange(new float[]{
+							vertices[i].X, vertices[i].Y, vertices[i].Z,
+							normals[i].X, normals[i].Y, normals[i].Z,
+							mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
+							uvs[i][0], uvs[i][1] });
+					}
+
+					int[] ind = m.GetIndices();
+					uint[] indices = (uint[])(object)ind; // nasty...
+					a = new Model(vertexData.ToArray(), indices);
+				}
+			}
+			return a;
 		}
 
 		private static void CreateUnitModels() {
