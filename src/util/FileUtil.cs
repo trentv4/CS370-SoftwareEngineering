@@ -9,8 +9,7 @@ namespace Project.Util {
 				using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None)) {
 					stream.Close();
 				}
-			}
-			catch (IOException ex) {
+			} catch (IOException) {
 				return true;
 			}
 
@@ -30,7 +29,7 @@ namespace Project.Util {
 				contents = reader.ReadToEnd();
 				stream.Unlock(0, stream.Length);
 				reader.Close();
-			} catch (IOException ex) {
+			} catch (IOException) {
 				return false;
 			}
 
