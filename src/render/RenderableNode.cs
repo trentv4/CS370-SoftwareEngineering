@@ -172,10 +172,12 @@ namespace Project.Render {
 							mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
 							uvs[i][0], uvs[i][1] });
 					}
-
 					int[] ind = m.GetIndices();
 					uint[] indices = (uint[])(object)ind; // nasty...
+
 					a = new Model(vertexData.ToArray(), indices);
+					a.SetTexture(Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
+									TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat));
 				}
 			}
 			return a;
@@ -506,3 +508,55 @@ namespace Project.Render {
 		}
 	}
 }
+
+/*
+
+Console.WriteLine($"Loading model from file: \"{filename}\" exists: {File.Exists(filename)}");
+AssimpContext c = new AssimpContext();
+var scene = c.ImportFile(filename, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
+Model a = null;
+if (scene.HasMeshes) {
+	//TODO(trent): Implement properly (children)
+	foreach (Mesh m in scene.Meshes) {
+		Vector3D[] vertices = m.Vertices.ToArray();
+		Vector3D[] normals = m.Normals.ToArray();
+		Vector3D[] uvs = m.TextureCoordinateChannels[0].ToArray();
+		Material mat = scene.Materials[m.MaterialIndex];
+
+		List<Texture> t = new List<Texture>();
+
+		t.Add(mat.HasTextureDiffuse ?
+				new Texture($"{mat.Name}-diffuse", scene.Textures[mat.TextureDiffuse.TextureIndex])
+				: Texture.MissingTexture);
+		t.Add(mat.HasTextureSpecular ?
+				new Texture($"{mat.Name}-gloss", scene.Textures[mat.TextureSpecular.TextureIndex])
+				: Texture.MissingTexture);
+		t.Add(mat.HasTextureAmbientOcclusion ?
+				new Texture($"{mat.Name}-ao", scene.Textures[mat.TextureAmbientOcclusion.TextureIndex])
+				: Texture.MissingTexture);
+		t.Add(mat.HasTextureNormal ?
+				new Texture($"{mat.Name}-normal", scene.Textures[mat.TextureNormal.TextureIndex])
+				: Texture.MissingTexture);
+		t.Add(mat.HasTextureHeight ?
+				new Texture($"{mat.Name}-height", scene.Textures[mat.TextureHeight.TextureIndex])
+				: Texture.MissingTexture);
+
+		List<float> vertexData = new List<float>(vertices.Length * 12);
+		for (int i = 0; i < vertices.Length; i++) {
+			vertexData.AddRange(new float[]{
+				vertices[i].X, vertices[i].Y, vertices[i].Z,
+				uvs[i][0], uvs[i][1],
+				mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
+				normals[i].X, normals[i].Y, normals[i].Z});
+		}
+
+		int[] ind = m.GetIndices();
+		uint[] indices = (uint[])(object)ind; // nasty...
+		a = new Model(vertexData.ToArray(), indices, t.ToArray());
+	}
+}
+
+
+
+
+*/

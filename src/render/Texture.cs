@@ -3,6 +3,8 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using StbImageSharp;
 using System.Collections.Generic;
+using System;
+using System.Drawing;
 
 namespace Project.Render {
 	/// <summary> Wrapper class for OpenGL textures. This allows for loading textures multiple times by retreiving loaded textures from cache. </summary>
@@ -71,6 +73,36 @@ namespace Project.Render {
 							image.Width, image.Height, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.UnsignedByte, image.Data);
 			GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
+			_textureCache.Add(cacheName, value.TextureID);
+			return value;
+		}
+
+		public static Texture CreateTexture(string cacheName, Assimp.EmbeddedTexture image, TextureMinFilter filter, TextureWrapMode wrapMode) {
+			if (_textureCache.ContainsKey(cacheName)) {
+				return new Texture(_textureCache[cacheName]);
+			}
+			Texture value = new Texture(GL.GenTexture());
+			GL.BindTexture(TextureTarget.Texture2D, value.TextureID);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)wrapMode);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)wrapMode);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)filter);
+			GL.TexParameter(TextureTarget.Texture2D, (TextureParameterName)All.TextureMaxAnisotropy, _anisotropicLevel);
+
+			if (image.IsCompressed) {
+				Bitmap compressedBitmap = new Bitmap(new MemoryStream(image.CompressedData));
+				System.Drawing.Imaging.BitmapData rawBits = compressedBitmap.LockBits(
+								new System.Drawing.Rectangle(0, 0, compressedBitmap.Width, compressedBitmap.Height),
+								System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+				GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+								compressedBitmap.Width, compressedBitmap.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, rawBits.Scan0);
+
+				compressedBitmap.UnlockBits(rawBits);
+				compressedBitmap.Dispose();
+			} else {
+				Console.WriteLine($"Uncompressed texture data found in texture ${cacheName}.");
+			}
+
+			GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 			_textureCache.Add(cacheName, value.TextureID);
 			return value;
 		}
