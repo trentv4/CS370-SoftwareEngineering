@@ -15,6 +15,7 @@ namespace Project.Render {
 		internal const float RCF = 0.017453293f;
 
 		public static readonly GameLogic LogicThread = new GameLogic();
+		public static readonly Vector2 ProjectMatrixNearFar = new Vector2(0.01f, 1000000f);
 		public static Renderer INSTANCE;
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
 
@@ -102,8 +103,8 @@ namespace Project.Render {
 			// Camera and perspective matrices required for different passes
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
-			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
-			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
+			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
+			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 
 			DebugGroup("G-Buffer");
 			GBuffer.Use().Reset();

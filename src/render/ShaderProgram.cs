@@ -231,6 +231,7 @@ namespace Project.Render {
 
 		protected override void SetUniforms() {
 			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "screenSize"), (float)Renderer.INSTANCE.Size.X, (float)Renderer.INSTANCE.Size.Y);
+			GL.Uniform2(GL.GetUniformLocation(ShaderProgram_ID, "projectionMatrixNearFar"), (float)Renderer.ProjectMatrixNearFar.X, (float)Renderer.ProjectMatrixNearFar.Y);
 			UniformModel_ID = GL.GetUniformLocation(ShaderProgram_ID, "model");
 			UniformView_ID = GL.GetUniformLocation(ShaderProgram_ID, "view");
 			UniformPerspective_ID = GL.GetUniformLocation(ShaderProgram_ID, "perspective");
