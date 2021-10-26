@@ -33,9 +33,12 @@ namespace Project.Render {
 
 			float roomSize = 10.0f;
 
-			var testModel = Model.LoadModelFromFile("assets/models/truck_grey.glb");
+			var testModel = Model.LoadModelFromFile("assets/models/sponza/Sponza.gltf");
 			if (testModel != null)
 				Scene.Children.Add(testModel);
+			var test2 = Model.LoadModelFromFile("assets/models/truck_grey.glb");
+			if (test2 != null)
+				Scene.Children.Add(test2);
 
 			// Floor
 			Scene.Children.Add(Model.GetCachedModel("unit_circle")

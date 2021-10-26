@@ -40,6 +40,8 @@ namespace Project.Render {
 
 		private int _indexLength;
 
+		private Model() { }
+
 		/// <summary> Creates a Model given vertex data and indices. The data is sent to the GPU and then discarded on main memory. </summary>
 		public Model(float[] vertexData, uint[] indices) {
 			_indexLength = indices.Length;
@@ -152,35 +154,50 @@ namespace Project.Render {
 		}
 
 		public static Model LoadModelFromFile(string file) {
+			if (_cachedModels.ContainsKey(file)) {
+				return _cachedModels.GetValueOrDefault(file);
+			}
 			Console.WriteLine($"Loading model from file: \"{file}\", exists: {File.Exists(file)}");
 			Scene scene = _assimp.ImportFile(file, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
+			string p = Path.GetDirectoryName(file).ToString();
+			Model modelNode = new Model();
+			if (scene.RootNode != null) {
+				Assimp.Node root = scene.RootNode;
+				if (root.HasMeshes) {
+					foreach (int index in root.MeshIndices) {
+						Assimp.Mesh currentMesh = scene.Meshes[index];
+						Vector3D[] vertices = currentMesh.Vertices.ToArray();
+						Vector3D[] normals = currentMesh.Normals.ToArray();
+						Vector3D[] uvs = currentMesh.TextureCoordinateChannels[0].ToArray();
+						Material mat = scene.Materials[currentMesh.MaterialIndex];
+						uint[] indices = (uint[])(object)currentMesh.GetIndices(); // nasty...
 
-			Model a = null;
-			if (scene.HasMeshes) {
-				//TODO(trent): Implement properly (children)
-				foreach (Mesh m in scene.Meshes) {
-					Vector3D[] vertices = m.Vertices.ToArray();
-					Vector3D[] normals = m.Normals.ToArray();
-					Vector3D[] uvs = m.TextureCoordinateChannels[0].ToArray();
-					Material mat = scene.Materials[m.MaterialIndex];
+						List<float> vertexData = new List<float>(vertices.Length * 12);
+						for (int i = 0; i < vertices.Length; i++) {
+							vertexData.AddRange(new float[]{
+								vertices[i].X, vertices[i].Y, vertices[i].Z,
+								normals[i].X, normals[i].Y, normals[i].Z,
+								mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
+								uvs[i][0], uvs[i][1] });
+						}
+						Model tempMesh = new Model(vertexData.ToArray(), indices);
+						if (mat.HasTextureDiffuse) {
+							Assimp.TextureSlot textureSlot = mat.TextureDiffuse;
+							if (scene.TextureCount > textureSlot.TextureIndex) {
+								Texture t = Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
+												TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat);
+								tempMesh.SetTexture(t);
+							} else {
+								tempMesh.SetTexture(Texture.CreateTexture($"{p}\\{textureSlot.FilePath}"));
+							}
+						}
 
-					List<float> vertexData = new List<float>(vertices.Length * 12);
-					for (int i = 0; i < vertices.Length; i++) {
-						vertexData.AddRange(new float[]{
-							vertices[i].X, vertices[i].Y, vertices[i].Z,
-							normals[i].X, normals[i].Y, normals[i].Z,
-							mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
-							uvs[i][0], uvs[i][1] });
+						modelNode.Children.Add(tempMesh);
 					}
-					int[] ind = m.GetIndices();
-					uint[] indices = (uint[])(object)ind; // nasty...
-
-					a = new Model(vertexData.ToArray(), indices);
-					a.SetTexture(Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
-									TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat));
 				}
 			}
-			return a;
+			modelNode.Cache(file);
+			return modelNode;
 		}
 
 		private static void CreateUnitModels() {
