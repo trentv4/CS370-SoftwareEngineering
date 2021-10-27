@@ -191,6 +191,13 @@ namespace Project {
 					room.Visited = Room.VisitedState.Seen;
 				}
 			}
+			//Debug keybind to add all keys required for end room
+			if (Input.IsKeyPressed(Keys.K)) {
+				foreach(ItemDefinition keyDef in Level.KeyDefinitions) {
+					if (Level.Player.Inventory.Items.Find(item => item.Definition == keyDef) == null) //If player doesn't have the key
+						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key
+				}
+			}
 		}
 
 		/// <summary>Input for inventory management</summary>

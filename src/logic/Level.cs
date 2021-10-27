@@ -15,6 +15,8 @@ namespace Project.Levels {
 		public Player Player;
 
 		public Room[] Rooms;
+		/// <summary> Keys required to pass pass through the end room into the next level. </summary>
+		public ItemDefinition[] KeyDefinitions;
 		///<summary>The room that the player is in.</summary>
 		public Room CurrentRoom = null;
 		///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
@@ -355,24 +357,61 @@ namespace Project.Levels {
             	}
             }
 
-			//Add random items to each room
+			//Add random non-key items to each room
 			foreach (var room in roomsGen) {
 				int numItemsToAdd = rand.Next(0, 5);
 				for (int i = 0; i < numItemsToAdd; i++) {
-					//Pick random item and add it to the room
-					var def = ItemDefinition.Definitions[rand.Next(ItemDefinition.Definitions.Count)];
+					//Get random item definition that isn't a key
+					ItemDefinition def = null;
+					while (def == null) {
+						ItemDefinition temp = ItemDefinition.Definitions[rand.Next(ItemDefinition.Definitions.Count)];
+						if (!temp.IsKey)
+							def = temp;
+					}
+
+					//Add item to the room in random position
 					var item = new Item(def);
 					room.Items.Add(item);
-
-					//Pick random position for the item
 					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
 					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
 					item.Position = new Vector2(x, y);
 				}
 			}
 
-            //Set final rooms list and their connections
-            foreach (var room in roomsGen) {
+			//Get 3 key definitions
+			var keyDefs = new List<ItemDefinition>();
+			foreach (int i in Enumerable.Range(0, ItemDefinition.Definitions.Count).OrderBy(i => rand.Next())) {
+				if (keyDefs.Count == 3)
+					break;
+
+				ItemDefinition def = ItemDefinition.Definitions[i];
+				if (def.IsKey)
+					keyDefs.Add(def);
+			}
+			//Store key defs for end room checks
+			KeyDefinitions = keyDefs.ToArray();
+
+			//Add keys to rooms somewhere in the map
+			foreach(ItemDefinition keyDef in keyDefs) {
+				while(true) {
+					//Pick a random room
+					Room room = roomsGen[rand.Next(0, roomsGen.Count)];
+
+					//Use room if it's not the start/end room and doesn't already have a key
+					if (room != startRoom && room != endRoom && room.Items.Find(item => item.Definition.IsKey) == null) {
+						//Create key and add it to the room in a random position
+						var key = new Item(keyDef);
+						room.Items.Add(key);
+						float x = (float)((rand.NextDouble() - 0.5) * 5.0);
+						float y = (float)((rand.NextDouble() - 0.5) * 5.0);
+						key.Position = new Vector2(x, y);
+						break;
+					}
+				}
+			}
+
+			//Set final rooms list and their connections
+			foreach (var room in roomsGen) {
 				var connectedRooms = connections[room];
 				room.ConnectedRooms = connectedRooms.ToArray();
 			}
@@ -396,19 +435,38 @@ namespace Project.Levels {
 		}
 
 		public void Update() {
-			//Print out score and generate a new level if player completes this one
-			if (CurrentRoom == EndRoom) {
-				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
-				Score = 0;
-                CurrentLevel++;
-                TryGenerateLevel(10000);
-            }
-
-            CheckIfPlayerEnteredDoorway();
+			CheckIfPlayerCompletedLevel();
+			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
         }
 
-		/// <summary>Moves them to the next room if they collide with a doorway and it doesn't go to the previous room.</summary>
+		/// <summary>The current level is completed if the player is inside the end room and has all the keys required to open it.</summary>
+		void CheckIfPlayerCompletedLevel() {
+			if (CurrentRoom == EndRoom) {
+				//Check that the player has the keys needed to pass through
+				bool hasRequiredKeys = true;
+				foreach (ItemDefinition keyDef in KeyDefinitions)
+					if (Player.Inventory.Items.Find(item => item.Definition == keyDef) == null)
+						hasRequiredKeys = false;
+
+				//Todo: The player should also be required to walk through a special "end room door" so they can still backtrack and grab more loot if needed
+				//Has required keys. Print out score and generate a new level.
+				if(hasRequiredKeys) {
+					Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
+					Score = 0;
+                	CurrentLevel++;
+                	TryGenerateLevel(10000);
+				} else {
+					Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
+					foreach (ItemDefinition keyDef in KeyDefinitions) {
+						bool hasKey = Player.Inventory.Items.Find(item => item.Definition == keyDef) != null;
+						Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
+					}
+				}
+            }
+		}
+
+		/// <summary> Moves the player to the next room if they collide with a doorway and it doesn't go to the previous room. </summary>
 		void CheckIfPlayerEnteredDoorway() {
 			// Loop through each door
 			float roomSize = 10.0f;
