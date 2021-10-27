@@ -294,8 +294,8 @@ namespace Project.Levels {
 						}
 					}
 
-                    //Remove connection
-                    if (room2 != null) {
+                    //Remove connection if there will still be a valid path to the end room
+                    if (room2 != null && CanRoomBeSafelyRemoved(room, room2, startRoom, endRoom, roomsGen, connections)) {
 						roomConnections.Remove(room2);
                         connections[room2].Remove(room);
                     }
@@ -432,6 +432,35 @@ namespace Project.Levels {
 			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
 			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			return true;
+		}
+
+		/// <summary>
+		/// Returns true if there will still be a connection between start and end room if the connection
+		/// between target0 and target1 is removed. Used by Level.GenerateLevel().
+		/// </summary>
+		private static bool CanRoomBeSafelyRemoved(Room target0, Room target1, Room startRoom, Room endRoom, IReadOnlyList<Room> rooms, IReadOnlyDictionary<Room, List<Room>> connections) {
+                //Do floodfill from the start room
+				var checkedRooms = new List<Room>();
+                var roomQueue = new Queue<Room>();
+                roomQueue.Enqueue(startRoom);
+                bool reachedEndRoom = false;
+                while (roomQueue.Count > 0) {
+                    //Get next room from queue
+                    var room = roomQueue.Dequeue();
+                    checkedRooms.Add(room);
+
+                    //Check if we've reached the end room
+                    if (room == endRoom)
+                        reachedEndRoom = true;
+
+                    //Push connections onto queue if they haven't already been checked
+                    foreach (var connection in connections[room])
+                        if (!checkedRooms.Contains(connection))
+							if ((room == target0 && connection == target1) || (room == target1 && connection == target0)) //Pretend the connection doesn't exist
+                            	roomQueue.Enqueue(connection);
+                }
+
+                return reachedEndRoom;
 		}
 
 		public void Update() {
