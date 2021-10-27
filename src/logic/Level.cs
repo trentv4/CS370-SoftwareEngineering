@@ -398,7 +398,7 @@ namespace Project.Levels {
 					Room room = roomsGen[rand.Next(0, roomsGen.Count)];
 
 					//Use room if it's not the start/end room and doesn't already have a key
-					if (room != startRoom && room != endRoom && room.Items.Find(item => item.Definition.IsKey) == null) {
+					if (room != startRoom && room != endRoom && room.Items.Contains(item => item.Definition.IsKey)) {
 						//Create key and add it to the room in a random position
 						var key = new Item(keyDef);
 						room.Items.Add(key);
@@ -446,7 +446,7 @@ namespace Project.Levels {
 				//Check that the player has the keys needed to pass through
 				bool hasRequiredKeys = true;
 				foreach (ItemDefinition keyDef in KeyDefinitions)
-					if (Player.Inventory.Items.Find(item => item.Definition == keyDef) == null)
+					if (Player.Inventory.Items.Contains(item => item.Definition == keyDef))
 						hasRequiredKeys = false;
 
 				//Todo: The player should also be required to walk through a special "end room door" so they can still backtrack and grab more loot if needed
@@ -459,7 +459,7 @@ namespace Project.Levels {
 				} else {
 					Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
 					foreach (ItemDefinition keyDef in KeyDefinitions) {
-						bool hasKey = Player.Inventory.Items.Find(item => item.Definition == keyDef) != null;
+						bool hasKey = Player.Inventory.Items.Contains(item => item.Definition == keyDef);
 						Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
 					}
 				}
