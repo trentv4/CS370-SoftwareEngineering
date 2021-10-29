@@ -55,6 +55,37 @@ namespace Project.Render {
 			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
 		}
 
+		/// <summary> Private constructor used during model loading from Assimp. </summary>
+		private Model(Assimp.Mesh mesh) {
+			uint[] indices = (uint[])(object)mesh.GetIndices(); // nasty...
+
+			List<float> vertexDataList = new List<float>(mesh.Vertices.Count * 12);
+			for (int i = 0; i < mesh.Vertices.Count; i++) {
+				Assimp.Vector3D position = mesh.HasVertices ? mesh.Vertices[i] : new Assimp.Vector3D(0);
+				Assimp.Vector3D normal = mesh.HasNormals ? mesh.Normals[i] : new Assimp.Vector3D(0);
+				float[] uvs = new float[] { 0f, 0f };
+				if (mesh.TextureCoordinateChannelCount > 0) {
+					Assimp.Vector3D channel = mesh.TextureCoordinateChannels[0][i];
+					uvs = new float[] { channel.X, channel.Y };
+				}
+				vertexDataList.AddRange(new float[]{
+								position.X, position.Y, position.Z,
+								normal.X, normal.Y, normal.Z,
+								1f, 1f, 1f, 1f,
+								uvs[0], uvs[1] });
+			}
+			var vertexData = vertexDataList.ToArray();
+			_indexLength = indices.Length;
+
+			ElementBufferArray_ID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+
+			VertexBufferObject_ID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+		}
+
 		/// <summary> Private constructor used when cached models are loaded. </summary>
 		private Model(Model copy) {
 			this._indexLength = copy._indexLength;
@@ -160,44 +191,42 @@ namespace Project.Render {
 			Console.WriteLine($"Loading model from file: \"{file}\", exists: {File.Exists(file)}");
 			Scene scene = _assimp.ImportFile(file, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
 			string p = Path.GetDirectoryName(file).ToString();
-			Model modelNode = new Model();
-			if (scene.RootNode != null) {
-				Assimp.Node root = scene.RootNode;
-				if (root.HasMeshes) {
-					foreach (int index in root.MeshIndices) {
-						Assimp.Mesh currentMesh = scene.Meshes[index];
-						Vector3D[] vertices = currentMesh.Vertices.ToArray();
-						Vector3D[] normals = currentMesh.Normals.ToArray();
-						Vector3D[] uvs = currentMesh.TextureCoordinateChannels[0].ToArray();
-						Material mat = scene.Materials[currentMesh.MaterialIndex];
-						uint[] indices = (uint[])(object)currentMesh.GetIndices(); // nasty...
 
-						List<float> vertexData = new List<float>(vertices.Length * 12);
-						for (int i = 0; i < vertices.Length; i++) {
-							vertexData.AddRange(new float[]{
-								vertices[i].X, vertices[i].Y, vertices[i].Z,
-								normals[i].X, normals[i].Y, normals[i].Z,
-								mat.ColorDiffuse.R, mat.ColorDiffuse.G, mat.ColorDiffuse.B, mat.ColorDiffuse.A,
-								uvs[i][0], uvs[i][1] });
-						}
-						Model tempMesh = new Model(vertexData.ToArray(), indices);
-						if (mat.HasTextureDiffuse) {
-							Assimp.TextureSlot textureSlot = mat.TextureDiffuse;
-							if (scene.TextureCount > textureSlot.TextureIndex) {
-								Texture t = Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
-												TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat);
-								tempMesh.SetTexture(t);
-							} else {
-								tempMesh.SetTexture(Texture.CreateTexture($"{p}\\{textureSlot.FilePath}"));
-							}
-						}
+			Model[] models = new Model[scene.Meshes.Count];
+			for (int i = 0; i < models.Length; i++) {
+				Assimp.Mesh currentMesh = scene.Meshes[i];
+				models[i] = new Model(scene.Meshes[i]);
 
-						modelNode.Children.Add(tempMesh);
+				Assimp.Material mat = scene.Materials[currentMesh.MaterialIndex];
+				if (mat.HasTextureDiffuse) {
+					if (scene.TextureCount > mat.TextureDiffuse.TextureIndex) {
+						models[i].SetTexture(Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
+										TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat));
+					} else {
+						models[i].SetTexture(Texture.CreateTexture($"{p}\\{mat.TextureDiffuse.FilePath}"));
 					}
 				}
 			}
-			modelNode.Cache(file);
-			return modelNode;
+
+			Model root = new Model();
+			CreateModelFromAssimpNode(root, scene.RootNode, models);
+
+			root.Cache(file);
+			return root;
+		}
+
+		private static void CreateModelFromAssimpNode(Model parent, Assimp.Node node, Model[] models) {
+			if (node.HasMeshes) {
+				foreach (int i in node.MeshIndices) {
+					Model m = new Model(models[i]).SetTexture(models[i].AlbedoTexture);
+					parent.Children.Add(m);
+				}
+			}
+			if (node.HasChildren) {
+				foreach (Node n in node.Children) {
+					CreateModelFromAssimpNode(parent, n, models);
+				}
+			}
 		}
 
 		private static void CreateUnitModels() {
