@@ -185,9 +185,6 @@ namespace Project.Render {
 		}
 
 		public static Model LoadModelFromFile(string file) {
-			if (_cachedModels.ContainsKey(file)) {
-				return _cachedModels.GetValueOrDefault(file);
-			}
 			Console.WriteLine($"Loading model from file: \"{file}\", exists: {File.Exists(file)}");
 			Scene scene = _assimp.ImportFile(file, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
 			string p = Path.GetDirectoryName(file).ToString();
@@ -211,7 +208,6 @@ namespace Project.Render {
 			Model root = new Model();
 			CreateModelFromAssimpNode(root, scene.RootNode, models);
 
-			root.Cache(file);
 			return root;
 		}
 
