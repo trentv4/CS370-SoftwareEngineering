@@ -33,6 +33,7 @@ namespace Project.Render {
 		private static Vector3 ScaleModifier = Vector3.Zero;
 		private static Vector3 RotationModifier = Vector3.Zero;
 		private static Vector3 PositionModifier = Vector3.Zero;
+		private static bool IsFogModifier = false;
 
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
@@ -116,6 +117,11 @@ namespace Project.Render {
 		public override void Render() {
 			if (!Enabled) return;
 
+			bool SetFog = false;
+			if (IsFogModifier == false && IsFog) {
+				SetFog = true;
+				IsFogModifier = true;
+			}
 			ScaleModifier += Scale - Vector3.One;
 			RotationModifier += Rotation;
 			PositionModifier += Position;
@@ -127,11 +133,12 @@ namespace Project.Render {
 			PositionModifier -= Position;
 
 			RenderSelf();
+			if (SetFog) IsFogModifier = false;
 		}
 
 		/// <summary> Renders this model. It will be drawn in the correct render pass depending on if it is a fog model or real model. </summary>
 		protected override void RenderSelf() {
-			if (IsFog != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
+			if ((IsFogModifier) != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
 				return;
 
 			Matrix4 modelMatrix = Matrix4.Identity;
@@ -141,7 +148,7 @@ namespace Project.Render {
 			modelMatrix *= Matrix4.CreateRotationZ((Rotation.Z + RotationModifier.Z) * Renderer.RCF);
 			modelMatrix *= Matrix4.CreateTranslation(Position + PositionModifier);
 
-			if (IsFog) {
+			if (IsFogModifier) {
 				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
 				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
