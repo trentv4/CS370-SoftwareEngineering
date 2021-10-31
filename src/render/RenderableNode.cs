@@ -13,7 +13,7 @@ namespace Project.Render {
 		public bool Enabled = true;
 
 		/// <summary> Renders this object and all children, and returns the number of GL draw calls issued. </summary>
-		public void Render() {
+		public virtual void Render() {
 			if (!Enabled) return;
 
 			foreach (RenderableNode r in Children) {
@@ -29,6 +29,10 @@ namespace Project.Render {
 	public class Model : RenderableNode {
 		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
 		private static readonly AssimpContext _assimp = new AssimpContext();
+		// The following are used to allow parent model transforms to influence child model transforms.
+		private static Vector3 ScaleModifier = Vector3.Zero;
+		private static Vector3 RotationModifier = Vector3.Zero;
+		private static Vector3 PositionModifier = Vector3.Zero;
 
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
@@ -39,6 +43,7 @@ namespace Project.Render {
 		public Texture AlbedoTexture { get; private set; } = Texture.CreateTexture("assets/textures/null.png");
 
 		private int _indexLength;
+
 
 		private Model() { }
 
@@ -108,15 +113,33 @@ namespace Project.Render {
 			return this;
 		}
 
+		public override void Render() {
+			if (!Enabled) return;
+
+			ScaleModifier += Scale - Vector3.One;
+			RotationModifier += Rotation;
+			PositionModifier += Position;
+			foreach (RenderableNode r in Children) {
+				r.Render();
+			}
+			ScaleModifier -= Scale - Vector3.One;
+			RotationModifier -= Rotation;
+			PositionModifier -= Position;
+
+			RenderSelf();
+		}
+
 		/// <summary> Renders this model. It will be drawn in the correct render pass depending on if it is a fog model or real model. </summary>
 		protected override void RenderSelf() {
 			if (IsFog != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
 				return;
 
 			Matrix4 modelMatrix = Matrix4.Identity;
-			modelMatrix *= Matrix4.CreateScale(Scale);
-			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
-			modelMatrix *= Matrix4.CreateTranslation(Position);
+			modelMatrix *= Matrix4.CreateScale(Scale + ScaleModifier);
+			modelMatrix *= Matrix4.CreateRotationX((Rotation.X + RotationModifier.X) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationY((Rotation.Y + RotationModifier.Y) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationZ((Rotation.Z + RotationModifier.Z) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateTranslation(Position + PositionModifier);
 
 			if (IsFog) {
 				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);

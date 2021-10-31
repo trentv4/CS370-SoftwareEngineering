@@ -33,10 +33,6 @@ namespace Project.Render {
 
 			float roomSize = 10.0f;
 
-			Scene.Children.Add(Model.LoadModelFromFile("assets/models/sponza/Sponza.gltf"));
-			Scene.Children.Add(Model.LoadModelFromFile("assets/models/truck_grey.glb"));
-			Scene.Children.Add(Model.LoadModelFromFile("assets/models/grave1.obj"));
-
 			// Floor
 			Scene.Children.Add(Model.GetCachedModel("unit_circle")
 				.SetPosition(new Vector3(0, -1f, 0))
