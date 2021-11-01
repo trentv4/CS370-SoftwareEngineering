@@ -102,8 +102,20 @@ namespace Project.Util {
 		public static void StopSound(string filePath) {
 			//Stop all sources that are playing this sound
 			foreach(var kv in _sourceSounds)
-				if(kv.Value == filePath)
+				if (kv.Value == filePath) {
 					AL.SourceStop(kv.Key);
+					_sourceSounds[kv.Key] = null; //Unmap sound from source
+					break;
+				}
+		}
+
+		/// <summary> Returns true if any source is playing the sound </summary>
+		public static bool IsSoundPlaying(string filePath) {
+			foreach (var kv in _sourceSounds)
+				if (kv.Value == filePath)
+					return true;
+
+			return false;
 		}
 	}
 
