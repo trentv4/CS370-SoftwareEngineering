@@ -137,7 +137,7 @@ namespace Project.Levels {
                 for (int j = 0; j < roomsInPath; j++) {
 					//Calculate position of next room
 					if(j != 0) {
-                    	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
+                    	float angle = rand.NextFloat(-1.0f, 1.0f) * angleMaxRadians;
                     	roomX += xDelta * MathF.Cos(angle);
                     	roomY += xDelta * MathF.Sin(angle);
 					}
@@ -169,10 +169,10 @@ namespace Project.Levels {
             foreach (List<Room> path in primaryPaths) {
                 for (int i = 0; i < path.Count; i++) {
                     //Chance on each primary path room to have a secondary path
-                    if (rand.NextDouble() <= secondaryPathChance) {
+                    if (rand.NextFloat() <= secondaryPathChance) {
                      	Room primary = path[i];
 
-                        //Look for another primary in range to connect this room with
+                        //Look for a nearby primary path to connect with this one
                         float closestRoom = float.PositiveInfinity;
                         Room nextRoom = null;
                         foreach (var room in roomsGen) {
@@ -188,30 +188,42 @@ namespace Project.Levels {
                             }
                         }
 
-						if(nextRoom != null) { //Connect to another primary
+						if (nextRoom != null) { //Connect to another primary path
                             connections[primary].Add(nextRoom);
                             connections[nextRoom].Add(primary);
-                        }
-						else { //Form a separate branch
-							//Todo: Rewrite this so branches do more than just looping back into the same path
-							Room nextPrimary = (i == path.Count - 1) ? path[i - 1] : path[i + 1];
-                        	float xDelta = 10.0f / (path.Count + 1);
+                        } else { //Branch off this primary and loop back into it elsewhere.
+							//Todo: Rewrite this so it forms more complex branches. Currently just forms a loop off the current primary.
+							//Determine the end room of the loop
+							Room loopEnd = null;
+							if(i == (path.Count - 1))
+								loopEnd = path[i - 1]; //Go backwards if we're at the end of the primary
+							else
+								loopEnd = path[i + 1]; //Otherwise, go forward
+
+							//Calculate angle the loop takes off the primary path
                         	float minSecondaryAngle = 5.0f;
-                        	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
+                        	float angle = rand.NextFloat(-1.0f, 1.0f) * angleMaxRadians;
                         	angle = Math.Sign(angle) * Math.Max(minSecondaryAngle, Math.Abs(angle));
+							
+							//Calculate the position of the loop center room
+							float xDelta = 10.0f / (path.Count + 1); //Distance between primary path rooms
                         	float roomX = primary.Position.X;
                         	float roomY = primary.Position.Y;
                         	roomX += xDelta * MathF.Cos(angle) * 0.5f;
                         	roomY += xDelta * MathF.Sin(angle) * 0.5f;
 
+							//Create a room at the center of the loop
                         	var room = new Room(roomX, roomY);
                         	roomsGen.Add(room);
                         	connections[room] = new List<Room>();
+
+							//Connect loop start and center rooms
                         	connections[room].Add(primary);
                         	connections[primary].Add(room);
-
-                        	connections[room].Add(nextPrimary);
-                        	connections[nextPrimary].Add(room);
+							
+							//Connect loop center and end rooms
+                        	connections[room].Add(loopEnd);
+                        	connections[loopEnd].Add(room);
 						}
                     }
                 }
@@ -372,8 +384,8 @@ namespace Project.Levels {
 					//Add item to the room in random position
 					var item = new Item(def);
 					room.Items.Add(item);
-					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
-					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
+					float x = rand.NextFloat(-2.5f, 2.5f);
+					float y = rand.NextFloat(-2.5f, 2.5f);
 					item.Position = new Vector2(x, y);
 				}
 			}
@@ -402,8 +414,8 @@ namespace Project.Levels {
 						//Create key and add it to the room in a random position
 						var key = new Item(keyDef);
 						room.Items.Add(key);
-						float x = (float)((rand.NextDouble() - 0.5) * 5.0);
-						float y = (float)((rand.NextDouble() - 0.5) * 5.0);
+						float x = rand.NextFloat(-2.5f, 2.5f);
+						float y = rand.NextFloat(-2.5f, 2.5f);
 						key.Position = new Vector2(x, y);
 						break;
 					}
