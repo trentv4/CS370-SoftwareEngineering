@@ -419,6 +419,25 @@ namespace Project.Levels {
 			StartRoom = startRoom;
 			EndRoom = endRoom;
 
+			//Add obstacles to 60% of rooms
+			int numRoomsWithObstacles = (int)(Rooms.Length * 0.6f);
+			int obstacleCount = 0;
+			foreach (int i in Enumerable.Range(0, roomsGen.Count).OrderBy(i => rand.Next())) {
+				if (obstacleCount == numRoomsWithObstacles)
+					break;
+
+				Room room = Rooms[i];
+				if(room == startRoom || room == endRoom)
+					continue;
+
+				//Note: Only windy rooms are implemented so far
+				room.Type = Room.RoomType.Windy;
+				room.WindSpeed = rand.NextFloat(5.0f, 6.2f);
+				room.WindDirection = rand.NextVec2();
+
+				obstacleCount++;
+			}
+
 			//Spawn the player in the start room
 			Player = new Player(new Vector2(0.0f, 0.0f));
 			CurrentRoom = startRoom;
@@ -468,7 +487,8 @@ namespace Project.Levels {
 			CheckIfPlayerCompletedLevel();
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
-        }
+			UpdateObstacles();
+		}
 
 		/// <summary>The current level is completed if the player is inside the end room and has all the keys required to open it.</summary>
 		void CheckIfPlayerCompletedLevel() {
@@ -500,7 +520,7 @@ namespace Project.Levels {
 		void CheckIfPlayerEnteredDoorway() {
 			// Loop through each door
 			float roomSize = 10.0f;
-            float doorSize = 0.8f;
+            float doorSize = 1.0f;
             foreach (Room r in CurrentRoom.ConnectedRooms) {
 				float angle = CurrentRoom.AngleToRoom(r);
 				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), (float)Math.Cos(angle), 0.0f) * (roomSize - 0.1f);
@@ -519,6 +539,15 @@ namespace Project.Levels {
 						}
 					}
                     Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate scene
+
+					//Todo: A better way of doing this is probably to have separate classes for each room type with virtual OnEnter and OnExit functions
+					//Stop/start wind sound effect depending on if the room is windy
+					const string windSoundEffect = "assets/sounds/Wind0.wav";
+					if (CurrentRoom.Type == Room.RoomType.Windy && !Sounds.IsSoundPlaying(windSoundEffect))
+						Sounds.PlaySound(windSoundEffect, true);
+					else if(CurrentRoom.Type != Room.RoomType.Windy)
+						Sounds.StopSound(windSoundEffect);
+
                     break;
                 }
             }
@@ -549,6 +578,24 @@ namespace Project.Levels {
                 }
             }
         }
+
+		void UpdateObstacles() {
+			switch(CurrentRoom.Type) {
+				case Room.RoomType.Windy:
+					Player.Velocity += CurrentRoom.WindDirection * CurrentRoom.WindSpeed;
+					break;
+
+				case Room.RoomType.Trapped:
+					break;
+
+				case Room.RoomType.Icy:
+					break;
+
+				case Room.RoomType.Safe:
+				default:
+					break;
+			}	
+		}
 	}
 
 	public class Room {
@@ -557,8 +604,13 @@ namespace Project.Levels {
 			Seen,
 			Visited
 		}
+		public enum RoomType {
+			Safe, //No obstacles
+			Windy, //Wind pushes the player around, making movement difficult
+			Trapped, //The floor has hidden trap tiles that when triggered shoot flames or arrows at the player
+			Icy //The floor is slippery. Movement comes to a stop much slower and direction changes are slow
+		}
 		public VisitedState Visited = VisitedState.NotSeen;
-
 		public Vector2 Position;
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();
@@ -566,6 +618,11 @@ namespace Project.Levels {
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
 		public int Id => _id;
+
+		//Obstacle data
+		public RoomType Type = RoomType.Safe;
+		public Vector2 WindDirection = new Vector2(0.0f);
+		public float WindSpeed = 0.0f;
 
 		public Room(float X, float Y) {
 			this.Position = new Vector2(X, Y);
