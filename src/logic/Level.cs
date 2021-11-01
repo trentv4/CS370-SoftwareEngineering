@@ -464,6 +464,7 @@ namespace Project.Levels {
 		}
 
 		public void Update(double deltaTime) {
+			Player.Update(deltaTime);
 			CheckIfPlayerCompletedLevel();
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();

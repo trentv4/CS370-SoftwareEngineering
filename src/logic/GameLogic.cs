@@ -109,8 +109,9 @@ namespace Project {
 				Renderer.INSTANCE.CursorGrabbed = true;
 			}
 
-			//Mouse camera movement
+			//Player and camera movement
 			if (Renderer.INSTANCE.CursorGrabbed) {
+				//Camera movement
 				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
 				CameraYaw -= Input.MouseDeltaX * CameraMouseSensitivity;
 				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
@@ -121,13 +122,12 @@ namespace Project {
 				int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
 				int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
 
-				float speed = 0.1f;
 				float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
 				float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
 
-				player.Position += new Vector2(
-					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
-					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
+				player.Velocity += new Vector2(
+					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * player.MovementSpeed,
+					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * player.MovementSpeed
 				);
 			}
 

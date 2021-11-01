@@ -12,6 +12,9 @@ namespace Project {
 		public int Armor = 0;
 		public int CarryWeight = 10;
 		public Vector2 Position;
+		public Vector2 Velocity;
+		public readonly float MovementSpeed = 6.5f;
+		public readonly float MaxSpeed = 6.5f;
 
 		public Player(Vector2 initialPosition) {
 			Position = initialPosition;
@@ -30,6 +33,18 @@ namespace Project {
 			copy.Armor = Armor;
 			copy.CarryWeight = CarryWeight;
 			return copy;
+		}
+
+		public void Update(double deltaTime) {
+			//Enforce max speed
+			if (Velocity.Length > MaxSpeed)
+				 	Velocity *= (MaxSpeed / Velocity.Length);
+
+			//Update position
+			Position += Velocity * (float)deltaTime;
+
+			//Apply floor friction
+			Velocity *= 0.85f;
 		}
 	}
 }
