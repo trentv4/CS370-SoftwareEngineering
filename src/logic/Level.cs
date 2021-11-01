@@ -463,7 +463,7 @@ namespace Project.Levels {
                 return reachedEndRoom;
 		}
 
-		public void Update() {
+		public void Update(double deltaTime) {
 			CheckIfPlayerCompletedLevel();
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();

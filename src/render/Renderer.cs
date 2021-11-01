@@ -198,7 +198,7 @@ namespace Project.Render {
 
 		/// <summary> Stub method to call the external Program method, helps in isolation of logic from rendering. </summary>
 		protected override void OnUpdateFrame(FrameEventArgs args) {
-			Program.LogicThread.Update();
+			Program.LogicThread.Update(args.Time);
 		}
 	}
 }

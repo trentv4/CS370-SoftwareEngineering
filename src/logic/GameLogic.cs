@@ -66,9 +66,9 @@ namespace Project {
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
-		public virtual void Update() {
+		public virtual void Update(double deltaTime) {
 			Input.Update();
-			Level.Update();
+			Level.Update(deltaTime);
 			UpdateInput();
 			GameTick++;
 
@@ -255,7 +255,7 @@ namespace Project {
 
 		}
 
-		public override void Update() {
+		public override void Update(double deltaTime) {
 			// every 16.6ms (60fps), retreive a new GameState from the server
 		}
 
