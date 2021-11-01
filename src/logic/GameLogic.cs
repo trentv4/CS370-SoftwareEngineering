@@ -30,6 +30,7 @@ namespace Project {
 		private GameState StateBuffer = new GameState();
 
 		public Level Level;
+		public Player Player;
 		public int GameTick;
 
 		//Camera variables
@@ -60,13 +61,25 @@ namespace Project {
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
 			ItemDefinition.LoadDefinitions();
-			Level = new Level();
+			Player = new Player(new Vector2(0.0f, 0.0f));
+			Level = LevelGenerator.TryGenerateLevel();
+			Level.Player = Player;
+			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			Server = new Server(Level);
 			Sounds.Init();
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
 		public virtual void Update(double deltaTime) {
+			//Regenerate level if signalled
+			if (Level.NeedsRegen) {
+				uint score = Level.Score;
+				Level = LevelGenerator.TryGenerateLevel(Level.Depth);
+				Level.Score = score;
+				Level.Player = Player;
+				Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+			}
+
 			Input.Update();
 			Level.Update(deltaTime);
 			UpdateInput();
@@ -150,7 +163,7 @@ namespace Project {
 
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G)) {
-				Level.TryGenerateLevel(1000);
+				Level.NeedsRegen = true;
 			}
 
 			//Debug minimap movement
@@ -172,6 +185,8 @@ namespace Project {
 					} else {
 						Level.PreviousRoom = Level.CurrentRoom;
 						Level.CurrentRoom = nextRoom;
+						Level.PreviousRoom.OnExit(Level, Level.CurrentRoom);
+						Level.CurrentRoom.OnEnter(Level, Level.PreviousRoom);
 						Level.Score += 100;
 						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 
@@ -194,8 +209,8 @@ namespace Project {
 			//Debug keybind to add all keys required for end room
 			if (Input.IsKeyPressed(Keys.K)) {
 				foreach(ItemDefinition keyDef in Level.KeyDefinitions) {
-					if (Level.Player.Inventory.Items.Find(item => item.Definition == keyDef) == null) //If player doesn't have the key
-						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key
+					if (!Level.Player.Inventory.Items.Contains(item => item.Definition == keyDef))
+						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key if player doesn't have it
 				}
 			}
 		}
