@@ -31,8 +31,11 @@ void main() {
 	vec2 uvs = vec2(gl_FragCoord.x / screenSize.x, gl_FragCoord.y / screenSize.y);
 	float fogFar = LinearizeDepth(texture(depthMap, uvs).x);
 	float fogNear = LinearizeDepth(gl_FragCoord.z);
+	if(fogFar == fogNear) {
+		fogNear = 0;
+	}
 	float fogDepth = (fogFar - fogNear)/10;
 	fogDepth = pow(fogDepth, 0.7);
 
-	fogOut = vec4(fogDepth, gl_FragCoord.z, 0, 1);
+	fogOut = vec4(fogDepth, gl_FragCoord.z, 1, 1);
 }

@@ -138,7 +138,7 @@ namespace Project.Render {
 
 		/// <summary> Renders this model. It will be drawn in the correct render pass depending on if it is a fog model or real model. </summary>
 		protected override void RenderSelf() {
-			if ((IsFogModifier) != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
+			if (_indexLength == 0)
 				return;
 
 			Matrix4 modelMatrix = Matrix4.Identity;
@@ -148,21 +148,21 @@ namespace Project.Render {
 			modelMatrix *= Matrix4.CreateRotationZ((Rotation.Z + RotationModifier.Z) * Renderer.RCF);
 			modelMatrix *= Matrix4.CreateTranslation(Position + PositionModifier);
 
-			if (IsFogModifier) {
+			if (IsFogModifier && Renderer.CurrentPass == "Fog") {
 				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-			} else {
+			} else if (!IsFogModifier && Renderer.CurrentPass != "Fog") {
 				GL.UniformMatrix4(Renderer.INSTANCE.DeferredProgram.UniformModel_ID, true, ref modelMatrix);
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			} else {
+				return;
 			}
 
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}
 

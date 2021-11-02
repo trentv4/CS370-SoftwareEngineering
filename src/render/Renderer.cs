@@ -18,6 +18,7 @@ namespace Project.Render {
 		public static readonly Vector2 ProjectMatrixNearFar = new Vector2(0.01f, 1000000f);
 		public static Renderer INSTANCE;
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
+		public static string CurrentPass { get; private set; }
 
 		private static DebugProc _debugCallback = DebugCallback;
 		private static GCHandle _debugCallbackHandle;
@@ -115,20 +116,17 @@ namespace Project.Render {
 			DebugGroupEnd();
 
 			DebugGroup("Fog");
-			// Blit existing g-buffer depth to fog depth buffer
 			FogFramebuffer.Use().Reset();
-			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit);
-			// Draw depth of back faces of fog to fog depth buffer
+			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit); // Copy depth from GBuffer to temporary fog framebuffer
 			GL.Enable(EnableCap.CullFace);
-			_sceneHierarchy.Render();
+			_sceneHierarchy.Render(); // This draws the backfaces of anything that is labeled "foggy"
 			GL.Disable(EnableCap.CullFace);
-			// Draw front faces, use it to calculate fog strength, write to g-buffer
 			GBuffer.Use();
 			FogProgram.Use();
 			FogFramebuffer.Depth.Bind();
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
-			_sceneHierarchy.Render();
+			_sceneHierarchy.Render(); // This draws the frontfaces of anything labeled "foggy", and calculates fog strength.
 			DebugGroupEnd();
 
 			DebugGroup("Interface");
@@ -185,6 +183,7 @@ namespace Project.Render {
 		/// <summary> Starts a GPU debug group, used for grouping operations together into one section for debugging in RenderDoc. </summary>
 		private void DebugGroup(string title) {
 			GL.PushDebugGroup(DebugSourceExternal.DebugSourceApplication, _debugGroupTracker++, title.Length, title);
+			CurrentPass = title;
 		}
 
 		/// <summary> Ends the current debug group on the GPU. </summary>
