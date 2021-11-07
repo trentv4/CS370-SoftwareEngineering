@@ -38,7 +38,7 @@ namespace Project.Render {
 				.SetPosition(new Vector3(0, -1f, 0))
 				.SetRotation(new Vector3(0f, 90f, 0))
 				.SetScale(roomSize * 4)
-				.SetTexture(Texture.CreateTexture("assets/textures/plane.png")));
+				.SetTexture(Texture.CreateTexture($"assets/textures/{currentRoom.FloorTexture}")));
 
 			//try/catch is a temporary fix.
 			try {

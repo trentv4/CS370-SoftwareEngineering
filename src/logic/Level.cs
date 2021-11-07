@@ -172,6 +172,7 @@ namespace Project.Levels {
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();
 		public List<LevelObject> Objects = new List<LevelObject>();
+		public string FloorTexture = "plane.png";
 		private static int _currentId = 0;
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
@@ -231,6 +232,31 @@ namespace Project.Levels {
 			base.OnExit(level, nextRoom);
 			if (nextRoom.GetType() != typeof(WindyRoom))
 				Sounds.StopSound(windSoundEffect); //Stop wind sound if next room isn't windy
+		}
+	}
+
+	
+	/// <summary> Room with slippery floors.  </summary>
+	public class IcyRoom : Room {
+		public float FloorFriction = 0.01f;
+
+		public IcyRoom(float x, float y) : base(x, y) { }
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+			base.FloorTexture = "Ice.png";
+		}
+
+		public override void OnEnter(Level level, Room previousRoom) {
+			base.OnEnter(level, previousRoom);
+			//Make the floors slippery and movement slower while in icy rooms
+			level.Player.FloorFriction = FloorFriction;
+			level.Player.MovementSpeed = 0.1f;
+		}
+
+		public override void OnExit(Level level, Room nextRoom) {
+			base.OnExit(level, nextRoom);
+			level.Player.FloorFriction = Player.DefaultFloorFriction;
+			level.Player.MovementSpeed = Player.DefaultMovementSpeed;
 		}
 	}
 

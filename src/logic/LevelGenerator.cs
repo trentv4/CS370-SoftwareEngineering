@@ -424,12 +424,20 @@ namespace Project.Levels {
 		/// <summary> Creates a new Room instance with a chance of creating a room with obstacles </summary>
 		private static Room MakeRoom(float x, float y, Random rand, bool allowObstacles = true) {
 			const float obstacleChance = 0.6f;
-			if (allowObstacles && rand.NextFloat() <= obstacleChance) //Random chance to create obstacle a room
-			{
-				//Note: Only windy room are implemented so far
-				WindyRoom room = new WindyRoom(x, y);
-				room.WindSpeed = rand.NextFloat(5.0f, 6.2f);
-				room.WindDirection = rand.NextVec2();
+			if (allowObstacles && rand.NextFloat() <= obstacleChance) { //Random chance to create obstacle a room
+				//Randomly pick room type
+				Room room = null;
+				switch(rand.Next(2)) {
+					case 0:
+						WindyRoom windyRoom = new WindyRoom(x, y);
+						windyRoom.WindSpeed = rand.NextFloat(5.0f, 6.2f);
+						windyRoom.WindDirection = rand.NextVec2();
+						room = windyRoom;
+						break;
+					case 1:
+						room = new IcyRoom(x, y);	
+						break;
+				}
 
 				//Add some spikes to the room for added danger
 				int numSpikes = rand.Next(3, 10);

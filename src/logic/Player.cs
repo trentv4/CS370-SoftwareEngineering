@@ -13,8 +13,12 @@ namespace Project {
 		public int CarryWeight = 10;
 		public Vector2 Position;
 		public Vector2 Velocity;
-		public readonly float MovementSpeed = 6.5f;
+		public float MovementSpeed = DefaultMovementSpeed;
 		public readonly float MaxSpeed = 6.5f;
+		public float FloorFriction = DefaultFloorFriction;
+		//Store defaults so special rooms can reset values after changing them. E.g. Icy rooms change speed and friction then reset on exit.
+		public static readonly float DefaultFloorFriction = 0.65f;
+		public static readonly float DefaultMovementSpeed = 6.5f;
 
 		public Player(Vector2 initialPosition) {
 			Position = initialPosition;
@@ -44,7 +48,7 @@ namespace Project {
 			Position += Velocity * (float)deltaTime;
 
 			//Apply floor friction
-			Velocity *= 0.85f;
+			Velocity -= FloorFriction * Velocity;
 		}
 	}
 }
