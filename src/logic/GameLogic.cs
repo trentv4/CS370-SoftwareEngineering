@@ -261,6 +261,7 @@ namespace Project {
 					item.Consume(player);
 					used = true;
 					Console.WriteLine($"Consumed {item.Definition.Name}! {item.UsesRemaining} uses remaining.");
+					Sounds.PlaySound("assets/sounds/PotionDrink0.wav");
 				} else if (item.Definition.IsKey) {
 					//Not yet implemented
 					Console.WriteLine($"You try to use {item.Definition.Name}, but you have nothing to unlock!");
