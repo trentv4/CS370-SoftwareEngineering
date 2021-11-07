@@ -171,6 +171,7 @@ namespace Project.Levels {
 		public Vector2 Position;
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();
+		public List<LevelObject> Objects = new List<LevelObject>();
 		private static int _currentId = 0;
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
@@ -193,7 +194,8 @@ namespace Project.Levels {
 
 		/// <summary> Called once each frame. </summary>
 		public virtual void Update(double deltaTime, Level level) {
-
+			foreach (LevelObject obj in Objects)
+				obj.Update(deltaTime, level);
 		}
 
 		/// <summary> Called whenever the player enters this room. </summary>
@@ -209,11 +211,11 @@ namespace Project.Levels {
 
 	/// <summary> Room with wind constantly pushing the player around. </summary>
 	public class WindyRoom : Room {
-		public WindyRoom(float x, float y) : base(x, y) { }
 		public Vector2 WindDirection = new Vector2(0.0f);
 		public float WindSpeed = 0.0f;
 		public static readonly string windSoundEffect = "assets/sounds/Wind0.wav";
 
+		public WindyRoom(float x, float y) : base(x, y) { }
 		public override void Update(double deltaTime, Level level) {
 			base.Update(deltaTime, level);
 			level.Player.Velocity += WindDirection * WindSpeed;
@@ -229,6 +231,59 @@ namespace Project.Levels {
 			base.OnExit(level, nextRoom);
 			if (nextRoom.GetType() != typeof(WindyRoom))
 				Sounds.StopSound(windSoundEffect); //Stop wind sound if next room isn't windy
+		}
+	}
+
+	/// <summary> Interactable object found in rooms. </summary>
+	public class LevelObject {
+		public Vector2 Position;
+		public readonly string TextureName;
+
+		public LevelObject(Vector2 position, string textureName) {
+			Position = position;
+			TextureName = textureName;
+		}
+
+		/// <summary> Called each frame when the player is in the same room as the object. </summary>
+		public virtual void Update(double deltaTime, Level level) {
+
+		}
+	}
+
+	/// <summary> Spikes that damage the player if they walk into them. </summary>
+	public class FloorSpike : LevelObject {
+		/// <summary> The player takes damage if within this distance from the spikes </summary>
+		public float Radius;
+		/// <summary> How much of the players health gets removed on collision </summary>
+		public int Damage;
+		/// <summary> Amount of time in seconds that the player can't take damage again after hitting the spikes. </summary>
+		public static readonly double SafeTime = 0.65;
+		public DateTime LastCollisionTime = DateTime.UnixEpoch;
+
+		public FloorSpike(Vector2 position, string textureName, float radius, int damage) : base(position, textureName) {
+			Radius = radius;
+			Damage = damage;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+
+			//Perform circular collision handling. Both the player and the spikes are treated as circles.
+			Player player = level.Player;
+			float distance = player.Position.Distance(this.Position);
+			TimeSpan timeSinceCollision = DateTime.Now.Subtract(LastCollisionTime);
+			if (distance <= Radius) { //Check if player is colliding with the spikes
+				//Push player away from the spikes
+				Vector2 dir = (player.Position - Position).Normalized();
+				player.Position += dir * (Radius - distance);
+
+				//Damage the player if it hasn't happened too recently
+				if(timeSinceCollision >= TimeSpan.FromSeconds(SafeTime)) {
+					player.Health -= Damage;
+					LastCollisionTime = DateTime.Now;
+					Sounds.PlaySound("assets/sounds/FloorSpikeHit0.wav");
+				}
+			}
 		}
 	}
 }

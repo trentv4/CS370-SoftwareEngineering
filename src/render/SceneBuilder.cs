@@ -49,6 +49,14 @@ namespace Project.Render {
 						.SetRotation(new Vector3(20.0f, 0, 0))
 						.SetTexture(Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}")));
 				}
+
+				// Non-carryable objects on the floor
+				foreach (LevelObject obj in currentRoom.Objects) {
+					Scene.Children.Add(Model.GetCachedModel("unit_rectangle")
+						.SetPosition(new Vector3(obj.Position.X, 0, obj.Position.Y))
+						.SetRotation(new Vector3(20.0f, 0, 0))
+						.SetTexture(Texture.CreateTexture($"assets/textures/{obj.TextureName}")));
+				}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
 
 			// Room connectors (doorways)

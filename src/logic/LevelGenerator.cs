@@ -430,6 +430,15 @@ namespace Project.Levels {
 				WindyRoom room = new WindyRoom(x, y);
 				room.WindSpeed = rand.NextFloat(5.0f, 6.2f);
 				room.WindDirection = rand.NextVec2();
+
+				//Add some spikes to the room for added danger
+				int numSpikes = rand.Next(3, 10);
+				for (int i = 0; i < numSpikes; i++) {
+					Vector2 pos = rand.NextVec2(-6.0f, 6.0f, -6.0f, 6.0f);
+					var obj = new FloorSpike(pos, "spikes.png", 0.8f, 1);
+					room.Objects.Add(obj);
+				}
+
 				return room;
 			}
 			else

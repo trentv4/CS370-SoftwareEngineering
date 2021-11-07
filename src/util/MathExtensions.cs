@@ -19,5 +19,10 @@ namespace Project.Util {
 			float y = random.NextFloat(yMin, yMax);
 			return new Vector2(x, y);
 		}
+
+		/// <summary> Distance between two points. </summary>
+		public static float Distance(this Vector2 a, Vector2 b) {
+			return (b - a).Length;
+		}
     }
 }

@@ -80,6 +80,18 @@ namespace Project {
 				Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			}
 
+			//Player died, reset level
+			if (Player.Health <= 0) {
+				Level.CurrentRoom.OnExit(Level, Level.StartRoom); //Call on exit so things like ambient music are stopped
+				Sounds.PlaySound("assets/sounds/PlayerDeath0.wav"); //Play death sound
+				//Recreate player and generate new level
+				Player = new Player(new Vector2(0.0f, 0.0f));
+				Level = LevelGenerator.TryGenerateLevel();
+				Level.Player = Player;
+				Console.WriteLine($"Player died with a score of {Level.Score}!");
+				Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+			}
+
 			Input.Update();
 			Level.Update(deltaTime);
 			UpdateInput();
