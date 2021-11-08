@@ -361,9 +361,6 @@ namespace Project.Levels {
 		public float Radius;
 		/// <summary> How much of the players health gets removed on collision </summary>
 		public int Damage;
-		/// <summary> Amount of time in seconds that the player can't take damage again after hitting the spikes. </summary>
-		public static readonly double SafeTime = 0.65;
-		public DateTime LastCollisionTime = DateTime.UnixEpoch;
 
 		public FloorSpike(Vector2 position, string textureName, float radius, int damage) : base(position, textureName) {
 			Radius = radius;
@@ -372,7 +369,6 @@ namespace Project.Levels {
 
 		public override object Clone() {
 			var clone = new FloorSpike(Position, TextureName, Radius, Damage);
-			clone.LastCollisionTime = LastCollisionTime;
 			return clone;
 		}
 
@@ -382,18 +378,14 @@ namespace Project.Levels {
 			//Perform circular collision handling. Both the player and the spikes are treated as circles.
 			Player player = level.Player;
 			float distance = player.Position.Distance(this.Position);
-			TimeSpan timeSinceCollision = DateTime.Now.Subtract(LastCollisionTime);
 			if (distance <= Radius) { //Check if player is colliding with the spikes
 				//Push player away from the spikes
 				Vector2 dir = (player.Position - Position).Normalized();
 				player.Position += dir * (Radius - distance);
 
-				//Damage the player if it hasn't happened too recently
-				if(timeSinceCollision >= TimeSpan.FromSeconds(SafeTime)) {
-					player.Health -= Damage;
-					LastCollisionTime = DateTime.Now;
+				//Damage the player
+				if (player.TryDamage(Damage))
 					Sounds.PlaySound("assets/sounds/FloorSpikeHit0.wav");
-				}
 			}
 		}
 	}

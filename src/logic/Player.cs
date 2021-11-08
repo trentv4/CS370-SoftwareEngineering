@@ -16,6 +16,9 @@ namespace Project {
 		public float MovementSpeed = DefaultMovementSpeed;
 		public readonly float MaxSpeed = 6.5f;
 		public float FloorFriction = DefaultFloorFriction;
+		/// <summary> Amount of time in seconds that the player can't take damage again after hitting the spikes. </summary>
+		public static readonly double DamageSafeTime = 0.65;
+		private DateTime _lastDamageTime = DateTime.UnixEpoch;
 		//Store defaults so special rooms can reset values after changing them. E.g. Icy rooms change speed and friction then reset on exit.
 		public static readonly float DefaultFloorFriction = 0.65f;
 		public static readonly float DefaultMovementSpeed = 6.5f;
@@ -51,6 +54,25 @@ namespace Project {
 
 			//Apply floor friction
 			Velocity -= FloorFriction * Velocity;
+		}
+
+		/// <summary>
+		/// Lower the players health. After taking damage the player can't take damage again for DamageSafeTime seconds
+		/// That way if they collide with something like a floor spike for 0.5s they don't take damage 30+ times (each frame).
+		/// Returns true if the player is damaged.
+		/// </summary>
+		/// <param name="amount">How much to lower health by.</param>
+		/// <param name="overrideInvulnerability">If true ignore invulnerability and the damage timer.</param>
+		public bool TryDamage(int amount, bool overrideInvulnerability = false) {
+			TimeSpan timeSinceDamage = DateTime.Now.Subtract(_lastDamageTime);
+			if (timeSinceDamage >= TimeSpan.FromSeconds(DamageSafeTime) || overrideInvulnerability) {
+				//Damage the player if it hasn't happened too recently
+				Health -= amount;
+				_lastDamageTime = DateTime.Now;
+				return true;
+			}
+
+			return false;
 		}
 	}
 }
