@@ -53,6 +53,29 @@ namespace Project.Levels {
 				copy.EndRoom = copy.Rooms[endRoomIndex];
 			}
 
+			//Get indices of connected rooms
+			var connections = new Dictionary<int, List<int>>();
+			for (int i = 0; i < Rooms.Length; i++) {
+				Room room = Rooms[i];
+				var connectedRoomIndices = new List<int>();
+				connections[i] = connectedRoomIndices;
+				foreach (Room connection in room.ConnectedRooms) {
+					for (int j = 0; j < Rooms.Length; j++) {
+						if (connection == Rooms[j]) {
+							connectedRoomIndices.Add(j);
+							break;
+						}
+					}
+				}
+			}
+			//Update connected rooms in clone since they still reference the original rooms
+			foreach(var kv in connections) {
+				Room room = copy.Rooms[kv.Key]; //Room in the level copy
+				List<int> connectedIndices = kv.Value;
+				for (int i = 0; i < room.ConnectedRooms.Length; i++)
+					room.ConnectedRooms[i] = copy.Rooms[connectedIndices[i]];
+			}
+
 			copy.Depth = Depth;
 			return copy;
 		}
@@ -161,7 +184,7 @@ namespace Project.Levels {
         }
 	}
 
-	public class Room {
+	public class Room : ICloneable {
 		public enum VisitedState {
 			NotSeen,
 			Seen,
@@ -181,6 +204,25 @@ namespace Project.Levels {
 		public Room(float X, float Y) {
 			this.Position = new Vector2(X, Y);
 			_id = _currentId++;
+		}
+
+		/// <summary> Clone base class data. Derived classes can use this instead of duplicating the clone code </summary>
+		public void CloneBase(Room clone) {
+			clone.Visited = Visited;
+			clone.Items = new List<Item>();
+			clone.Objects = new List<LevelObject>();
+			clone.ConnectedRooms = (Room[])ConnectedRooms.Clone(); //Makes a shallow copy, Level.Clone() updates references
+			clone.FloorTexture = FloorTexture;
+			foreach (Item item in Items)
+				clone.Items.Add((Item)item.Clone());
+			foreach (LevelObject obj in Objects)
+				clone.Objects.Add((LevelObject)obj.Clone());
+		}
+
+		public virtual object Clone() {
+			var room = new Room(Position.X, Position.Y);
+			CloneBase(room);
+			return room;
 		}
 
 		public double DistanceToRoom(Room otherRoom) {
@@ -217,6 +259,15 @@ namespace Project.Levels {
 		public static readonly string windSoundEffect = "assets/sounds/Wind0.wav";
 
 		public WindyRoom(float x, float y) : base(x, y) { }
+		
+		public override object Clone() {
+			var room = new WindyRoom(Position.X, Position.Y);
+			CloneBase(room);
+			room.WindDirection = WindDirection;
+			room.WindSpeed = WindSpeed;
+			return room;
+		}
+
 		public override void Update(double deltaTime, Level level) {
 			base.Update(deltaTime, level);
 			level.Player.Velocity += WindDirection * WindSpeed;
@@ -241,6 +292,14 @@ namespace Project.Levels {
 		public float FloorFriction = 0.01f;
 
 		public IcyRoom(float x, float y) : base(x, y) { }
+
+		public override object Clone() {
+			var room = new IcyRoom(Position.X, Position.Y);
+			CloneBase(room);
+			room.FloorFriction = FloorFriction;
+			return room;
+		}
+
 		public override void Update(double deltaTime, Level level) {
 			base.Update(deltaTime, level);
 			base.FloorTexture = "Ice.png";
@@ -261,13 +320,18 @@ namespace Project.Levels {
 	}
 
 	/// <summary> Interactable object found in rooms. </summary>
-	public class LevelObject {
+	public class LevelObject : ICloneable {
 		public Vector2 Position;
 		public readonly string TextureName;
 
 		public LevelObject(Vector2 position, string textureName) {
 			Position = position;
 			TextureName = textureName;
+		}
+
+		public virtual object Clone() {
+			var clone = new LevelObject(Position, TextureName);
+			return clone;
 		}
 
 		/// <summary> Called each frame when the player is in the same room as the object. </summary>
@@ -289,6 +353,12 @@ namespace Project.Levels {
 		public FloorSpike(Vector2 position, string textureName, float radius, int damage) : base(position, textureName) {
 			Radius = radius;
 			Damage = damage;
+		}
+
+		public override object Clone() {
+			var clone = new FloorSpike(Position, TextureName, Radius, Damage);
+			clone.LastCollisionTime = LastCollisionTime;
+			return clone;
 		}
 
 		public override void Update(double deltaTime, Level level) {

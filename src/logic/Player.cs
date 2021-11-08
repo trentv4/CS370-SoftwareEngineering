@@ -36,6 +36,8 @@ namespace Project {
 			copy.MaxMana = MaxMana;
 			copy.Armor = Armor;
 			copy.CarryWeight = CarryWeight;
+			copy.MovementSpeed = MovementSpeed;
+			copy.FloorFriction = FloorFriction;
 			return copy;
 		}
 
