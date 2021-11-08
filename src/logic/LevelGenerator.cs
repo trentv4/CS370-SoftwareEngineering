@@ -398,8 +398,8 @@ namespace Project.Levels {
 		/// </summary>
 		private static bool CanRoomBeSafelyRemoved(Room target0, Room target1, Room startRoom, Room endRoom, IReadOnlyList<Room> rooms, IReadOnlyDictionary<Room, List<Room>> connections) {
             //Do floodfill from the start room
-			var checkedRooms = new List<Room>();
-            var roomQueue = new Queue<Room>();
+			var checkedRooms = new List<Room>(); //Rooms the floodfill has checked
+            var roomQueue = new Queue<Room>(); //Rooms that need to be checked by the floodfill
             roomQueue.Enqueue(startRoom);
             bool reachedEndRoom = false;
         	while (roomQueue.Count > 0) {
@@ -408,13 +408,15 @@ namespace Project.Levels {
                 checkedRooms.Add(room);
 
                 //Check if we've reached the end room
-                if (room == endRoom)
-                    reachedEndRoom = true;
+                if (room == endRoom) {
+					reachedEndRoom = true;
+					break; //Reached the end room. Stop early.
+				}
 
                 //Push connections onto queue if they haven't already been checked
                 foreach (var connection in connections[room])
                     if (!checkedRooms.Contains(connection))
-						if ((room == target0 && connection == target1) || (room == target1 && connection == target0)) //Pretend the connection doesn't exist
+						if (!(room == target0 && connection == target1) && !(room == target1 && connection == target0)) //Pretend the target connection doesn't exist
                         	roomQueue.Enqueue(connection);
             }
 
