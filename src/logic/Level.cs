@@ -26,6 +26,8 @@ namespace Project.Levels {
 		public int Depth = 0;
 		/// <summary> Setting this to true causes GameLogic to regenerate the level. </summary>
 		public bool NeedsRegen = false;
+		/// <summary> Time in seconds since last time the player was checked for end room keys. Used to prevent console spam. </summary>
+		private float _timeSinceLastKeyCheck = float.PositiveInfinity;
 
 		/// <summary>Make a deep copy</summary>
 		public object Clone() {
@@ -82,17 +84,18 @@ namespace Project.Levels {
 
 		public void Update(double deltaTime) {
 			Player.Update(deltaTime);
-			CheckIfPlayerCompletedLevel();
+			CheckIfPlayerCompletedLevel(deltaTime);
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
 			CurrentRoom.Update(deltaTime, this);
 		}
 
 		/// <summary>The current level is completed if the player is inside the end room and has all the keys required to open it.</summary>
-		void CheckIfPlayerCompletedLevel() {
+		void CheckIfPlayerCompletedLevel(double deltaTime) {
 			if (CurrentRoom == EndRoom) {
 				//Check that the player has the keys needed to pass through
 				bool hasRequiredKeys = true;
+				_timeSinceLastKeyCheck += (float)deltaTime;
 				foreach (ItemDefinition keyDef in KeyDefinitions)
 					if (!Player.Inventory.Items.Contains(item => item.Definition == keyDef))
 						hasRequiredKeys = false;
@@ -114,7 +117,8 @@ namespace Project.Levels {
 					Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
                 	Depth++;
 					NeedsRegen = true;
-				} else {
+				} else if(_timeSinceLastKeyCheck >= 3.5f) {
+					_timeSinceLastKeyCheck = 0.0f;
 					Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
 					foreach (ItemDefinition keyDef in KeyDefinitions) {
 						bool hasKey = Player.Inventory.Items.Contains(item => item.Definition == keyDef);
@@ -272,7 +276,7 @@ namespace Project.Levels {
 
 		public override void Update(double deltaTime, Level level) {
 			base.Update(deltaTime, level);
-			
+
 			//Push the player around
 			level.Player.Velocity += WindDirection * WindSpeed;
 
