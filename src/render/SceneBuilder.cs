@@ -31,9 +31,9 @@ namespace Project.Render {
 
 		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
 		public RenderableNode BuildRoom(Room currentRoom) {
-			if (true) {
+			if (currentRoom == null)
 				return BuildRenderTestGym();
-			}
+
 			RenderableNode Scene = new RenderableNode();
 
 			float roomSize = 10.0f;
@@ -55,8 +55,6 @@ namespace Project.Render {
 						.SetTexture(Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}")));
 				}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
-
-			// Room connectors (doorways)
 
 			// Creates a list of angles pointing towards neighboring room connections
 			List<float> connectionAngles = new List<float>();
@@ -241,6 +239,10 @@ namespace Project.Render {
 
 		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
 		public void BuildMapInterface(GameState state) {
+			if (state.Level == null) {
+				Map = new RenderableNode();
+				return;
+			}
 			RenderableNode interfaceNode = new RenderableNode();
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();

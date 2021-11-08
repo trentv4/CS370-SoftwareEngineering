@@ -38,6 +38,7 @@ namespace Project.Render {
 
 		private GameRoot _sceneHierarchy = new GameRoot();
 		private InterfaceRoot _interfaceRoot = new InterfaceRoot();
+		private static bool _isRenderGymActive = false;
 		private int _debugGroupTracker = 0;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
@@ -54,6 +55,8 @@ namespace Project.Render {
 			GL.Viewport(0, 0, Size.X, Size.Y);
 
 			VSync = VSyncMode.On;
+
+			_isRenderGymActive = false;
 
 			// Shader program creation
 			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
@@ -162,8 +165,13 @@ namespace Project.Render {
 				bool result = EventQueue.TryDequeue(out eventString);
 				switch (eventString) {
 					case "LevelRegenerated":
-						_interfaceRoot.BuildMapInterface(state);
-						_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						if (_isRenderGymActive) {
+							_interfaceRoot.BuildMapInterface(new GameState());
+							_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(null);
+						} else {
+							_interfaceRoot.BuildMapInterface(state);
+							_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						}
 						break;
 					default:
 						break;
