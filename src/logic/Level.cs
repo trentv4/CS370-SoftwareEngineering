@@ -256,6 +256,8 @@ namespace Project.Levels {
 	public class WindyRoom : Room {
 		public Vector2 WindDirection = new Vector2(0.0f);
 		public float WindSpeed = 0.0f;
+		public float DirectionChangePeriod = 5.0f; //Time between wind direction changes
+		private float _directionChangeTimer = 0.0f;
 		public static readonly string windSoundEffect = "assets/sounds/Wind0.wav";
 
 		public WindyRoom(float x, float y) : base(x, y) { }
@@ -270,7 +272,16 @@ namespace Project.Levels {
 
 		public override void Update(double deltaTime, Level level) {
 			base.Update(deltaTime, level);
+			
+			//Push the player around
 			level.Player.Velocity += WindDirection * WindSpeed;
+
+			//Periodically change wind direction
+			_directionChangeTimer += (float)deltaTime;
+			if (_directionChangeTimer >= DirectionChangePeriod) {
+				_directionChangeTimer = 0.0f;
+				WindDirection = new Random().NextVec2();
+			}
 		}
 
 		public override void OnEnter(Level level, Room previousRoom) {

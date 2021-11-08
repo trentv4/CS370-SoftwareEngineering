@@ -432,6 +432,7 @@ namespace Project.Levels {
 						WindyRoom windyRoom = new WindyRoom(x, y);
 						windyRoom.WindSpeed = rand.NextFloat(5.0f, 6.2f);
 						windyRoom.WindDirection = rand.NextVec2();
+						windyRoom.DirectionChangePeriod = rand.NextFloat(4.0f, 12.0f); //Change wind direction periodically
 						room = windyRoom;
 						break;
 					case 1:
