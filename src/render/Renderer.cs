@@ -23,14 +23,12 @@ namespace Project.Render {
 		private static DebugProc _debugCallback = DebugCallback;
 		private static GCHandle _debugCallbackHandle;
 
-		public ShaderProgram CurrentProgram; // Handled automatically by ShaderProgram
 		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; }
 		public ShaderProgramInterface InterfaceProgram { get; private set; }
 		public ShaderProgramFog FogProgram { get; private set; }
 		public ShaderProgramVignette VignetteProgram { get; private set; }
 		public ShaderProgramCompositor CompositorShader { get; private set; }
 
-		public Framebuffer CurrentBuffer; // Handled automatically by Framebuffer
 		public Framebuffer GBuffer;
 		public Framebuffer FogFramebuffer;
 		public Framebuffer InterfaceBuffer;

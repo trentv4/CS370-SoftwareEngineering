@@ -58,7 +58,6 @@ namespace Project.Render {
 			TryLoadShaders();
 			GL.UseProgram(ShaderProgram_ID);
 			GL.BindVertexArray(VertexArrayObject_ID);
-			Renderer.INSTANCE.CurrentProgram = this;
 			return this;
 		}
 
