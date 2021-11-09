@@ -96,7 +96,6 @@ namespace Project.Render {
 
 		/// <summary> Binds this framebuffer and updates Renderer.CurrentBuffer. </summary>
 		public Framebuffer Use() {
-			Renderer.INSTANCE.CurrentBuffer = this;
 			GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);
 			return this;
 		}

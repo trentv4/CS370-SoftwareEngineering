@@ -15,23 +15,28 @@ void main() {
 
 uniform sampler2D depthMap;
 uniform vec2 screenSize;
+uniform vec2 projectionMatrixNearFar;
 
 layout (location = 2) out vec4 fogOut;
   
 float LinearizeDepth(float depth) 
 {
-	float near = 0.01;
-	float far = 100.0;
-    float z = depth * 2.0 - 1.0; // back to NDC 
-    return (2.0 * near * far) / (far + near - z * (far - near));	
+	float near = projectionMatrixNearFar.x;
+	float far = projectionMatrixNearFar.y;
+	float z = depth * 2.0 - 1.0; // back to NDC 
+	return (2.0 * near * far) / (far + near - z * (far - near));	
 }
 
 void main() {
 	vec2 uvs = vec2(gl_FragCoord.x / screenSize.x, gl_FragCoord.y / screenSize.y);
 	float fogFar = LinearizeDepth(texture(depthMap, uvs).x);
 	float fogNear = LinearizeDepth(gl_FragCoord.z);
-	float fogDepth = (fogFar - fogNear)/10;
+	float delta = fogFar - fogNear;
+	if(delta < 0.0001) {
+		delta = fogFar - 0;
+	}
+	float fogDepth = delta/7;
 	fogDepth = pow(fogDepth, 0.7);
 
-	fogOut = vec4(fogDepth, gl_FragCoord.z, 0, 1);
+	fogOut = vec4(fogDepth, gl_FragCoord.z, 1, 1);
 }

@@ -2,6 +2,8 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
+using Assimp;
+using System.IO;
 
 namespace Project.Render {
 	/// <summary> Superclass for all renderable objects. This node is essentially a "container" and does nothing when rendered,
@@ -11,7 +13,7 @@ namespace Project.Render {
 		public bool Enabled = true;
 
 		/// <summary> Renders this object and all children, and returns the number of GL draw calls issued. </summary>
-		public void Render() {
+		public virtual void Render() {
 			if (!Enabled) return;
 
 			foreach (RenderableNode r in Children) {
@@ -26,6 +28,12 @@ namespace Project.Render {
 	/// <summary> Container class for a 3d model containing vertices and indices that exist on the GPU. </summary>
 	public class Model : RenderableNode {
 		private static readonly Dictionary<string, Model> _cachedModels = new Dictionary<string, Model>();
+		private static readonly AssimpContext _assimp = new AssimpContext();
+		// The following are used to allow parent model transforms to influence child model transforms.
+		private static Vector3 ScaleModifier = Vector3.Zero;
+		private static Vector3 RotationModifier = Vector3.Zero;
+		private static Vector3 PositionModifier = Vector3.Zero;
+		private static bool IsFogModifier = false;
 
 		public readonly int ElementBufferArray_ID;
 		public readonly int VertexBufferObject_ID;
@@ -37,8 +45,42 @@ namespace Project.Render {
 
 		private int _indexLength;
 
+
+		private Model() { }
+
 		/// <summary> Creates a Model given vertex data and indices. The data is sent to the GPU and then discarded on main memory. </summary>
 		public Model(float[] vertexData, uint[] indices) {
+			_indexLength = indices.Length;
+
+			ElementBufferArray_ID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, BufferUsageHint.StaticDraw);
+
+			VertexBufferObject_ID = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
+			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+		}
+
+		/// <summary> Private constructor used during model loading from Assimp. </summary>
+		private Model(Assimp.Mesh mesh) {
+			uint[] indices = (uint[])(object)mesh.GetIndices(); // nasty...
+
+			List<float> vertexDataList = new List<float>(mesh.Vertices.Count * 12);
+			for (int i = 0; i < mesh.Vertices.Count; i++) {
+				Assimp.Vector3D position = mesh.HasVertices ? mesh.Vertices[i] : new Assimp.Vector3D(0);
+				Assimp.Vector3D normal = mesh.HasNormals ? mesh.Normals[i] : new Assimp.Vector3D(0);
+				float[] uvs = new float[] { 0f, 0f };
+				if (mesh.TextureCoordinateChannelCount > 0) {
+					Assimp.Vector3D channel = mesh.TextureCoordinateChannels[0][i];
+					uvs = new float[] { channel.X, channel.Y };
+				}
+				vertexDataList.AddRange(new float[]{
+								position.X, position.Y, position.Z,
+								normal.X, normal.Y, normal.Z,
+								1f, 1f, 1f, 1f,
+								uvs[0], uvs[1] });
+			}
+			var vertexData = vertexDataList.ToArray();
 			_indexLength = indices.Length;
 
 			ElementBufferArray_ID = GL.GenBuffer();
@@ -72,31 +114,55 @@ namespace Project.Render {
 			return this;
 		}
 
+		public override void Render() {
+			if (!Enabled) return;
+
+			bool SetFog = false;
+			if (IsFogModifier == false && IsFog) {
+				SetFog = true;
+				IsFogModifier = true;
+			}
+			ScaleModifier += Scale - Vector3.One;
+			RotationModifier += Rotation;
+			PositionModifier += Position;
+			foreach (RenderableNode r in Children) {
+				r.Render();
+			}
+			ScaleModifier -= Scale - Vector3.One;
+			RotationModifier -= Rotation;
+			PositionModifier -= Position;
+
+			RenderSelf();
+			if (SetFog) IsFogModifier = false;
+		}
+
 		/// <summary> Renders this model. It will be drawn in the correct render pass depending on if it is a fog model or real model. </summary>
 		protected override void RenderSelf() {
-			if (IsFog != (Renderer.INSTANCE.CurrentProgram == Renderer.INSTANCE.FogProgram))
+			if (_indexLength == 0)
 				return;
 
 			Matrix4 modelMatrix = Matrix4.Identity;
-			modelMatrix *= Matrix4.CreateScale(Scale);
-			modelMatrix *= Matrix4.CreateRotationX(Rotation.X * Renderer.RCF) * Matrix4.CreateRotationY(Rotation.Y * Renderer.RCF) * Matrix4.CreateRotationZ(Rotation.Z * Renderer.RCF);
-			modelMatrix *= Matrix4.CreateTranslation(Position);
+			modelMatrix *= Matrix4.CreateScale(Scale + ScaleModifier);
+			modelMatrix *= Matrix4.CreateRotationX((Rotation.X + RotationModifier.X) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationY((Rotation.Y + RotationModifier.Y) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateRotationZ((Rotation.Z + RotationModifier.Z) * Renderer.RCF);
+			modelMatrix *= Matrix4.CreateTranslation(Position + PositionModifier);
 
-			if (IsFog) {
+			if (IsFogModifier && Renderer.CurrentPass == "Fog") {
 				GL.UniformMatrix4(Renderer.INSTANCE.FogProgram.UniformModel_ID, true, ref modelMatrix);
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-			} else {
+			} else if (!IsFogModifier && Renderer.CurrentPass != "Fog") {
 				GL.UniformMatrix4(Renderer.INSTANCE.DeferredProgram.UniformModel_ID, true, ref modelMatrix);
-				GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
-				GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
-				GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 				GL.ActiveTexture(TextureUnit.Texture0);
 				GL.BindTexture(TextureTarget.Texture2D, AlbedoTexture.TextureID);
+			} else {
+				return;
 			}
 
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
+			GL.BindVertexBuffer(0, VertexBufferObject_ID, (IntPtr)(0 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(1, VertexBufferObject_ID, (IntPtr)(3 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(2, VertexBufferObject_ID, (IntPtr)(6 * sizeof(float)), 12 * sizeof(float));
+			GL.BindVertexBuffer(3, VertexBufferObject_ID, (IntPtr)(10 * sizeof(float)), 12 * sizeof(float));
 			GL.DrawElements(OpenTK.Graphics.OpenGL4.PrimitiveType.Triangles, _indexLength, DrawElementsType.UnsignedInt, 0);
 		}
 
@@ -129,23 +195,70 @@ namespace Project.Render {
 			return this;
 		}
 
+		/// <summary> Chainable method to set the albedo texture of the object. </summary>
 		public Model SetTexture(Texture texture) {
 			this.AlbedoTexture = texture;
 			return this;
 		}
 
+		/// <summary> Update this model with a new list of vertex attrib data. It must be interleaved. </summary>
 		public Model SetVertices(float[] vertexData) {
 			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBufferObject_ID);
 			GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
 			return this;
 		}
 
+		/// <summary> Update this model with a new list of indices sent to the element buffer array. </summary>
 		public Model SetIndices(uint[] indexData) {
 			_indexLength = indexData.Length;
 
 			GL.BindBuffer(BufferTarget.ElementArrayBuffer, ElementBufferArray_ID);
 			GL.BufferData(BufferTarget.ElementArrayBuffer, indexData.Length * sizeof(uint), indexData, BufferUsageHint.StaticDraw);
 			return this;
+		}
+
+		/// <summary> Loads a model from disk, processes Assimp's intermediate format, and then returns a model that contains
+		/// all of the submodels of the model. This result IS NOT and CAN NOT be cached, so limit the usage of this if possible. </summary>
+		public static Model LoadModelFromFile(string file) {
+			Console.WriteLine($"Loading model from file: \"{file}\", exists: {File.Exists(file)}");
+			Scene scene = _assimp.ImportFile(file, PostProcessSteps.Triangulate | PostProcessSteps.FlipUVs | PostProcessSteps.CalculateTangentSpace);
+			string p = Path.GetDirectoryName(file).ToString();
+
+			Model[] models = new Model[scene.Meshes.Count];
+			for (int i = 0; i < models.Length; i++) {
+				Assimp.Mesh currentMesh = scene.Meshes[i];
+				models[i] = new Model(scene.Meshes[i]);
+
+				Assimp.Material mat = scene.Materials[currentMesh.MaterialIndex];
+				if (mat.HasTextureDiffuse) {
+					if (scene.TextureCount > mat.TextureDiffuse.TextureIndex) {
+						models[i].SetTexture(Texture.CreateTexture($"{mat.Name}-albedo", scene.Textures[mat.TextureDiffuse.TextureIndex],
+										TextureMinFilter.LinearMipmapLinear, OpenTK.Graphics.OpenGL4.TextureWrapMode.Repeat));
+					} else {
+						models[i].SetTexture(Texture.CreateTexture($"{p}\\{mat.TextureDiffuse.FilePath}"));
+					}
+				}
+			}
+
+			Model root = new Model();
+			CreateModelFromAssimpNode(root, scene.RootNode, models);
+
+			return root;
+		}
+
+		/// <summary> Recursive method to create all of the raw models from Assimp's root node. This will prevent duplication by making copies
+		/// of the existing models loaded in LoadModelFromFile().  </summary>
+		private static void CreateModelFromAssimpNode(Model parent, Assimp.Node node, Model[] models) {
+			if (node.HasMeshes) {
+				foreach (int i in node.MeshIndices) {
+					parent.Children.Add(new Model(models[i]).SetTexture(models[i].AlbedoTexture));
+				}
+			}
+			if (node.HasChildren) {
+				foreach (Node n in node.Children) {
+					CreateModelFromAssimpNode(parent, n, models);
+				}
+			}
 		}
 
 		private static void CreateUnitModels() {

@@ -15,20 +15,20 @@ namespace Project.Render {
 		internal const float RCF = 0.017453293f;
 
 		public static readonly GameLogic LogicThread = new GameLogic();
+		public static readonly Vector2 ProjectMatrixNearFar = new Vector2(0.01f, 1000000f);
 		public static Renderer INSTANCE;
 		public static ConcurrentQueue<string> EventQueue = new ConcurrentQueue<string>();
+		public static string CurrentPass { get; private set; }
 
 		private static DebugProc _debugCallback = DebugCallback;
 		private static GCHandle _debugCallbackHandle;
 
-		public ShaderProgram CurrentProgram; // Handled automatically by ShaderProgram
 		public ShaderProgramDeferredRenderer DeferredProgram { get; private set; }
 		public ShaderProgramInterface InterfaceProgram { get; private set; }
 		public ShaderProgramFog FogProgram { get; private set; }
 		public ShaderProgramVignette VignetteProgram { get; private set; }
 		public ShaderProgramCompositor CompositorShader { get; private set; }
 
-		public Framebuffer CurrentBuffer; // Handled automatically by Framebuffer
 		public Framebuffer GBuffer;
 		public Framebuffer FogFramebuffer;
 		public Framebuffer InterfaceBuffer;
@@ -36,6 +36,7 @@ namespace Project.Render {
 
 		private GameRoot _sceneHierarchy = new GameRoot();
 		private InterfaceRoot _interfaceRoot = new InterfaceRoot();
+		private static bool _isRenderGymActive = false;
 		private int _debugGroupTracker = 0;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
@@ -52,6 +53,8 @@ namespace Project.Render {
 			GL.Viewport(0, 0, Size.X, Size.Y);
 
 			VSync = VSyncMode.On;
+
+			_isRenderGymActive = false;
 
 			// Shader program creation
 			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
@@ -102,55 +105,52 @@ namespace Project.Render {
 			// Camera and perspective matrices required for different passes
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
 			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
-			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, 0.01f, 100.0f);
-			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, 0.1f, 100f);
+			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
+			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 
-			DebugGroup("G-Buffer");
+			BeginPass("G-Buffer");
 			GBuffer.Use().Reset();
 			DeferredProgram.Use();
 			GL.UniformMatrix4(DeferredProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(DeferredProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
-			DebugGroupEnd();
+			EndPass();
 
-			DebugGroup("Fog");
-			// Blit existing g-buffer depth to fog depth buffer
+			BeginPass("Fog");
 			FogFramebuffer.Use().Reset();
-			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit);
-			// Draw depth of back faces of fog to fog depth buffer
+			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit); // Copy depth from GBuffer to temporary fog framebuffer
 			GL.Enable(EnableCap.CullFace);
-			_sceneHierarchy.Render();
+			_sceneHierarchy.Render(); // This draws the backfaces of anything that is labeled "foggy"
 			GL.Disable(EnableCap.CullFace);
-			// Draw front faces, use it to calculate fog strength, write to g-buffer
 			GBuffer.Use();
 			FogProgram.Use();
 			FogFramebuffer.Depth.Bind();
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
-			_sceneHierarchy.Render();
-			DebugGroupEnd();
+			_sceneHierarchy.Render(); // This draws the frontfaces of anything labeled "foggy", and calculates fog strength.
+			EndPass();
 
-			DebugGroup("Interface");
+			BeginPass("Interface");
 			_interfaceRoot.Rebuild(state);
 			InterfaceBuffer.Use().Reset();
 			InterfaceProgram.Use();
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			_interfaceRoot.Render(state);
-			DebugGroupEnd();
-			DebugGroup("Vignette");
+			EndPass();
+			BeginPass("Vignette");
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-			DebugGroupEnd();
+			EndPass();
 
-			DebugGroup("Compositor");
+			BeginPass("Compositor");
 			DefaultFramebuffer.Use().Reset();
 			CompositorShader.Use();
 			GBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
 			GBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth
 			InterfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-			DebugGroupEnd();
+			EndPass();
 
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;
@@ -163,8 +163,13 @@ namespace Project.Render {
 				bool result = EventQueue.TryDequeue(out eventString);
 				switch (eventString) {
 					case "LevelRegenerated":
-						_interfaceRoot.BuildMapInterface(state);
-						_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						if (_isRenderGymActive) {
+							_interfaceRoot.BuildMapInterface(new GameState());
+							_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(null);
+						} else {
+							_interfaceRoot.BuildMapInterface(state);
+							_sceneHierarchy.Scene = _sceneHierarchy.BuildRoom(state.Level.CurrentRoom);
+						}
 						break;
 					default:
 						break;
@@ -182,12 +187,13 @@ namespace Project.Render {
 		}
 
 		/// <summary> Starts a GPU debug group, used for grouping operations together into one section for debugging in RenderDoc. </summary>
-		private void DebugGroup(string title) {
+		private void BeginPass(string title) {
 			GL.PushDebugGroup(DebugSourceExternal.DebugSourceApplication, _debugGroupTracker++, title.Length, title);
+			CurrentPass = title;
 		}
 
 		/// <summary> Ends the current debug group on the GPU. </summary>
-		private void DebugGroupEnd() {
+		private void EndPass() {
 			GL.PopDebugGroup();
 		}
 

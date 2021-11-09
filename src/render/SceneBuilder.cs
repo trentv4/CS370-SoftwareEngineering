@@ -16,6 +16,8 @@ namespace Project.Render {
 		/// are uploaded to the GPU to update instead of creating new objects for every room. This object is stored in the scene hierarchy automatically. </summary>
 		private Model _fogWall;
 
+		private static RenderableNode RenderTestGym;
+
 		/// <summary> Creates one-time objects. </summary>
 		public void Build() {
 			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
@@ -29,6 +31,9 @@ namespace Project.Render {
 
 		/// <summary> Provides a RenderableNode containing all contents of the provided room, arranged in no particular order. </summary>
 		public RenderableNode BuildRoom(Room currentRoom) {
+			if (currentRoom == null)
+				return BuildRenderTestGym();
+
 			RenderableNode Scene = new RenderableNode();
 
 			float roomSize = 10.0f;
@@ -58,8 +63,6 @@ namespace Project.Render {
 						.SetTexture(Texture.CreateTexture($"assets/textures/{obj.TextureName}")));
 				}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
-
-			// Room connectors (doorways)
 
 			// Creates a list of angles pointing towards neighboring room connections
 			List<float> connectionAngles = new List<float>();
@@ -103,6 +106,18 @@ namespace Project.Render {
 			_fogWall.SetVertices(vc.ToArray());
 			Scene.Children.Add(_fogWall);
 
+			return Scene;
+		}
+
+		private RenderableNode BuildRenderTestGym() {
+			if (RenderTestGym != null) return RenderTestGym;
+			RenderableNode Scene = new RenderableNode();
+
+			Scene.Children.Add(Model.LoadModelFromFile("assets/models/sponza/Sponza.gltf").SetScale(0.05f).SetPosition(new Vector3(0f, -1f, 0f)));
+			Scene.Children.Add(Model.LoadModelFromFile("assets/models/truck_grey.glb").SetScale(10f).SetPosition(new Vector3(20f, -1f, 0f)).SetFoggy(true));
+			Scene.Children.Add(Model.LoadModelFromFile("assets/models/grave1.obj").SetPosition(new Vector3(-5f, 1f, 0f)));
+
+			RenderTestGym = Scene;
 			return Scene;
 		}
 	}
@@ -232,6 +247,10 @@ namespace Project.Render {
 
 		/// <summary> Constructs a RenderableNode containing the widescreen map. This contains rooms as circles, the background element, and connections between rooms. </summary>
 		public void BuildMapInterface(GameState state) {
+			if (state.Level == null) {
+				Map = new RenderableNode();
+				return;
+			}
 			RenderableNode interfaceNode = new RenderableNode();
 			List<InterfaceModel> roomNodes = new List<InterfaceModel>();
 			List<InterfaceModel> connectorNodes = new List<InterfaceModel>();
