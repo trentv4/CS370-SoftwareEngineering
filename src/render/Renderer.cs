@@ -108,15 +108,15 @@ namespace Project.Render {
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 
-			DebugGroup("G-Buffer");
+			BeginPass("G-Buffer");
 			GBuffer.Use().Reset();
 			DeferredProgram.Use();
 			GL.UniformMatrix4(DeferredProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(DeferredProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render();
-			DebugGroupEnd();
+			EndPass();
 
-			DebugGroup("Fog");
+			BeginPass("Fog");
 			FogFramebuffer.Use().Reset();
 			FogFramebuffer.BlitFrom(GBuffer, ClearBufferMask.DepthBufferBit); // Copy depth from GBuffer to temporary fog framebuffer
 			GL.Enable(EnableCap.CullFace);
@@ -128,29 +128,29 @@ namespace Project.Render {
 			GL.UniformMatrix4(FogProgram.UniformView_ID, true, ref View);
 			GL.UniformMatrix4(FogProgram.UniformPerspective_ID, true, ref Perspective3D);
 			_sceneHierarchy.Render(); // This draws the frontfaces of anything labeled "foggy", and calculates fog strength.
-			DebugGroupEnd();
+			EndPass();
 
-			DebugGroup("Interface");
+			BeginPass("Interface");
 			_interfaceRoot.Rebuild(state);
 			InterfaceBuffer.Use().Reset();
 			InterfaceProgram.Use();
 			GL.UniformMatrix4(InterfaceProgram.UniformPerspective_ID, true, ref Perspective2D);
 			_interfaceRoot.Render(state);
-			DebugGroupEnd();
-			DebugGroup("Vignette");
+			EndPass();
+			BeginPass("Vignette");
 			VignetteProgram.Use();
 			GL.Uniform1(VignetteProgram.UniformVignetteStrength_ID, 1.75f);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-			DebugGroupEnd();
+			EndPass();
 
-			DebugGroup("Compositor");
+			BeginPass("Compositor");
 			DefaultFramebuffer.Use().Reset();
 			CompositorShader.Use();
 			GBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
 			GBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth
 			InterfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-			DebugGroupEnd();
+			EndPass();
 
 			Context.SwapBuffers();
 			_debugGroupTracker = 0;
@@ -187,13 +187,13 @@ namespace Project.Render {
 		}
 
 		/// <summary> Starts a GPU debug group, used for grouping operations together into one section for debugging in RenderDoc. </summary>
-		private void DebugGroup(string title) {
+		private void BeginPass(string title) {
 			GL.PushDebugGroup(DebugSourceExternal.DebugSourceApplication, _debugGroupTracker++, title.Length, title);
 			CurrentPass = title;
 		}
 
 		/// <summary> Ends the current debug group on the GPU. </summary>
-		private void DebugGroupEnd() {
+		private void EndPass() {
 			GL.PopDebugGroup();
 		}
 
