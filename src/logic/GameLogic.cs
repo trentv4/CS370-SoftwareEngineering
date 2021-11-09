@@ -30,6 +30,7 @@ namespace Project {
 		private GameState StateBuffer = new GameState();
 
 		public Level Level;
+		public Player Player;
 		public int GameTick;
 
 		//Camera variables
@@ -60,15 +61,39 @@ namespace Project {
 		/// <summary> Handles all on-startup tasks, instantiation of objects, or other similar run-once tasks. </summary>
 		public virtual void Initialize() {
 			ItemDefinition.LoadDefinitions();
-			Level = new Level();
+			Player = new Player(new Vector2(0.0f, 0.0f));
+			Level = LevelGenerator.TryGenerateLevel();
+			Level.Player = Player;
+			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 			Server = new Server(Level);
 			Sounds.Init();
 		}
 
 		/// <summary> Primary gameplay loop. Make all your calls and modifications to State, not StateBuffer!</summary>
-		public virtual void Update() {
+		public virtual void Update(double deltaTime) {
+			//Regenerate level if signalled
+			if (Level.NeedsRegen) {
+				uint score = Level.Score;
+				Level = LevelGenerator.TryGenerateLevel(Level.Depth);
+				Level.Score = score;
+				Level.Player = Player;
+				Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+			}
+
+			//Player died, reset level
+			if (Player.Health <= 0) {
+				Level.CurrentRoom.OnExit(Level, Level.StartRoom); //Call on exit so things like ambient music are stopped
+				Sounds.PlaySound("assets/sounds/PlayerDeath0.wav"); //Play death sound
+				//Recreate player and generate new level
+				Player = new Player(new Vector2(0.0f, 0.0f));
+				Level = LevelGenerator.TryGenerateLevel();
+				Level.Player = Player;
+				Console.WriteLine($"Player died with a score of {Level.Score}!");
+				Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
+			}
+
 			Input.Update();
-			Level.Update();
+			Level.Update(deltaTime);
 			UpdateInput();
 			GameTick++;
 
@@ -109,8 +134,9 @@ namespace Project {
 				Renderer.INSTANCE.CursorGrabbed = true;
 			}
 
-			//Mouse camera movement
+			//Player and camera movement
 			if (Renderer.INSTANCE.CursorGrabbed) {
+				//Camera movement
 				CameraPitch += -Input.MouseDeltaY * CameraMouseSensitivity;
 				CameraYaw -= Input.MouseDeltaX * CameraMouseSensitivity;
 				CameraPitch = MathUtil.MinMax(CameraPitch, CameraMinPitch, CameraMaxPitch);
@@ -121,13 +147,12 @@ namespace Project {
 				int qe = Convert.ToInt32(Input.IsKeyDown(Keys.Q)) - Convert.ToInt32(Input.IsKeyDown(Keys.E));
 				int sl = Convert.ToInt32(Input.IsKeyDown(Keys.Space)) - Convert.ToInt32(Input.IsKeyDown(Keys.LeftShift));
 
-				float speed = 0.1f;
 				float yawRadian = CameraYaw * Renderer.RCF; // Angle (in radians) pointing "forwards"
 				float yawPerpRadian = (CameraYaw + 90) * Renderer.RCF; // Angle pointing perpendicular to the above angle
 
-				player.Position += new Vector2(
-					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * speed,
-					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * speed
+				player.Velocity += new Vector2(
+					(float)((Math.Sin(yawRadian) * ws) + (Math.Sin(yawPerpRadian) * ad)) * player.MovementSpeed,
+					(float)((Math.Cos(yawRadian) * ws) + (Math.Cos(yawPerpRadian) * ad)) * player.MovementSpeed
 				);
 			}
 
@@ -150,7 +175,7 @@ namespace Project {
 
 			//Regenerate level
 			if (Input.IsKeyPressed(Keys.G)) {
-				Level.TryGenerateLevel(1000);
+				Level.NeedsRegen = true;
 			}
 
 			//Debug minimap movement
@@ -172,6 +197,8 @@ namespace Project {
 					} else {
 						Level.PreviousRoom = Level.CurrentRoom;
 						Level.CurrentRoom = nextRoom;
+						Level.PreviousRoom.OnExit(Level, Level.CurrentRoom);
+						Level.CurrentRoom.OnEnter(Level, Level.PreviousRoom);
 						Level.Score += 100;
 						Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
 
@@ -189,6 +216,13 @@ namespace Project {
 			if (Input.IsKeyPressed(Keys.V)) {
 				foreach (Room room in Level.Rooms) {
 					room.Visited = Room.VisitedState.Seen;
+				}
+			}
+			//Debug keybind to add all keys required for end room
+			if (Input.IsKeyPressed(Keys.K)) {
+				foreach(ItemDefinition keyDef in Level.KeyDefinitions) {
+					if (!Level.Player.Inventory.Items.Contains(item => item.Definition == keyDef))
+						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key if player doesn't have it
 				}
 			}
 		}
@@ -227,6 +261,7 @@ namespace Project {
 					item.Consume(player);
 					used = true;
 					Console.WriteLine($"Consumed {item.Definition.Name}! {item.UsesRemaining} uses remaining.");
+					Sounds.PlaySound("assets/sounds/PotionDrink0.wav");
 				} else if (item.Definition.IsKey) {
 					//Not yet implemented
 					Console.WriteLine($"You try to use {item.Definition.Name}, but you have nothing to unlock!");
@@ -248,7 +283,7 @@ namespace Project {
 
 		}
 
-		public override void Update() {
+		public override void Update(double deltaTime) {
 			// every 16.6ms (60fps), retreive a new GameState from the server
 		}
 

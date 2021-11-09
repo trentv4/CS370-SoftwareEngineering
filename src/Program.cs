@@ -69,7 +69,7 @@ namespace Project {
 		protected override void OnRenderFrame(FrameEventArgs args) { }
 
 		protected override void OnUpdateFrame(FrameEventArgs args) {
-			Program.LogicThread.Update();
+			Program.LogicThread.Update(args.Time);
 		}
 	}
 }

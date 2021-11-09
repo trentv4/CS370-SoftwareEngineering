@@ -8,13 +8,13 @@ using System.Linq;
 
 namespace Project.Levels {
 	public class Level : ICloneable {
-		private readonly Random Random = new System.Random();
-
 		///<summary>Goes up with each room you visit before passing the end room. Lower scores are better.</summary>
 		public uint Score = 0;
 		public Player Player;
 
 		public Room[] Rooms;
+		/// <summary> Keys required to pass pass through the end room into the next level. </summary>
+		public ItemDefinition[] KeyDefinitions;
 		///<summary>The room that the player is in.</summary>
 		public Room CurrentRoom = null;
 		///<summary>Previous room that the player was in. Used to stop player from moving backwards.</summary>
@@ -22,24 +22,16 @@ namespace Project.Levels {
 		public Room StartRoom = null;
 		public Room EndRoom = null;
 
-		/// <summary>Current level the player is on. Starts at 0 and increases each time they reach and end room.</summary>
-		public int CurrentLevel = 0;
-		private int LevelSeed = 0;
-
-		private readonly List<LevelGenConfig> GenerationConfigs = new List<LevelGenConfig>() {
-				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 2, MinRoomsPerPath = 2, MaxRoomsPerPath = 3, PruneChance = 0.15f, SecondaryPathChance = 0.2f },
-				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 3, MinRoomsPerPath = 3, MaxRoomsPerPath = 4, PruneChance = 0.25f, SecondaryPathChance = 0.4f },
-				new LevelGenConfig() {NumLevels = 1, NumPrimaryPaths = 4, MinRoomsPerPath = 3, MaxRoomsPerPath = 7, PruneChance = 0.5f, SecondaryPathChance = 0.5f },
-			};
-
-		public Level(bool generateLevel = true) {
-			if (generateLevel)
-				TryGenerateLevel(1000);
-		}
+		/// <summary> Increases by one each time the player completes a level. </summary>
+		public int Depth = 0;
+		/// <summary> Setting this to true causes GameLogic to regenerate the level. </summary>
+		public bool NeedsRegen = false;
+		/// <summary> Time in seconds since last time the player was checked for end room keys. Used to prevent console spam. </summary>
+		private float _timeSinceLastKeyCheck = float.PositiveInfinity;
 
 		/// <summary>Make a deep copy</summary>
 		public object Clone() {
-			Level copy = new Level(false);
+			Level copy = new Level();
 			copy.Score = Score;
 			copy.Player = (Player)Player.Clone();
 			copy.Rooms = (Room[])Rooms.Clone();
@@ -63,366 +55,99 @@ namespace Project.Levels {
 				copy.EndRoom = copy.Rooms[endRoomIndex];
 			}
 
-			copy.CurrentLevel = CurrentLevel;
-			copy.LevelSeed = LevelSeed;
-			return copy;
-		}
-
-		/// <summary> Attempts to generate a level the provided number of times. Returns true if one of the attempts is successful and false if they all fail. </summary>
-		public bool TryGenerateLevel(int numGenerationAttempts) {
-            for (int i = 0; i < numGenerationAttempts; i++)
-				if(GenerateNewLevel())
-                    return true;
-
-			throw new Exception($"ERROR! Tried to regenerate level {numGenerationAttempts} times and failed every time! Seed: {LevelSeed}");
-        }
-
-		/// <summary> Generates new level. Can be called multiple times to regenerate the level. Returns true if it succeeds and false if it fails. </summary>
-		private bool GenerateNewLevel() {
-			//Random number generator used to vary level gen
-			LevelSeed = (int)System.DateTime.Now.Ticks; //Seed with time so generation is always different
-			Random rand = new Random(LevelSeed);
-
-            //Room generation config
-            LevelGenConfig genSettings = null;
-            int level = 0;
-            int index = 0;
-            foreach (var config in GenerationConfigs) {
-                genSettings = config;
-                if(CurrentLevel >= level && CurrentLevel < level + config.NumLevels)
-                    break;
-
-                level += config.NumLevels;
-                index++;
-            }
-            if(genSettings == null) //Use final config if none is found for current level
-                genSettings = GenerationConfigs[GenerationConfigs.Count - 1];
-
-			int minRoomsPerPath = genSettings.MinRoomsPerPath;
-			int maxRoomsPerPath = genSettings.MaxRoomsPerPath;
-            int numPrimaryPaths = genSettings.NumPrimaryPaths;
-            double pruneChance = genSettings.PruneChance;
-            float secondaryPathChance = genSettings.SecondaryPathChance;
-
-			float yDelta = 5.0f / numPrimaryPaths; //Vertical separation between each primary path
-            float xDeltaMax = 10.0f / maxRoomsPerPath; //Maximum x separation between each room on a primary path
-            float centerY = yDelta * numPrimaryPaths / 2; //Map center y 
-            float angleMaxDegrees = 12.0f; //Max angle magnitude of each room relative to the previous room
-            float angleMaxRadians = angleMaxDegrees * (MathF.PI / 180.0f);
-
-            //Level generation state
-            var roomsGen = new List<Room>();
-			var connections = new Dictionary<Room, List<Room>>();
-			var pathEnds = new List<Room>(); //End rooms of each primary path
-            var primaryPaths = new List<List<Room>>(); //Rooms in each primary path
-
-            //Create start room
-            var startRoom = new Room(-0.5f, centerY);
-			roomsGen.Add(startRoom);
-			connections[startRoom] = new List<Room>();
-
-            //Generate primary paths
-            for (uint i = 0; i < numPrimaryPaths; i++) {
-                int roomsInPath = rand.Next(minRoomsPerPath, maxRoomsPerPath);
-                float xDelta = 10.0f / (roomsInPath + 1);
-                float roomX = xDelta;
-                float roomY = yDelta * i + 0.5f;
-                Room lastRoom = null;
-                Room curRoom = startRoom;
-                var path = new List<Room>();
-                primaryPaths.Add(path);
-
-                for (int j = 0; j < roomsInPath; j++) {
-					//Calculate position of next room
-					if(j != 0) {
-                    	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
-                    	roomX += xDelta * MathF.Cos(angle);
-                    	roomY += xDelta * MathF.Sin(angle);
-					}
-
-                    //Create next room
-                    lastRoom = curRoom;
-                    curRoom = new Room(roomX, roomY);
-                    roomsGen.Add(curRoom);
-                    path.Add(curRoom);
-                    connections[curRoom] = new List<Room>();
-                	connections[curRoom].Add(lastRoom);
-                	connections[lastRoom].Add(curRoom);
-                }
-                pathEnds.Add(curRoom);
-            }
-
-            //Add end room
-            var endRoom = new Room(xDeltaMax * maxRoomsPerPath + 0.5f, centerY);
-			roomsGen.Add(endRoom);
-			connections[endRoom] = new List<Room>();
-
-			//Connect primary path end points to end room
-			foreach (Room room in pathEnds) {
-                connections[room].Add(endRoom);
-                connections[endRoom].Add(room);
-            }
-
-            //Generate secondary paths that branch off primary paths
-            foreach (List<Room> path in primaryPaths) {
-                for (int i = 0; i < path.Count; i++) {
-                    //Chance on each primary path room to have a secondary path
-                    if (rand.NextDouble() <= secondaryPathChance) {
-                     	Room primary = path[i];
-
-                        //Look for another primary in range to connect this room with
-                        float closestRoom = float.PositiveInfinity;
-                        Room nextRoom = null;
-                        foreach (var room in roomsGen) {
-							if(room == primary || path.Contains(room) || room == startRoom || room == endRoom)
-                                continue;
-							if(connections[room].Contains(primary) || connections[primary].Contains(room))
-                                continue;
-
-                            float dist = (float)primary.DistanceToRoom(room);
-							if(dist < closestRoom) {
-								closestRoom = dist;
-                                nextRoom = room;
-                            }
-                        }
-
-						if(nextRoom != null) { //Connect to another primary
-                            connections[primary].Add(nextRoom);
-                            connections[nextRoom].Add(primary);
-                        }
-						else { //Form a separate branch
-							//Todo: Rewrite this so branches do more than just looping back into the same path
-							Room nextPrimary = (i == path.Count - 1) ? path[i - 1] : path[i + 1];
-                        	float xDelta = 10.0f / (path.Count + 1);
-                        	float minSecondaryAngle = 5.0f;
-                        	float angle = ((float)rand.NextDouble() * 2.0f - 1.0f) * angleMaxRadians;
-                        	angle = Math.Sign(angle) * Math.Max(minSecondaryAngle, Math.Abs(angle));
-                        	float roomX = primary.Position.X;
-                        	float roomY = primary.Position.Y;
-                        	roomX += xDelta * MathF.Cos(angle) * 0.5f;
-                        	roomY += xDelta * MathF.Sin(angle) * 0.5f;
-
-                        	var room = new Room(roomX, roomY);
-                        	roomsGen.Add(room);
-                        	connections[room] = new List<Room>();
-                        	connections[room].Add(primary);
-                        	connections[primary].Add(room);
-
-                        	connections[room].Add(nextPrimary);
-                        	connections[nextPrimary].Add(room);
-						}
-                    }
-                }
-            }
-
-			//Determine min/max room positions pre room push step
-			Vector2 prePushMin = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
-			Vector2 prePushMax = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
-			foreach(var room in roomsGen) {
-				if(room == startRoom || room == endRoom)
-					continue;
-
-				if (room.Position.X < prePushMin.X)
-					prePushMin.X = room.Position.X;
-				if (room.Position.Y < prePushMin.Y)
-					prePushMin.Y = room.Position.Y;
-				if (room.Position.X > prePushMax.X)
-					prePushMax.X = room.Position.X;
-				if (room.Position.Y > prePushMax.Y)
-					prePushMax.Y = room.Position.Y;
-			}
-
-			//Push close rooms away from each other
-			int roomSeparationSteps = 5;
-            float maxPushDistance = 2.0f; //Maximum distance a room can be pushed each step
-            for (int i = 0; i < roomSeparationSteps; i++) {
-                foreach (var room0 in roomsGen) {
-                    foreach (var room1 in roomsGen) {
-                        if (room0 == room1 || room0 == startRoom || room0 == endRoom || room1 == startRoom || room0 == endRoom)
-                            continue;
-
-						//Push rooms away from each other if they're within minPushDistance
-                        float distance = (float)room0.DistanceToRoom(room1);
-                        if (distance <= maxPushDistance) {
-                            float strength = 1.0f / (distance * distance);
-                            strength *= 0.05f;
-                            Vector2 dir0 = (room0.Position - room1.Position).Normalized();
-                            Vector2 dir1 = -dir0;
-
-                            room0.Position += dir0 * strength;
-                            room1.Position += dir1 * strength;
-
-							//How much to increase min/max bounds by during push step. Currently disabled but left in for future tweaking
-							float pushStepBoundsIncrease = 0.0f;
-							//Ensure rooms aren't pushed out of bounds
-							room0.Position.X = MathUtil.MinMax(room0.Position.X, prePushMin.X - pushStepBoundsIncrease, prePushMax.X + pushStepBoundsIncrease);
-							room0.Position.Y = MathUtil.MinMax(room0.Position.Y, prePushMin.Y - pushStepBoundsIncrease, prePushMax.Y + pushStepBoundsIncrease);
-							room1.Position.X = MathUtil.MinMax(room1.Position.X, prePushMin.X - pushStepBoundsIncrease, prePushMax.X + pushStepBoundsIncrease);
-							room1.Position.Y = MathUtil.MinMax(room1.Position.Y, prePushMin.Y - pushStepBoundsIncrease, prePushMax.Y + pushStepBoundsIncrease);
-                        }
-
-                    }
-				}
-			}
-
-			//Ensure rooms aren't before/after the start/end rooms
-			foreach (var room in roomsGen) {
-				if(room == startRoom || room == endRoom)
-					continue;
-
-				room.Position.X = MathUtil.MinMax(room.Position.X, startRoom.Position.X + xDeltaMax * 0.5f, endRoom.Position.X - xDeltaMax * 0.5f);
-			}
-
-			//Iterate rooms in random order and prune some connections
-			foreach (int i in Enumerable.Range(0, roomsGen.Count).OrderBy(i => rand.Next())) {
-                Room room = roomsGen[i];
-            	var roomConnections = connections[room];
-				if (room == startRoom || room == endRoom)
-                    continue;
-                if (roomConnections.Count <= 2 || rand.NextDouble() > pruneChance)
-                    continue;
-
-                //Find a connection where the room on the other end will still have >= 2 connections
-                if (roomConnections.Count > 2) {
-					Room room2 = null;
-					foreach (var connectedRoom in roomConnections) {
-						if (connections[connectedRoom].Count > 2) {
-							room2 = connectedRoom;
+			//Get indices of connected rooms
+			var connections = new Dictionary<int, List<int>>();
+			for (int i = 0; i < Rooms.Length; i++) {
+				Room room = Rooms[i];
+				var connectedRoomIndices = new List<int>();
+				connections[i] = connectedRoomIndices;
+				foreach (Room connection in room.ConnectedRooms) {
+					for (int j = 0; j < Rooms.Length; j++) {
+						if (connection == Rooms[j]) {
+							connectedRoomIndices.Add(j);
 							break;
 						}
 					}
-
-                    //Remove connection
-                    if (room2 != null) {
-						roomConnections.Remove(room2);
-                        connections[room2].Remove(room);
-                    }
-				}
-            }
-
-            //Do floodfill to see if theres a path from start to finish, and to detect stranded rooms
-            {
-                var checkedRooms = new List<Room>();
-                var roomQueue = new Queue<Room>();
-                roomQueue.Enqueue(startRoom);
-                bool success = false;
-                while (roomQueue.Count > 0) {
-                    //Get next room from queue
-                    var room = roomQueue.Dequeue();
-                    checkedRooms.Add(room);
-
-                    //Check if we've reached the end room
-                    if (room == endRoom)
-                        success = true;
-
-                    //Push connections onto queue if they haven't already been checked
-                    foreach (var connection in connections[room])
-                        if (!checkedRooms.Contains(connection))
-                            roomQueue.Enqueue(connection);
-                }
-
-                //Fail level generation if start and end rooms aren't connected
-                if (!success) {
-                    Console.WriteLine("Level generation error! No valid path from start room to end room.");
-                    return false;
-                }
-
-                //Get a list of rooms that aren't connected to the start room
-                var strandedRooms = new List<Room>(); //Rooms that don't have a path to the start room
-                foreach (var room in roomsGen)
-                    if (!checkedRooms.Contains(room))
-                        strandedRooms.Add(room);
-
-                //Remove rooms that aren't connected to the start room.
-                //Done in two steps since you shouldn't enumerate a list (roomsGen) while removing items from it
-                foreach (var room in strandedRooms) {
-                    roomsGen.Remove(room);
-
-                    //Iterate all other rooms and remove their connections to this one if present
-                    foreach (var room2 in roomsGen) {
-                        var room2Connections = connections[room2];
-                        if (room2Connections.Contains(room))
-                            room2Connections.Remove(room);
-                    }
-                }
-            }
-
-			//Check again that all rooms have >= 2 connections
-			foreach (var room in roomsGen) {
-            	if (connections[room].Count < 2) {
-            		Console.WriteLine($"Level generation error! Room {room.Id} has < 2 connections.");
-            		return false;
-            	}
-            }
-
-			//Add random items to each room
-			foreach (var room in roomsGen) {
-				int numItemsToAdd = rand.Next(0, 5);
-				for (int i = 0; i < numItemsToAdd; i++) {
-					//Pick random item and add it to the room
-					var def = ItemDefinition.Definitions[rand.Next(ItemDefinition.Definitions.Count)];
-					var item = new Item(def);
-					room.Items.Add(item);
-
-					//Pick random position for the item
-					float x = (float)((rand.NextDouble() - 0.5) * 5.0);
-					float y = (float)((rand.NextDouble() - 0.5) * 5.0);
-					item.Position = new Vector2(x, y);
 				}
 			}
-
-            //Set final rooms list and their connections
-            foreach (var room in roomsGen) {
-				var connectedRooms = connections[room];
-				room.ConnectedRooms = connectedRooms.ToArray();
-			}
-			Rooms = roomsGen.ToArray();
-			StartRoom = startRoom;
-			EndRoom = endRoom;
-
-			//Spawn the player in the start room
-			Player = new Player(new Vector2(0.0f, 0.0f));
-			CurrentRoom = startRoom;
-			PreviousRoom = startRoom;
-
-			CurrentRoom.Visited = Room.VisitedState.Visited;
-			foreach (Room c in CurrentRoom.ConnectedRooms) {
-				c.Visited = Room.VisitedState.Seen;
+			//Update connected rooms in clone since they still reference the original rooms
+			foreach(var kv in connections) {
+				Room room = copy.Rooms[kv.Key]; //Room in the level copy
+				List<int> connectedIndices = kv.Value;
+				for (int i = 0; i < room.ConnectedRooms.Length; i++)
+					room.ConnectedRooms[i] = copy.Rooms[connectedIndices[i]];
 			}
 
-			Console.WriteLine($"Generated new level with {Rooms.Length} rooms.");
-			Renderer.EventQueue.Enqueue("LevelRegenerated"); //Signal to renderer to regenerate map scene
-			return true;
+			copy.Depth = Depth;
+			return copy;
 		}
 
-		public void Update() {
-			//Print out score and generate a new level if player completes this one
-			if (CurrentRoom == EndRoom) {
-				Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
-				Score = 0;
-                CurrentLevel++;
-                TryGenerateLevel(10000);
-            }
-
-            CheckIfPlayerEnteredDoorway();
+		public void Update(double deltaTime) {
+			Player.Update(deltaTime, CurrentRoom);
+			CheckIfPlayerCompletedLevel(deltaTime);
+			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
-        }
+			CurrentRoom.Update(deltaTime, this);
+		}
 
-		/// <summary>Moves them to the next room if they collide with a doorway and it doesn't go to the previous room.</summary>
+		/// <summary>The current level is completed if the player is inside the end room and has all the keys required to open it.</summary>
+		void CheckIfPlayerCompletedLevel(double deltaTime) {
+			if (CurrentRoom == EndRoom) {
+				//Check that the player has the keys needed to pass through
+				bool hasRequiredKeys = true;
+				_timeSinceLastKeyCheck += (float)deltaTime;
+				foreach (ItemDefinition keyDef in KeyDefinitions)
+					if (!Player.Inventory.Items.Contains(item => item.Definition == keyDef))
+						hasRequiredKeys = false;
+
+				//Todo: The player should also be required to walk through a special "end room door" so they can still backtrack and grab more loot if needed
+				//Has required keys. Print out score and generate a new level.
+				if (hasRequiredKeys) {
+					//Remove keys from inventory
+					foreach(ItemDefinition keyDef in KeyDefinitions) {
+						foreach (Item item in Player.Inventory.Items.ToArray()) { //Iterate array copy so we can remove items while iterating
+							if (item.Definition == keyDef) {
+								Player.Inventory.Items.Remove(item);
+								break; //Only remove one instance of each key
+							}
+						}
+					}
+
+					//Trigger regen
+					Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
+                	Depth++;
+					NeedsRegen = true;
+				} else if(_timeSinceLastKeyCheck >= 3.5f) {
+					_timeSinceLastKeyCheck = 0.0f;
+					Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
+					foreach (ItemDefinition keyDef in KeyDefinitions) {
+						bool hasKey = Player.Inventory.Items.Contains(item => item.Definition == keyDef);
+						Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
+					}
+				}
+            }
+		}
+
+		/// <summary> Moves the player to the next room if they collide with a doorway and it doesn't go to the previous room. </summary>
 		void CheckIfPlayerEnteredDoorway() {
 			// Loop through each door
 			float roomSize = 10.0f;
-            float doorSize = 0.8f;
+            float doorSize = 1.0f;
             foreach (Room r in CurrentRoom.ConnectedRooms) {
 				float angle = CurrentRoom.AngleToRoom(r);
 				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), (float)Math.Cos(angle), 0.0f) * (roomSize - 0.1f);
                 float distance = (doorPosition.Xy - Player.Position).Length;
 
 				//If player within certain distance of door and it's not the previous room, move to next room
-                if(distance < doorSize && r != PreviousRoom) {
+                if (distance < doorSize && r != PreviousRoom) {
+					//Update room variables
                     PreviousRoom = CurrentRoom;
                     CurrentRoom = r;
-                    Score += 100;
+					PreviousRoom.OnExit(this, CurrentRoom);
+					CurrentRoom.OnEnter(this, PreviousRoom);
+
+					//Update score, player position, and room visited state
+					Score += 100;
                     Player.Position = new Vector2(0.0f, 0.0f);
 					CurrentRoom.Visited = Room.VisitedState.Visited;
 					foreach (Room c in CurrentRoom.ConnectedRooms) {
@@ -463,17 +188,20 @@ namespace Project.Levels {
         }
 	}
 
-	public class Room {
+	public class Room : ICloneable {
 		public enum VisitedState {
 			NotSeen,
 			Seen,
 			Visited
 		}
 		public VisitedState Visited = VisitedState.NotSeen;
-
 		public Vector2 Position;
 		public Room[] ConnectedRooms;
 		public List<Item> Items = new List<Item>();
+		public List<LevelObject> Objects = new List<LevelObject>();
+		public string FloorTexture = "plane.png";
+		public float FloorFriction = DefaultFloorFriction;
+		public static readonly float DefaultFloorFriction = 0.65f;
 		private static int _currentId = 0;
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
@@ -482,6 +210,25 @@ namespace Project.Levels {
 		public Room(float X, float Y) {
 			this.Position = new Vector2(X, Y);
 			_id = _currentId++;
+		}
+
+		/// <summary> Clone base class data. Derived classes can use this instead of duplicating the clone code </summary>
+		public void CloneBase(Room clone) {
+			clone.Visited = Visited;
+			clone.Items = new List<Item>();
+			clone.Objects = new List<LevelObject>();
+			clone.ConnectedRooms = (Room[])ConnectedRooms.Clone(); //Makes a shallow copy, Level.Clone() updates references
+			clone.FloorTexture = FloorTexture;
+			foreach (Item item in Items)
+				clone.Items.Add((Item)item.Clone());
+			foreach (LevelObject obj in Objects)
+				clone.Objects.Add((LevelObject)obj.Clone());
+		}
+
+		public virtual object Clone() {
+			var room = new Room(Position.X, Position.Y);
+			CloneBase(room);
+			return room;
 		}
 
 		public double DistanceToRoom(Room otherRoom) {
@@ -493,21 +240,153 @@ namespace Project.Levels {
 			float angle = (float)Math.Atan2(connectedRoomPos.Y, connectedRoomPos.X);
 			return angle;
 		}
+
+		/// <summary> Called once each frame. </summary>
+		public virtual void Update(double deltaTime, Level level) {
+			foreach (LevelObject obj in Objects)
+				obj.Update(deltaTime, level);
+		}
+
+		/// <summary> Called whenever the player enters this room. </summary>
+		public virtual void OnEnter(Level level, Room previousRoom) {
+
+		}
+
+		/// <summary> Called whenever the player exits this room. </summary>
+		public virtual void OnExit(Level level, Room nextRoom) {
+
+		}
 	}
 
-	/// <summary>Configuration for level generation</summary>
-	public class LevelGenConfig {
-		/// <summary>The number of levels to use this config for before moving to the next one</summary>
-        public int NumLevels;
-		/// <summary>The number of rows in the level, excluding the start and end rows</summary>
-        public int NumPrimaryPaths;
-		/// <summary>Minimum number of rooms per row</summary>
-        public int MinRoomsPerPath;
-		/// <summary>Maximum number of rooms per row</summary>
-        public int MaxRoomsPerPath;
-		/// <summary>The chance of pruning connections for rooms when they have < MaxConnections.</summary>
-        public float PruneChance;
-        /// <summary>The chance of a secondary path forming off of each room on a primary path</summary>
-        public float SecondaryPathChance;
-    }
+	/// <summary> Room with wind constantly pushing the player around. </summary>
+	public class WindyRoom : Room {
+		public Vector2 WindDirection = new Vector2(0.0f);
+		public float WindSpeed = 0.0f;
+		public float DirectionChangePeriod = 5.0f; //Time between wind direction changes
+		private float _directionChangeTimer = 0.0f;
+		public static readonly string windSoundEffect = "assets/sounds/Wind0.wav";
+
+		public WindyRoom(float x, float y) : base(x, y) { }
+		
+		public override object Clone() {
+			var room = new WindyRoom(Position.X, Position.Y);
+			CloneBase(room);
+			room.WindDirection = WindDirection;
+			room.WindSpeed = WindSpeed;
+			return room;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+
+			//Push the player around
+			level.Player.Velocity += WindDirection * WindSpeed;
+
+			//Periodically change wind direction
+			_directionChangeTimer += (float)deltaTime;
+			if (_directionChangeTimer >= DirectionChangePeriod) {
+				_directionChangeTimer = 0.0f;
+				WindDirection = new Random().NextVec2();
+			}
+		}
+
+		public override void OnEnter(Level level, Room previousRoom) {
+			base.OnEnter(level, previousRoom);
+			if (!Sounds.IsSoundPlaying(windSoundEffect))
+				Sounds.PlaySound(windSoundEffect); //Start wind sound if it isn't already playing
+		}
+
+		public override void OnExit(Level level, Room nextRoom) {
+			base.OnExit(level, nextRoom);
+			if (nextRoom.GetType() != typeof(WindyRoom))
+				Sounds.StopSound(windSoundEffect); //Stop wind sound if next room isn't windy
+		}
+	}
+
+	
+	/// <summary> Room with slippery floors.  </summary>
+	public class IcyRoom : Room {
+		public IcyRoom(float x, float y) : base(x, y) { }
+
+		public override object Clone() {
+			var room = new IcyRoom(Position.X, Position.Y);
+			CloneBase(room);
+			room.FloorFriction = FloorFriction;
+			return room;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+			base.FloorTexture = "Ice.png";
+		}
+
+		public override void OnEnter(Level level, Room previousRoom) {
+			base.OnEnter(level, previousRoom);
+			//Make the floors slippery and movement slower while in icy rooms
+			FloorFriction = 0.01f;
+			level.Player.MovementSpeed = 0.1f;
+		}
+
+		public override void OnExit(Level level, Room nextRoom) {
+			base.OnExit(level, nextRoom);
+			FloorFriction = DefaultFloorFriction;
+			level.Player.MovementSpeed = Player.DefaultMovementSpeed;
+		}
+	}
+
+	/// <summary> Interactable object found in rooms. </summary>
+	public class LevelObject : ICloneable {
+		public Vector2 Position;
+		public readonly string TextureName;
+
+		public LevelObject(Vector2 position, string textureName) {
+			Position = position;
+			TextureName = textureName;
+		}
+
+		public virtual object Clone() {
+			var clone = new LevelObject(Position, TextureName);
+			return clone;
+		}
+
+		/// <summary> Called each frame when the player is in the same room as the object. </summary>
+		public virtual void Update(double deltaTime, Level level) {
+
+		}
+	}
+
+	/// <summary> Spikes that damage the player if they walk into them. </summary>
+	public class FloorSpike : LevelObject {
+		/// <summary> The player takes damage if within this distance from the spikes </summary>
+		public float Radius;
+		/// <summary> How much of the players health gets removed on collision </summary>
+		public int Damage;
+
+		public FloorSpike(Vector2 position, string textureName, float radius, int damage) : base(position, textureName) {
+			Radius = radius;
+			Damage = damage;
+		}
+
+		public override object Clone() {
+			var clone = new FloorSpike(Position, TextureName, Radius, Damage);
+			return clone;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+
+			//Perform circular collision handling. Both the player and the spikes are treated as circles.
+			Player player = level.Player;
+			float distance = player.Position.Distance(this.Position);
+			if (distance <= Radius) { //Check if player is colliding with the spikes
+				//Push player away from the spikes
+				Vector2 dir = (player.Position - Position).Normalized();
+				player.Position += dir * (Radius - distance);
+
+				//Damage the player
+				if (player.TryDamage(Damage))
+					Sounds.PlaySound("assets/sounds/FloorSpikeHit0.wav");
+			}
+		}
+	}
 }

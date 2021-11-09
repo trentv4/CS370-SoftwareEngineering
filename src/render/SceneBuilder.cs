@@ -38,7 +38,7 @@ namespace Project.Render {
 				.SetPosition(new Vector3(0, -1f, 0))
 				.SetRotation(new Vector3(0f, 90f, 0))
 				.SetScale(roomSize * 4)
-				.SetTexture(Texture.CreateTexture("assets/textures/plane.png")));
+				.SetTexture(Texture.CreateTexture($"assets/textures/{currentRoom.FloorTexture}")));
 
 			//try/catch is a temporary fix.
 			try {
@@ -48,6 +48,14 @@ namespace Project.Render {
 						.SetPosition(new Vector3(i.Position.X, 0, i.Position.Y))
 						.SetRotation(new Vector3(20.0f, 0, 0))
 						.SetTexture(Texture.CreateTexture($"assets/textures/{i.Definition.TextureName}")));
+				}
+
+				// Non-carryable objects on the floor
+				foreach (LevelObject obj in currentRoom.Objects) {
+					Scene.Children.Add(Model.GetCachedModel("unit_rectangle")
+						.SetPosition(new Vector3(obj.Position.X, 0, obj.Position.Y))
+						.SetRotation(new Vector3(20.0f, 0, 0))
+						.SetTexture(Texture.CreateTexture($"assets/textures/{obj.TextureName}")));
 				}
 			} catch (Exception e) { Console.WriteLine(e.ToString()); }
 
