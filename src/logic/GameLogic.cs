@@ -74,6 +74,7 @@ namespace Project {
 			//Regenerate level if signalled
 			if (Level.NeedsRegen) {
 				uint score = Level.Score;
+				Level.CurrentRoom.OnExit(Level, Level.StartRoom);
 				Level = LevelGenerator.TryGenerateLevel(Level.Depth);
 				Level.Score = score;
 				Level.Player = Player;
