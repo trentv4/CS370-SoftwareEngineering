@@ -1,5 +1,6 @@
 using OpenTK.Mathematics;
 using System;
+using Project.Levels;
 
 namespace Project {
 	///<summary>All state of the player character.</summary>
@@ -15,12 +16,10 @@ namespace Project {
 		public Vector2 Velocity;
 		public float MovementSpeed = DefaultMovementSpeed;
 		public readonly float MaxSpeed = 6.5f;
-		public float FloorFriction = DefaultFloorFriction;
 		/// <summary> Amount of time in seconds that the player can't take damage again after hitting the spikes. </summary>
 		public static readonly double DamageSafeTime = 0.65;
 		private DateTime _lastDamageTime = DateTime.UnixEpoch;
-		//Store defaults so special rooms can reset values after changing them. E.g. Icy rooms change speed and friction then reset on exit.
-		public static readonly float DefaultFloorFriction = 0.65f;
+		//Store defaults so special rooms can reset values after changing them. E.g. Icy rooms change movement speed
 		public static readonly float DefaultMovementSpeed = 6.5f;
 
 		public Player(Vector2 initialPosition) {
@@ -40,11 +39,10 @@ namespace Project {
 			copy.Armor = Armor;
 			copy.CarryWeight = CarryWeight;
 			copy.MovementSpeed = MovementSpeed;
-			copy.FloorFriction = FloorFriction;
 			return copy;
 		}
 
-		public void Update(double deltaTime) {
+		public void Update(double deltaTime, Room room) {
 			//Enforce max speed
 			if (Velocity.Length > MaxSpeed)
 				 	Velocity *= (MaxSpeed / Velocity.Length);
@@ -53,7 +51,7 @@ namespace Project {
 			Position += Velocity * (float)deltaTime;
 
 			//Apply floor friction
-			Velocity -= FloorFriction * Velocity;
+			Velocity -= room.FloorFriction * Velocity;
 		}
 
 		/// <summary>

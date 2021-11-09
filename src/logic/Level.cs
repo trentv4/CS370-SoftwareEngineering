@@ -83,7 +83,7 @@ namespace Project.Levels {
 		}
 
 		public void Update(double deltaTime) {
-			Player.Update(deltaTime);
+			Player.Update(deltaTime, CurrentRoom);
 			CheckIfPlayerCompletedLevel(deltaTime);
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
@@ -200,6 +200,8 @@ namespace Project.Levels {
 		public List<Item> Items = new List<Item>();
 		public List<LevelObject> Objects = new List<LevelObject>();
 		public string FloorTexture = "plane.png";
+		public float FloorFriction = DefaultFloorFriction;
+		public static readonly float DefaultFloorFriction = 0.65f;
 		private static int _currentId = 0;
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
@@ -304,8 +306,6 @@ namespace Project.Levels {
 	
 	/// <summary> Room with slippery floors.  </summary>
 	public class IcyRoom : Room {
-		public float FloorFriction = 0.01f;
-
 		public IcyRoom(float x, float y) : base(x, y) { }
 
 		public override object Clone() {
@@ -323,13 +323,13 @@ namespace Project.Levels {
 		public override void OnEnter(Level level, Room previousRoom) {
 			base.OnEnter(level, previousRoom);
 			//Make the floors slippery and movement slower while in icy rooms
-			level.Player.FloorFriction = FloorFriction;
+			FloorFriction = 0.01f;
 			level.Player.MovementSpeed = 0.1f;
 		}
 
 		public override void OnExit(Level level, Room nextRoom) {
 			base.OnExit(level, nextRoom);
-			level.Player.FloorFriction = Player.DefaultFloorFriction;
+			FloorFriction = DefaultFloorFriction;
 			level.Player.MovementSpeed = Player.DefaultMovementSpeed;
 		}
 	}

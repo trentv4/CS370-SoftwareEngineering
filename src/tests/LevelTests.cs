@@ -16,5 +16,23 @@ namespace Project.Tests {
                 Assert.IsTrue(room.ConnectedRooms.Length >= 2);
             }
         }
+
+		[Test]
+        public void GenerateManyRooms() {
+			//Generate many levels
+			bool error = false;
+			try {
+				for (int i = 0; i < 1000; i++) {
+					//Attempts to regenerate level if the first seed fails. If it fails too many times it throws an exception.
+					Level level = LevelGenerator.TryGenerateLevel();
+				}
+			} catch(Exception ex) {
+				Console.WriteLine(ex.Message);
+				error = true;
+			}
+
+			//Level generation shouldn't completely fail
+			Assert.IsFalse(error);
+		}
     }
 }

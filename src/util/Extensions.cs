@@ -1,9 +1,19 @@
+using System.Collections.Generic;
 using OpenTK.Mathematics;
 using System;
 
 namespace Project.Util {
-    public static class MathExtensions {
+    public static class Extensions {
         /// <summary>
+        /// Override for List<T>.Contains() that uses a predicate instead of comparing each item with a value.
+        /// Useful when checking if a list contains an object with specific member values.
+        /// </summary>
+        public static bool Contains<T>(this List<T> list, Predicate<T> match) {
+            //List<T>.Find() returns null if the predicate doesn't match any value
+            return list.Find(match) != null;
+        }
+
+		/// <summary>
         /// Returns a random float in range [0.0f, 1.0f) with optional arguments to define a custom range.
         /// </summary>
         public static float NextFloat(this Random random, float min = 0.0f, float max = 1.0f) {
