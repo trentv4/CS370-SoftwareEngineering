@@ -131,8 +131,8 @@ namespace Project.Levels {
 		/// <summary> Moves the player to the next room if they collide with a doorway and it doesn't go to the previous room. </summary>
 		void CheckIfPlayerEnteredDoorway() {
 			// Loop through each door
-			float roomSize = 10.0f;
-            float doorSize = 1.0f;
+			float roomSize = Room.RoomRadius;
+            float doorSize = 0.65f;
             foreach (Room r in CurrentRoom.ConnectedRooms) {
 				float angle = CurrentRoom.AngleToRoom(r);
 				Vector3 doorPosition = new Vector3((float)Math.Sin(angle), (float)Math.Cos(angle), 0.0f) * (roomSize - 0.1f);
@@ -202,6 +202,7 @@ namespace Project.Levels {
 		public string FloorTexture = "plane.png";
 		public float FloorFriction = DefaultFloorFriction;
 		public static readonly float DefaultFloorFriction = 0.65f;
+		public static readonly float RoomRadius = 8.5f;
 		private static int _currentId = 0;
 		//Unique ID used for use as dictionary key
 		private readonly int _id = 0;
@@ -245,6 +246,12 @@ namespace Project.Levels {
 		public virtual void Update(double deltaTime, Level level) {
 			foreach (LevelObject obj in Objects)
 				obj.Update(deltaTime, level);
+
+			//Keep player in room bounds
+			Vector2 direction = level.Player.Position.Normalized();
+			float distance = level.Player.Position.Length;
+			if (distance >= RoomRadius)
+				level.Player.Position += direction * (RoomRadius - distance); //Push back into room if outside of it
 		}
 
 		/// <summary> Called whenever the player enters this room. </summary>
