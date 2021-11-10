@@ -160,6 +160,17 @@ namespace Project.Render {
 			Inventory inventory = state.Level.Player.Inventory;
 
 			// Minimap "rear view mirror"
+			InterfaceString weight = new InterfaceString("calibri", $"Weight: {state.Level.Player.Inventory.Weight} / {state.Level.Player.CarryWeight}");
+			weight.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 30f));
+			InterfaceString health = new InterfaceString("calibri", $"Health: {state.Level.Player.Health} / {state.Level.Player.MaxHealth}");
+			health.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 60f));
+			InterfaceString mana = new InterfaceString("calibri", $"Mana: {state.Level.Player.Mana} / {state.Level.Player.MaxMana}");
+			mana.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 90f));
+			InterfaceString armor = new InterfaceString("calibri", $"Armor: {state.Level.Player.Armor}");
+			armor.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 120f));
+			node.Children.AddRange(new RenderableNode[] { weight, health, mana, armor });
+
+			// Minimap "rear view mirror"
 
 			List<InterfaceModel> circles = new List<InterfaceModel>();
 			List<InterfaceModel> connectionModels = new List<InterfaceModel>();
@@ -215,7 +226,9 @@ namespace Project.Render {
 					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
 				InterfaceString u = new InterfaceString("calibri", "[ U use ] [ X discard ]");
 				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 30f));
-				node.Children.AddRange(new RenderableNode[] { currentItem, u });
+				InterfaceString itemName = new InterfaceString("calibri", $"{inventory.Items[currentIndex].Definition.Name}");
+				itemName.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((itemName.Width / 2) * itemName.Scale.X), 250f));
+				node.Children.AddRange(new RenderableNode[] { currentItem, u, itemName });
 			}
 			if (inventory.Items.Count > 1) {
 				int rightIndex = currentIndex + 1;
