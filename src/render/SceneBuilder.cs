@@ -77,10 +77,14 @@ namespace Project.Render {
 			// If the fog wall is null, generate the indices and create the model.
 			if (_fogWall == null) {
 				List<uint> indices = new List<uint>();
-				for (uint g = 0; g < density * 2 - 2; g++) {
-					indices.AddRange(new uint[] { g, g + 1, g + 2 });
+
+				uint d = (density * 2) - 2;
+				for (uint g = 0; g < d; g += 2) {
+					indices.AddRange(new uint[] { g + 0, g + 1, g + 3 });
+					indices.AddRange(new uint[] { g + 0, g + 3, g + 2 });
 				}
-				indices.AddRange(new uint[] { density * 2 - 2, density * 2 - 1, 0, density * 2 - 1, 0, 1 });
+				indices.AddRange(new uint[] { d, d + 1, 1, d, 1, 0 });
+
 				_fogWall = new Model(new float[] { 0 }, indices.ToArray())
 					.SetFoggy(true)
 					.SetPosition(new Vector3(0f, -1f, 00f))
