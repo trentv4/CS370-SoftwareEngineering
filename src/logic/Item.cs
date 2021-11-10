@@ -35,13 +35,13 @@ namespace Project.Items {
                 target.Health = MathUtil.MinMax(target.Health, 0, target.MaxHealth);
 
                 target.MaxHealth += Definition.OnConsume.MaxHealth;
-                target.MaxHealth += MathUtil.MinMax(target.MaxHealth, 0, 100);
+                target.MaxHealth = MathUtil.MinMax(target.MaxHealth, 0, 100);
 
                 target.Mana += Definition.OnConsume.Mana;
                 target.Mana = MathUtil.MinMax(target.Mana, 0, target.MaxMana);
 
                 target.MaxMana += Definition.OnConsume.MaxMana;
-                target.MaxMana += MathUtil.MinMax(target.MaxMana, 0, 100);
+                target.MaxMana = MathUtil.MinMax(target.MaxMana, 0, 100);
 
                 target.CarryWeight += Definition.OnConsume.CarryWeight;
                 target.CarryWeight = MathUtil.MinMax(target.CarryWeight, 0, 100);
