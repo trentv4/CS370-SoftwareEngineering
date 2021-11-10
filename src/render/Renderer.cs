@@ -96,6 +96,7 @@ namespace Project.Render {
 		protected override void OnRenderFrame(FrameEventArgs args) {
 			GameState state = Program.LogicThread.GetGameState();
 			ProcessEventsFromQueue(state);
+			_isRenderGymActive = state.IsRenderGym;
 
 			// Setting player model location according to logic thread player location
 			Model PlayerModel = _sceneHierarchy.PlayerModel;

@@ -21,6 +21,7 @@ namespace Project {
 		public float CameraYaw;
 		// Interface elements
 		public bool IsInGame;
+		public bool IsRenderGym;
 	}
 
 	public class GameLogic {
@@ -52,6 +53,7 @@ namespace Project {
 			StateBuffer.CameraPitch = 0.0f;
 			StateBuffer.CameraYaw = 0.0f;
 			StateBuffer.IsInGame = true;
+			StateBuffer.IsRenderGym = false;
 		}
 
 		~GameLogic() {
@@ -106,6 +108,7 @@ namespace Project {
 			State.CameraPitch = CameraPitch;
 			State.CameraYaw = CameraYaw;
 			State.IsInGame = true;
+			State.IsRenderGym = Input.IsKeyDown(Keys.Backslash);
 			StateBuffer = State;
 		}
 
