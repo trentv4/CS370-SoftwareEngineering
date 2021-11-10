@@ -213,8 +213,8 @@ namespace Project.Render {
 					.SetPosition(new Vector2(screenSize.X / 2, 150))
 					.SetScale(150f / 2)
 					.SetTexture(Texture.CreateTexture($"assets/textures/{inventory.Items[currentIndex].Definition.TextureName}"));
-				InterfaceString u = new InterfaceString("calibri", "[ U ]");
-				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 40f));
+				InterfaceString u = new InterfaceString("calibri", "[ U use ] [ X discard ]");
+				u.SetScale(35f).SetPosition(new Vector2((screenSize.X / 2) - ((u.Width / 2) * u.Scale.X), 30f));
 				node.Children.AddRange(new RenderableNode[] { currentItem, u });
 			}
 			if (inventory.Items.Count > 1) {

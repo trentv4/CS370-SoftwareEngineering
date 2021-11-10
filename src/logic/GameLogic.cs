@@ -175,7 +175,7 @@ namespace Project {
 				IsViewingMap = !IsViewingMap;
 
 			//Regenerate level
-			if (Input.IsKeyPressed(Keys.G)) {
+			if (Input.IsKeyPressed(Keys.G) && Input.IsKeyDown(Keys.RightShift)) {
 				Level.NeedsRegen = true;
 			}
 
@@ -214,13 +214,13 @@ namespace Project {
 			}
 
 			//Debug full level visibility
-			if (Input.IsKeyPressed(Keys.V)) {
+			if (Input.IsKeyPressed(Keys.V) && Input.IsKeyDown(Keys.RightShift)) {
 				foreach (Room room in Level.Rooms) {
 					room.Visited = Room.VisitedState.Seen;
 				}
 			}
 			//Debug keybind to add all keys required for end room
-			if (Input.IsKeyPressed(Keys.K)) {
+			if (Input.IsKeyPressed(Keys.K) && Input.IsKeyDown(Keys.RightShift)) {
 				foreach(ItemDefinition keyDef in Level.KeyDefinitions) {
 					if (!Level.Player.Inventory.Items.Contains(item => item.Definition == keyDef))
 						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key if player doesn't have it
@@ -228,17 +228,23 @@ namespace Project {
 			}
 		}
 
-		/// <summary>Input for inventory management</summary>
+		/// <summary> Input for inventory management </summary>
 		private void UpdateInventoryInput() {
 			var player = Level.Player;
 			var inventory = player.Inventory;
 
-			if (Input.IsKeyPressed(Keys.R)) { //Add random items to the inventory
+			if (Input.IsKeyPressed(Keys.R) && Input.IsKeyDown(Keys.RightShift)) { // Add random items to the inventory
 				uint numItemsAdded = inventory.AddRandomItems(5);
 				Console.WriteLine($"Added {numItemsAdded} to the inventory.");
 			}
 
-			//Update inventory position selector
+			// Discard the current item.
+			if (Input.IsKeyPressed(Keys.X)) {
+				inventory.Items.Remove(inventory.Items[inventory.Position]);
+				inventory.Position--;
+			}
+
+			// Update inventory position selector
 			if(Input.IsKeyPressed(Keys.Q)) {
 				inventory.Position--;
 				if (inventory.Position == -1) {
@@ -251,11 +257,11 @@ namespace Project {
 					inventory.Position = 0;
 				}
 			}
-			//Ensure inventory position is in valid range
+			// Ensure inventory position is in valid range
 			inventory.Position = MathUtil.MinMax(inventory.Position, 0, Math.Max(inventory.Items.Count - 1, 0));
 
-			//Use selected item
-		 	if (Input.IsKeyPressed(Keys.U) && inventory.Position < inventory.Items.Count) {
+			// Use selected item
+			if (Input.IsKeyPressed(Keys.U) && inventory.Position < inventory.Items.Count) {
 				var item = inventory.Items[inventory.Position];
 				bool used = false;
 				if (item.Definition.Consumeable) {
@@ -264,7 +270,7 @@ namespace Project {
 					Console.WriteLine($"Consumed {item.Definition.Name}! {item.UsesRemaining} uses remaining.");
 					Sounds.PlaySound("assets/sounds/PotionDrink0.wav");
 				} else if (item.Definition.IsKey) {
-					//Not yet implemented
+					// Not yet implemented
 					Console.WriteLine($"You try to use {item.Definition.Name}, but you have nothing to unlock!");
 				} else {
 					Console.WriteLine($"{item.Definition.Name} isn't a useable item!");
