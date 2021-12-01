@@ -198,8 +198,13 @@ namespace Project.Render {
 					tex = Texture.CreateTexture("assets/textures/interface/circle_final_room.png");
 				} else if (connection == state.Level.StartRoom) {
 					tex = Texture.CreateTexture("assets/textures/interface/circle_start_room.png");
-				} else if (connection.Visited == Room.VisitedState.Seen) {
-					tex = Texture.CreateTexture("assets/textures/interface/circle_not_visited.png");
+				} else if (connection.Visited == Room.VisitedState.Seen || connection.Visited == Room.VisitedState.Visited) {
+					if (connection.GetType() == typeof(IcyRoom))
+						tex = Texture.CreateTexture("assets/textures/interface/circle_ice_room.png");
+					else if (connection.GetType() == typeof(WindyRoom))
+						tex = Texture.CreateTexture("assets/textures/interface/circle_wind_room.png");
+					else
+						tex = Texture.CreateTexture("assets/textures/interface/circle_not_visited.png");
 				}
 
 				Vector2 connectionPosition = centerPosition + new Vector2((float)Math.Cos(angle) * 75, (float)Math.Sin(angle) * 75);
@@ -316,8 +321,13 @@ namespace Project.Render {
 					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_start_room.png"));
 				} else if (current == state.Level.PreviousRoom) {
 					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_previous_room.png"));
-				} else if (current.Visited == Room.VisitedState.Seen) {
-					circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_not_visited.png"));
+				} else if (current.Visited == Room.VisitedState.Seen || current.Visited == Room.VisitedState.Visited) {
+					if (current.GetType() == typeof(IcyRoom))
+						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_ice_room.png"));
+					else if (current.GetType() == typeof(WindyRoom))
+						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_wind_room.png"));
+					else
+						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_not_visited.png"));
 				}
 				circle.SetScale(40f);
 				roomNodes.Add(circle);
