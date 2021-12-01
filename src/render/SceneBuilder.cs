@@ -57,8 +57,10 @@ namespace Project.Render {
 
 				// Non-carryable objects on the floor
 				foreach (LevelObject obj in currentRoom.Objects) {
+					float posY = (obj.Scale - 1.0f) * 0.5f; //Slide objects up with increasing scale
 					Scene.Children.Add(Model.GetCachedModel("unit_rectangle")
-						.SetPosition(new Vector3(obj.Position.X, 0, obj.Position.Y))
+						.SetPosition(new Vector3(obj.Position.X, posY, obj.Position.Y))
+						.SetScale(obj.Scale)
 						.SetRotation(new Vector3(20.0f, 0, 0))
 						.SetTexture(Texture.CreateTexture($"assets/textures/{obj.TextureName}")));
 				}

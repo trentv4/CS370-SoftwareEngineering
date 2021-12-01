@@ -26,8 +26,6 @@ namespace Project.Levels {
 		public int Depth = 0;
 		/// <summary> Setting this to true causes GameLogic to regenerate the level. </summary>
 		public bool NeedsRegen = false;
-		/// <summary> Time in seconds since last time the player was checked for end room keys. Used to prevent console spam. </summary>
-		private float _timeSinceLastKeyCheck = float.PositiveInfinity;
 
 		/// <summary>Make a deep copy</summary>
 		public object Clone() {
@@ -84,48 +82,9 @@ namespace Project.Levels {
 
 		public void Update(double deltaTime) {
 			Player.Update(deltaTime, CurrentRoom);
-			CheckIfPlayerCompletedLevel(deltaTime);
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
 			CurrentRoom.Update(deltaTime, this);
-		}
-
-		/// <summary>The current level is completed if the player is inside the end room and has all the keys required to open it.</summary>
-		void CheckIfPlayerCompletedLevel(double deltaTime) {
-			if (CurrentRoom == EndRoom) {
-				//Check that the player has the keys needed to pass through
-				bool hasRequiredKeys = true;
-				_timeSinceLastKeyCheck += (float)deltaTime;
-				foreach (ItemDefinition keyDef in KeyDefinitions)
-					if (!Player.Inventory.Items.Contains(item => item.Definition == keyDef))
-						hasRequiredKeys = false;
-
-				//Todo: The player should also be required to walk through a special "end room door" so they can still backtrack and grab more loot if needed
-				//Has required keys. Print out score and generate a new level.
-				if (hasRequiredKeys) {
-					//Remove keys from inventory
-					foreach(ItemDefinition keyDef in KeyDefinitions) {
-						foreach (Item item in Player.Inventory.Items.ToArray()) { //Iterate array copy so we can remove items while iterating
-							if (item.Definition == keyDef) {
-								Player.Inventory.Items.Remove(item);
-								break; //Only remove one instance of each key
-							}
-						}
-					}
-
-					//Trigger regen
-					Console.WriteLine($"\n\n*****Level completed with a score of {Score}!*****\n");
-                	Depth++;
-					NeedsRegen = true;
-				} else if(_timeSinceLastKeyCheck >= 3.5f) {
-					_timeSinceLastKeyCheck = 0.0f;
-					Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
-					foreach (ItemDefinition keyDef in KeyDefinitions) {
-						bool hasKey = Player.Inventory.Items.Contains(item => item.Definition == keyDef);
-						Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
-					}
-				}
-            }
 		}
 
 		/// <summary> Moves the player to the next room if they collide with a doorway and it doesn't go to the previous room. </summary>
@@ -341,14 +300,43 @@ namespace Project.Levels {
 		}
 	}
 
+	/// <summary> Room at the end of each level. Contains a door that requires all 3 keys to go through </summary>
+	public class EndRoom : Room {
+		
+		public EndRoom(float x, float y) : base(x, y) {
+			//Note: Texture is likely a placeholder. Could probably make something that fits the aesthetic better with a model + volumetric fog
+			Objects.Add(new EndRoomDoor(new Vector2(0.0f, 6.0f), "EndRoomPortal.png", 4.0f));
+		}
+
+		public override object Clone() {
+			var room = new EndRoom(Position.X, Position.Y);
+			CloneBase(room);
+			return room;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+		}
+
+		public override void OnEnter(Level level, Room previousRoom) {
+			base.OnEnter(level, previousRoom);
+		}
+
+		public override void OnExit(Level level, Room nextRoom) {
+			base.OnExit(level, nextRoom);
+		}
+	}
+
 	/// <summary> Interactable object found in rooms. </summary>
 	public class LevelObject : ICloneable {
 		public Vector2 Position;
 		public readonly string TextureName;
+		public float Scale = 1.0f;
 
-		public LevelObject(Vector2 position, string textureName) {
+		public LevelObject(Vector2 position, string textureName, float scale = 1.0f) {
 			Position = position;
 			TextureName = textureName;
+			Scale = scale;
 		}
 
 		public virtual object Clone() {
@@ -393,6 +381,71 @@ namespace Project.Levels {
 				//Damage the player
 				if (player.TryDamage(Damage))
 					Sounds.PlaySound("assets/sounds/FloorSpikeHit0.wav");
+			}
+		}
+	}
+
+	/// <summary> Door found in level end rooms. Walking into it sends the player to the next level. Requires all three keys </summary>
+	public class EndRoomDoor : LevelObject {
+		/// <summary> Time in seconds since last time the player was checked for end room keys. Used to prevent console spam. </summary>
+		private float _timeSinceLastKeyCheck = float.PositiveInfinity;
+
+		public EndRoomDoor(Vector2 position, string textureName, float scale = 1.0f) : base(position, textureName, scale) {
+
+		}
+
+		public override object Clone() {
+			var clone = new EndRoomDoor(Position, TextureName);
+			return clone;
+		}
+
+		public override void Update(double deltaTime, Level level) {
+			base.Update(deltaTime, level);
+
+			//If player collides with it and has all the keys, send them to the next level
+			Player player = level.Player;
+			float distance = player.Position.Distance(this.Position);
+			float Radius = 2.5f;
+			if (distance <= Radius) { //Check if player is colliding with the spikes
+				OnCollide(deltaTime, level);
+			}
+		}
+
+		/// <summary> Called whenever the player collides with the door. Sends them to the next level if they have all the keys. </summary>
+		private void OnCollide(double deltaTime, Level level) {
+			Player player = level.Player;
+
+			//Check that the player has the keys needed to pass through
+			bool hasRequiredKeys = true;
+			_timeSinceLastKeyCheck += (float)deltaTime;
+			foreach (ItemDefinition keyDef in level.KeyDefinitions)
+				if (!player.Inventory.Items.Contains(item => item.Definition == keyDef))
+					hasRequiredKeys = false;
+
+			//Has required keys. Print out score and generate a new level.
+			if (hasRequiredKeys) {
+				//Remove keys from inventory
+				foreach(ItemDefinition keyDef in level.KeyDefinitions) {
+					foreach (Item item in player.Inventory.Items.ToArray()) { //Iterate array copy so we can remove items while iterating
+						if (item.Definition == keyDef) {
+							player.Inventory.Items.Remove(item);
+							break; //Only remove one instance of each key
+						}
+					}
+				}
+			
+				//Trigger regen
+				Console.WriteLine($"\n\n*****Level completed with a score of {level.Score}!*****\n");
+               	level.Depth++;
+				level.NeedsRegen = true;
+			} else if(_timeSinceLastKeyCheck >= 3.5f) {
+				_timeSinceLastKeyCheck = 0.0f;
+				Console.WriteLine("Don't have all keys needed to pass through the end room. Keys needed:");
+				foreach (ItemDefinition keyDef in level.KeyDefinitions) {
+					bool hasKey = player.Inventory.Items.Contains(item => item.Definition == keyDef);
+					Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
+				}
+				Sounds.PlaySound("assets/sounds/Portal0.wav");
 			}
 		}
 	}

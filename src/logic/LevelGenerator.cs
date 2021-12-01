@@ -102,7 +102,7 @@ namespace Project.Levels {
             }
 
             //Add end room
-            var endRoom = new Room(xDeltaMax * maxRoomsPerPath + 0.5f, centerY);
+            var endRoom = new EndRoom(xDeltaMax * maxRoomsPerPath + 0.5f, centerY);
 			roomsGen.Add(endRoom);
 			connections[endRoom] = new List<Room>();
 
