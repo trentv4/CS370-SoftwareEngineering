@@ -242,7 +242,7 @@ namespace Project {
 			}
 
 			// Discard the current item.
-			if (Input.IsKeyPressed(Keys.X)) {
+			if (Input.IsKeyPressed(Keys.X) && inventory.Items.Count != 0) {
 				inventory.Items.Remove(inventory.Items[inventory.Position]);
 				inventory.Position--;
 			}
