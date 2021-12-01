@@ -178,12 +178,12 @@ namespace Project {
 				IsViewingMap = !IsViewingMap;
 
 			//Regenerate level
-			if (Input.IsKeyPressed(Keys.G) && Input.IsKeyDown(Keys.RightShift)) {
+			if (Input.IsKeyPressed(Keys.G) && Input.ShiftDown()) {
 				Level.NeedsRegen = true;
 			}
 
 			//Debug minimap movement
-			if (Input.IsKeyDown(Keys.LeftShift) || Input.IsKeyDown(Keys.RightShift)) {
+			if (Input.ShiftDown()) {
 				Room nextRoom = null;
 				if (Input.IsKeyPressed(Keys.D1) && Level.CurrentRoom.ConnectedRooms.Length >= 1)
 					nextRoom = Level.CurrentRoom.ConnectedRooms[0];
@@ -217,13 +217,13 @@ namespace Project {
 			}
 
 			//Debug full level visibility
-			if (Input.IsKeyPressed(Keys.V) && Input.IsKeyDown(Keys.RightShift)) {
+			if (Input.IsKeyPressed(Keys.V) && Input.ShiftDown()) {
 				foreach (Room room in Level.Rooms) {
 					room.Visited = Room.VisitedState.Seen;
 				}
 			}
 			//Debug keybind to add all keys required for end room
-			if (Input.IsKeyPressed(Keys.K) && Input.IsKeyDown(Keys.RightShift)) {
+			if (Input.IsKeyPressed(Keys.K) && Input.ShiftDown()) {
 				foreach(ItemDefinition keyDef in Level.KeyDefinitions) {
 					if (!Level.Player.Inventory.Items.Contains(item => item.Definition == keyDef))
 						Level.Player.Inventory.Items.Add(new Item(keyDef)); //Add the key if player doesn't have it
@@ -236,7 +236,7 @@ namespace Project {
 			var player = Level.Player;
 			var inventory = player.Inventory;
 
-			if (Input.IsKeyPressed(Keys.R) && Input.IsKeyDown(Keys.RightShift)) { // Add random items to the inventory
+			if (Input.IsKeyPressed(Keys.R) && Input.ShiftDown()) { // Add random items to the inventory
 				uint numItemsAdded = inventory.AddRandomItems(5);
 				Console.WriteLine($"Added {numItemsAdded} to the inventory.");
 			}

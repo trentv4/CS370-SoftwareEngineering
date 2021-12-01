@@ -63,5 +63,10 @@ namespace Project.Util {
 			var keyboardState = Renderer.INSTANCE.KeyboardState;
 			return keyboardState.IsKeyReleased(key);
 		}
+
+		///<summary>Returns true if either shift key is down</summary>
+		public static bool ShiftDown() {
+			return IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
+		}
 	}
 }
