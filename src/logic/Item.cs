@@ -37,12 +37,6 @@ namespace Project.Items {
                 target.MaxHealth += Definition.OnConsume.MaxHealth;
                 target.MaxHealth = MathUtil.MinMax(target.MaxHealth, 0, 100);
 
-                target.Mana += Definition.OnConsume.Mana;
-                target.Mana = MathUtil.MinMax(target.Mana, 0, target.MaxMana);
-
-                target.MaxMana += Definition.OnConsume.MaxMana;
-                target.MaxMana = MathUtil.MinMax(target.MaxMana, 0, 100);
-
                 target.CarryWeight += Definition.OnConsume.CarryWeight;
                 target.CarryWeight = MathUtil.MinMax(target.CarryWeight, 0, 100);
 
@@ -62,11 +56,9 @@ namespace Project.Items {
 
 	public struct ConsumeEffects {
 		public int Health;
-		public int Mana;
 		public int CarryWeight;
 		public int Armor;
 		public int MaxHealth;
-		public int MaxMana;
 	}
 
 	/// <summary>Characteristics of an <see cref="Item"/>. Loaded by <see cref="ItemManager"/>.</summary>
@@ -142,24 +134,18 @@ namespace Project.Items {
 					if (consume != null) {
 						definition.Uses |= ItemUseFlags.Consume;
 						var healthChange = consume.SelectSingleNode("Health");
-						var manaChange = consume.SelectSingleNode("Mana");
 						var weightChange = consume.SelectSingleNode("CarryWeight");
 						var armorChange = consume.SelectSingleNode("Armor");
 						var maxHealthChange = consume.SelectSingleNode("MaxHealth");
-						var maxManaChange = consume.SelectSingleNode("MaxMana");
 
 						if (healthChange != null)
 							definition.OnConsume.Health = int.Parse(healthChange.InnerText);
-						if (manaChange != null)
-							definition.OnConsume.Mana = int.Parse(manaChange.InnerText);
 						if (weightChange != null)
 							definition.OnConsume.CarryWeight = int.Parse(weightChange.InnerText);
 						if (armorChange != null)
 							definition.OnConsume.Armor = int.Parse(armorChange.InnerText);
 						if (maxHealthChange != null)
 							definition.OnConsume.MaxHealth = int.Parse(maxHealthChange.InnerText);
-						if (maxManaChange != null)
-							definition.OnConsume.MaxMana = int.Parse(maxManaChange.InnerText);
 					}
 					if (key != null) {
 						definition.Uses |= ItemUseFlags.Key;

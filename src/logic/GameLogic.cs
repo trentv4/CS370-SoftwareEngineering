@@ -164,7 +164,6 @@ namespace Project {
 			if (Input.IsKeyPressed(Keys.P)) {
 				Console.WriteLine("\n\n*****Player stats*****");
 				Console.WriteLine($"Health: {player.Health}/{player.MaxHealth}");
-				Console.WriteLine($"Mana: {player.Mana}/{player.MaxMana}");
 				Console.WriteLine($"Armor: {player.Armor}");
 				Console.WriteLine($"Carry weight: {player.CarryWeight}");
 				Console.WriteLine($"Position: {player.Position}");

@@ -8,8 +8,6 @@ namespace Project {
 		public Inventory Inventory;
 		public int Health = 10;
 		public int MaxHealth = 10;
-		public int Mana = 10;
-		public int MaxMana = 10;
 		public int Armor = 0;
 		public int CarryWeight = 10;
 		public Vector2 Position;
@@ -34,8 +32,6 @@ namespace Project {
 			copy.Inventory.Owner = copy;
 			copy.Health = Health;
 			copy.MaxHealth = MaxHealth;
-			copy.Mana = Mana;
-			copy.MaxMana = MaxMana;
 			copy.Armor = Armor;
 			copy.CarryWeight = CarryWeight;
 			copy.MovementSpeed = MovementSpeed;
@@ -63,8 +59,8 @@ namespace Project {
 		/// <param name="overrideInvulnerability">If true ignore invulnerability and the damage timer.</param>
 		public bool TryDamage(int amount, bool overrideInvulnerability = false) {
 			TimeSpan timeSinceDamage = DateTime.Now.Subtract(_lastDamageTime);
+			//Damage the player if it hasn't happened too recently
 			if (timeSinceDamage >= TimeSpan.FromSeconds(DamageSafeTime) || overrideInvulnerability) {
-				//Damage the player if it hasn't happened too recently
 				Health -= amount;
 				_lastDamageTime = DateTime.Now;
 				return true;

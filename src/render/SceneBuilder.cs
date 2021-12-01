@@ -166,11 +166,9 @@ namespace Project.Render {
 			weight.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 30f));
 			InterfaceString health = new InterfaceString("calibri", $"Health: {state.Level.Player.Health} / {state.Level.Player.MaxHealth}");
 			health.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 60f));
-			InterfaceString mana = new InterfaceString("calibri", $"Mana: {state.Level.Player.Mana} / {state.Level.Player.MaxMana}");
-			mana.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 90f));
 			InterfaceString armor = new InterfaceString("calibri", $"Armor: {state.Level.Player.Armor}");
-			armor.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 120f));
-			node.Children.AddRange(new RenderableNode[] { weight, health, mana, armor });
+			armor.SetScale(35f).SetPosition(new Vector2((screenSize.X / 4) - ((weight.Width / 2) * weight.Scale.X), 90f));
+			node.Children.AddRange(new RenderableNode[] { weight, health, armor });
 
 			// Minimap "rear view mirror"
 

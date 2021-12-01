@@ -19,18 +19,6 @@
     </Uses>
   </Item>
   <Item>
-    <Name>Mana potion</Name>
-    <Weight>1</Weight>
-    <Damage>0</Damage>
-    <Armor>0</Armor>
-    <TextureName>items/potion_blue.png</TextureName>
-    <Uses NumUses="1">
-      <Consume>
-        <Mana>5</Mana>
-      </Consume>
-    </Uses>
-  </Item>
-  <Item>
     <Name>Strength potion</Name>
     <Weight>1</Weight>
     <Damage>0</Damage>
@@ -63,18 +51,6 @@
     <Uses NumUses="1">
       <Consume>
         <MaxHealth>5</MaxHealth>
-      </Consume>
-    </Uses>
-  </Item>
-  <Item>
-    <Name>Max mana potion</Name>
-    <Weight>1</Weight>
-    <Damage>0</Damage>
-    <Armor>0</Armor>
-    <TextureName>items/potion_purple.png</TextureName>
-    <Uses NumUses="1">
-      <Consume>
-        <MaxMana>5</MaxMana>
       </Consume>
     </Uses>
   </Item>
