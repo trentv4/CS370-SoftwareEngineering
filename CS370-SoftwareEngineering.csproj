@@ -6,8 +6,6 @@
     <GenerateProgramFile>false</GenerateProgramFile> <!--Needed for dotnet test to run NUnit tests-->
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
-    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
     
   <ItemGroup>
@@ -28,7 +26,7 @@
   </ItemGroup>
 
   <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
-    <Copy SourceFiles="LICENSE" DestinationFiles="build/LICNESE.txt"/>
+    <Copy SourceFiles="LICENSE" DestinationFiles="build/LICENSE.txt"/>
     <Copy SourceFiles="openal32.dll" DestinationFolder="build/"/>
     <Copy SourceFiles="@(AssetsDir)" DestinationFiles="@(AssetsDir->'build\assets\%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="@(PublishDir)" DestinationFiles="@(PublishDir->'build\%(RecursiveDir)%(Filename)%(Extension)')"/>

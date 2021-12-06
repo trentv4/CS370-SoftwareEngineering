@@ -25,4 +25,4 @@ For developers:
 * Build with `dotnet build` 
 * Run with `dotnet run`
 
-When you publish, calling `dotnet publish` will create a clean folder in the `build/` directory that can be zipped and send to users.
+When you publish, calling `dotnet publish -r win10-x64 -c Release -p:PublishSingleFile=true` will create a clean folder in the `build/` directory that can be zipped and send to users. You will have to run the command twice. Change `win10-x64` to your desired system and architecture. 
