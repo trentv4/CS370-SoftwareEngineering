@@ -1,14 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies> 
     <TargetFramework>net5.0</TargetFramework>
     <GenerateProgramFile>false</GenerateProgramFile> <!--Needed for dotnet test to run NUnit tests-->
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
-  
+    
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+	<AssetsDir Include="assets\**\*.*"/>
+	<Cfg Include="$(CompileConfig)"/>
+	<PublishDir Include="$(PublishDir)\**\*.*"/>
+	<BuildDir Include="$build/"/>
     <PackageReference Include="Network" Version="6.2.5.23" />
     <PackageReference Include="NUnit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
@@ -20,4 +26,15 @@
     <!--Exclude FastNoiseLite gui manually because we don't want it and it uses dependencies we don't use.-->
     <Compile Remove="dependencies/FastNoiseLite/PreviewApp/FastNoiseLiteGUI.cs"/>
   </ItemGroup>
-</Project>
+
+  <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
+    <Copy SourceFiles="LICENSE" DestinationFiles="build/LICNESE.txt"/>
+    <Copy SourceFiles="openal32.dll" DestinationFolder="build/"/>
+    <Copy SourceFiles="@(AssetsDir)" DestinationFiles="@(AssetsDir->'build\assets\%(RecursiveDir)%(Filename)%(Extension)')"/>
+    <Copy SourceFiles="@(PublishDir)" DestinationFiles="@(PublishDir->'build\%(RecursiveDir)%(Filename)%(Extension)')"/>
+	<!-- Cleanup build artifacts for publication -->
+	<Delete Files="build/CS370-SoftwareEngineering.pdb"/>
+	<Delete Files="build/NUnit3.TestAdapter.pdb"/>
+	<Move SourceFiles="build/CS370-SoftwareEngineering.exe" DestinationFiles="build/FaceTheFuture.exe"/>
+  </Target>
+ </Project>
