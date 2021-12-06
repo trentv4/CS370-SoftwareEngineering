@@ -21,6 +21,7 @@
     <PackageReference Include="System.Text.Json" Version="4.6.0" />
     <PackageReference Include="StbImageSharp" Version="2.22.4" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+	<PackageReference Include="OpenAL.Soft" Version="1.19.1" />
     <PackageReference Include="AssimpNet" Version="5.0.0-beta1" />
     <!--Exclude FastNoiseLite gui manually because we don't want it and it uses dependencies we don't use.-->
     <Compile Remove="dependencies/FastNoiseLite/PreviewApp/FastNoiseLiteGUI.cs"/>
@@ -28,7 +29,6 @@
 
   <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
     <Copy SourceFiles="LICENSE" DestinationFiles="build/LICENSE.txt"/>
-    <Copy SourceFiles="openal32.dll" DestinationFolder="build/"/>
     <Copy SourceFiles="@(AssetsDir)" DestinationFiles="@(AssetsDir->'build\assets\%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="@(ShaderDir)" DestinationFiles="@(ShaderDir->'build\src\render\shaders\%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="@(PublishDir)" DestinationFiles="@(PublishDir->'build\%(RecursiveDir)%(Filename)%(Extension)')"/>
