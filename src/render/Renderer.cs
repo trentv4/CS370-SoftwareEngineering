@@ -28,10 +28,12 @@ namespace Project.Render {
 		public ShaderProgramFog FogProgram { get; private set; }
 		public ShaderProgramVignette VignetteProgram { get; private set; }
 		public ShaderProgramCompositor CompositorShader { get; private set; }
+		public ShaderProgramPostProcess PostProcessShader { get; private set; }
 
 		public Framebuffer GBuffer;
 		public Framebuffer FogFramebuffer;
 		public Framebuffer InterfaceBuffer;
+		public Framebuffer PostProcessFramebuffer;
 		public Framebuffer DefaultFramebuffer;
 
 		private GameRoot _sceneHierarchy = new GameRoot();
@@ -59,11 +61,12 @@ namespace Project.Render {
 			_isRenderGymActive = false;
 
 			// Shader program creation
-			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
-			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
-			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
-			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
-			CompositorShader = new ShaderProgramCompositor("src/render/shaders/CompositorShader.glsl");
+			DeferredProgram = new ShaderProgramDeferredRenderer("assets/shaders/DeferredShader.glsl");
+			InterfaceProgram = new ShaderProgramInterface("assets/shaders/InterfaceShader.glsl");
+			FogProgram = new ShaderProgramFog("assets/shaders/FogShader.glsl");
+			VignetteProgram = new ShaderProgramVignette("assets/shaders/VignetteShader.glsl");
+			CompositorShader = new ShaderProgramCompositor("assets/shaders/CompositorShader.glsl");
+			PostProcessShader = new ShaderProgramPostProcess("assets/shaders/PostProcessShader.glsl");
 
 			// Fog temporary buffer to hold back-face + scene depths
 			FogFramebuffer = new Framebuffer();
@@ -79,7 +82,10 @@ namespace Project.Render {
 			// Interface buffer (both for UI and for fx like vignettes)
 			InterfaceBuffer = new Framebuffer();
 			InterfaceBuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
-			DebugLabel(ObjectLabelIdentifier.Texture, InterfaceBuffer.GetAttachment(0).TextureID, "Interface");
+
+			// Post-processing buffer. Stores result from compositor for final post processing (color-correction typically)
+			PostProcessFramebuffer = new Framebuffer();
+			PostProcessFramebuffer.AddAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba);
 
 			// Wrap the default framebuffer but don't assign anything new to it
 			DefaultFramebuffer = new Framebuffer(0);
@@ -148,11 +154,18 @@ namespace Project.Render {
 			EndPass();
 
 			BeginPass("Compositor");
-			DefaultFramebuffer.Use().Reset();
+			PostProcessFramebuffer.Use().Reset();
 			CompositorShader.Use();
 			GBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
 			GBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth
 			InterfaceBuffer.GetAttachment(0).Bind(3); // Interface [RGBA]
+			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			EndPass();
+
+			BeginPass("PostProcess");
+			DefaultFramebuffer.Use().Reset();
+			PostProcessShader.Use();
+			PostProcessFramebuffer.GetAttachment(0).Bind(0);
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 			EndPass();
 

@@ -10,7 +10,6 @@
     
   <ItemGroup>
 	<AssetsDir Include="assets\**\*.*"/>
-	<ShaderDir Include="src\render\shaders\**\*.*"/>
 	<Cfg Include="$(CompileConfig)"/>
 	<PublishDir Include="$(PublishDir)\**\*.*"/>
 	<BuildDir Include="$build/"/>
@@ -30,7 +29,6 @@
   <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
     <Copy SourceFiles="LICENSE" DestinationFiles="build/LICENSE.txt"/>
     <Copy SourceFiles="@(AssetsDir)" DestinationFiles="@(AssetsDir->'build\assets\%(RecursiveDir)%(Filename)%(Extension)')"/>
-    <Copy SourceFiles="@(ShaderDir)" DestinationFiles="@(ShaderDir->'build\src\render\shaders\%(RecursiveDir)%(Filename)%(Extension)')"/>
     <Copy SourceFiles="@(PublishDir)" DestinationFiles="@(PublishDir->'build\%(RecursiveDir)%(Filename)%(Extension)')"/>
 	<!-- Cleanup build artifacts for publication -->
 	<Delete Files="build/CS370-SoftwareEngineering.pdb"/>

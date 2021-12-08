@@ -272,6 +272,15 @@ namespace Project.Render {
 		}
 	}
 
+	public class ShaderProgramPostProcess : ShaderProgram {
+		public ShaderProgramPostProcess(string unifiedPath) : base(unifiedPath) { }
+		public ShaderProgramPostProcess(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
+
+		protected override void SetUniforms() {
+			GL.Uniform1(GL.GetUniformLocation(ShaderProgram_ID, "FramebufferInput"), 0);
+		}
+	}
+
 	public class ShaderProgramCompositor : ShaderProgram {
 		public ShaderProgramCompositor(string unifiedPath) : base(unifiedPath) { }
 		public ShaderProgramCompositor(string vertexShader, string fragmentShader) : base(vertexShader, fragmentShader) { }
