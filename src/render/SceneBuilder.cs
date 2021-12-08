@@ -20,7 +20,7 @@ namespace Project.Render {
 
 		/// <summary> Creates one-time objects. </summary>
 		public void Build() {
-			PlayerModel = Model.LoadModelFromFile("assets/models/Player.obj").SetScale(new Vector3(0.3f, 0.4f, 0.3f));
+			PlayerModel = Model.LoadModelFromFile("assets/models/Player.obj").SetScale(new Vector3(0.3f, 0.3f, 0.3f));
 		}
 
 		/// <summary> Renders all three-dimensional objects into world space. </summary>
