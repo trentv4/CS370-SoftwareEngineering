@@ -201,8 +201,6 @@ namespace Project.Render {
 						tex = Texture.CreateTexture("assets/textures/interface/circle_ice_room.png");
 					else if (connection.GetType() == typeof(WindyRoom))
 						tex = Texture.CreateTexture("assets/textures/interface/circle_wind_room.png");
-					else if (connection.GetType() == typeof(AnomalousRoom))
-						tex = Texture.CreateTexture("assets/textures/interface/circle_anomalous_room.png");
 					else if (connection.Visited == Room.VisitedState.Visited && connection.Items.Count != 0)
 						tex = Texture.CreateTexture("assets/textures/interface/circle_room_has_items.png");
 					else
@@ -331,8 +329,6 @@ namespace Project.Render {
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_ice_room.png"));
 					else if (current.GetType() == typeof(WindyRoom))
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_wind_room.png"));
-					else if(current.GetType() == typeof(AnomalousRoom))
-						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_anomalous_room.png"));
 					else if (current.Visited == Room.VisitedState.Visited && current.Items.Count != 0)
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_room_has_items.png"));
 					else
