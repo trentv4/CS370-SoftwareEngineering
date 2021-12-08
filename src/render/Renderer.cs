@@ -151,7 +151,9 @@ namespace Project.Render {
 			EndPass();
 
 			BeginPass("Compositor");
+			GL.ClearColor(0.7f, 0.7f, 0.7f, 1);
 			PostProcessFramebuffer.Use().Reset();
+			GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			CompositorShader.Use();
 			GBuffer.GetAttachment(0).Bind(0); // G buffer: albedo [RGBA]
 			GBuffer.GetAttachment(2).Bind(1); // G buffer: Fog strength, fog depth

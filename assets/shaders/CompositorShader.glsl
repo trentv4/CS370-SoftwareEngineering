@@ -38,8 +38,10 @@ void main() {
 	vec4 color = vec4(0,0,0,1);
 	color = blend(color, world);
 	color = blend(color, vec4(0.7, 0.7, 0.7, fog.x));
-	//color = blend(color, lights);
 	color = blend(color, iface);
+
+	if(color.r + color.g + color.b == 0) 
+		discard;
 
 	FragColor = color;
 }
