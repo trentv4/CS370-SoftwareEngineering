@@ -59,12 +59,12 @@ namespace Project.Render {
 			_isRenderGymActive = false;
 
 			// Shader program creation
-			DeferredProgram = new ShaderProgramDeferredRenderer("src/render/shaders/DeferredShader.glsl");
-			InterfaceProgram = new ShaderProgramInterface("src/render/shaders/InterfaceShader.glsl");
-			FogProgram = new ShaderProgramFog("src/render/shaders/FogShader.glsl");
-			VignetteProgram = new ShaderProgramVignette("src/render/shaders/VignetteShader.glsl");
-			CompositorShader = new ShaderProgramCompositor("src/render/shaders/CompositorShader.glsl");
-			PostProcessShader = new ShaderProgramPostProcess("src/render/shaders/PostProcessShader.glsl");
+			DeferredProgram = new ShaderProgramDeferredRenderer("assets/shaders/DeferredShader.glsl");
+			InterfaceProgram = new ShaderProgramInterface("assets/shaders/InterfaceShader.glsl");
+			FogProgram = new ShaderProgramFog("assets/shaders/FogShader.glsl");
+			VignetteProgram = new ShaderProgramVignette("assets/shaders/VignetteShader.glsl");
+			CompositorShader = new ShaderProgramCompositor("assets/shaders/CompositorShader.glsl");
+			PostProcessShader = new ShaderProgramPostProcess("assets/shaders/PostProcessShader.glsl");
 
 			// Fog temporary buffer to hold back-face + scene depths
 			FogFramebuffer = new Framebuffer();
