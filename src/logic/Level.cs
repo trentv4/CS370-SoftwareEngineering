@@ -311,6 +311,7 @@ namespace Project.Levels {
 		
 		public EndRoom(float x, float y) : base(x, y) {
 			Objects.Add(new EndRoomDoor(new Vector2(0.0f, 6.0f), "assets/models/EndRoomPortal.obj", 0.4f));
+			base.FloorTexture = "MetalSheet0.png";
 		}
 
 		public override object Clone() {
