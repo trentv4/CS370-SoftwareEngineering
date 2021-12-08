@@ -430,6 +430,8 @@ namespace Project.Levels {
 
 			//Has required keys. Print out score and generate a new level.
 			if (hasRequiredKeys) {
+				Sounds.PlaySound("assets/sounds/Portal0.wav");
+
 				//Remove keys from inventory
 				foreach(ItemDefinition keyDef in level.KeyDefinitions) {
 					foreach (Item item in player.Inventory.Items.ToArray()) { //Iterate array copy so we can remove items while iterating
@@ -451,7 +453,7 @@ namespace Project.Levels {
 					bool hasKey = player.Inventory.Items.Contains(item => item.Definition == keyDef);
 					Console.WriteLine($"\t- {keyDef.Name} ({(hasKey ? "Holding" : "Not holding")})");
 				}
-				Sounds.PlaySound("assets/sounds/Portal0.wav");
+				Sounds.PlaySound("assets/sounds/PortalMissingKeys.wav");
 			}
 		}
 	}
