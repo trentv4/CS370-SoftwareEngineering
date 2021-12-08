@@ -318,7 +318,7 @@ namespace Project.Levels {
 
 			//Add random non-key items to each room
 			foreach (var room in roomsGen) {
-				int numItemsToAdd = rand.Next(0, 5);
+				int numItemsToAdd = rand.Next(0, 3);
 				for (int i = 0; i < numItemsToAdd; i++) {
 					//Get random item definition that isn't a key
 					ItemDefinition def = null;
