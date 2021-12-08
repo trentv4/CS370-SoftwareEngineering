@@ -40,6 +40,8 @@ namespace Project.Render {
 		private InterfaceRoot _interfaceRoot = new InterfaceRoot();
 		private static bool _isRenderGymActive = false;
 		private int _debugGroupTracker = 0;
+		/// <summary> Sum of all frame delta times </summary>
+		private float _totalTime = 0.0f;
 
 		/// <summary> Handles all OpenGL setup, including shader programs, flags, attribs, etc. </summary>
 		protected override void OnRenderThreadStarted() {
@@ -100,18 +102,19 @@ namespace Project.Render {
 
 		/// <summary> Core render loop. Use GameState copies to access logic thread information.</summary>
 		protected override void OnRenderFrame(FrameEventArgs args) {
+			_totalTime += (float)args.Time;
 			GameState state = Program.LogicThread.GetGameState();
 			ProcessEventsFromQueue(state);
 			_isRenderGymActive = state.IsRenderGym;
 
 			// Setting player model location according to logic thread player location
 			Model PlayerModel = _sceneHierarchy.PlayerModel;
-			PlayerModel.SetPosition(new Vector3(state.PlayerX, 0f, state.PlayerY));
-			PlayerModel.SetRotation(PlayerModel.Rotation + new Vector3(0, 1f, 0));
+			PlayerModel.SetPosition(new Vector3(state.PlayerX, (float)Math.Sin(_totalTime * 0.5f) * 0.25f, state.PlayerY));
 
 			// Camera and perspective matrices required for different passes
 			Vector3 cameraRotation = new Vector3(0f, 2f, -3f) * Matrix3.CreateRotationY(state.CameraYaw * RCF);
-			Matrix4 View = Matrix4.LookAt(PlayerModel.Position + cameraRotation, PlayerModel.Position, Vector3.UnitY);
+			Vector3 cameraPosition = new Vector3(PlayerModel.Position.X, 0.0f, PlayerModel.Position.Z);
+			Matrix4 View = Matrix4.LookAt(cameraPosition + cameraRotation, cameraPosition, Vector3.UnitY);
 			Matrix4 Perspective3D = Matrix4.CreatePerspectiveFieldOfView(90f * RCF, (float)Size.X / (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 			Matrix4 Perspective2D = Matrix4.CreateOrthographicOffCenter(0f, (float)Size.X, 0f, (float)Size.Y, ProjectMatrixNearFar.X, ProjectMatrixNearFar.Y);
 

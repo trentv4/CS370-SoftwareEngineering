@@ -20,7 +20,7 @@ namespace Project.Render {
 
 		/// <summary> Creates one-time objects. </summary>
 		public void Build() {
-			PlayerModel = Model.GetCachedModel("player").SetScale(new Vector3(0.5f, 2f, 0.5f));
+			PlayerModel = Model.LoadModelFromFile("assets/models/Player.obj").SetScale(new Vector3(0.3f, 0.4f, 0.3f));
 		}
 
 		/// <summary> Renders all three-dimensional objects into world space. </summary>
@@ -201,6 +201,8 @@ namespace Project.Render {
 						tex = Texture.CreateTexture("assets/textures/interface/circle_ice_room.png");
 					else if (connection.GetType() == typeof(WindyRoom))
 						tex = Texture.CreateTexture("assets/textures/interface/circle_wind_room.png");
+					else if (connection.GetType() == typeof(AnomalousRoom))
+						tex = Texture.CreateTexture("assets/textures/interface/circle_anomalous_room.png");
 					else if (connection.Visited == Room.VisitedState.Visited && connection.Items.Count != 0)
 						tex = Texture.CreateTexture("assets/textures/interface/circle_room_has_items.png");
 					else
@@ -329,6 +331,8 @@ namespace Project.Render {
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_ice_room.png"));
 					else if (current.GetType() == typeof(WindyRoom))
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_wind_room.png"));
+					else if(current.GetType() == typeof(AnomalousRoom))
+						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_anomalous_room.png"));
 					else if (current.Visited == Room.VisitedState.Visited && current.Items.Count != 0)
 						circle.SetTexture(Texture.CreateTexture("assets/textures/interface/circle_room_has_items.png"));
 					else

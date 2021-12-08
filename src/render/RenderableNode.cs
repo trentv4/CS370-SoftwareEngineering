@@ -316,25 +316,6 @@ namespace Project.Render {
 			ic.AddRange(new uint[] { dc - 1, dc, 0 });
 
 			new Model(vc.ToArray(), ic.ToArray()).Cache("unit_cylinder");
-
-			// Player model
-			new Model(new float[] {
-				 0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 0.0f,   0.0f, 0.8f, 0.8f, 1.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
-				 0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f, -0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
-				-0.5f,  0.0f,  0.5f,  1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
-				 0.0f,  -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   0.8f, 0.0f, 0.8f, 1.0f,  0.0f, 0.0f,
-			}, new uint[] {
-				0, 1, 2,
-				0, 2, 3,
-				0, 3, 4,
-				0, 4, 1,
-				1, 5, 2,
-				2, 5, 3,
-				3, 5, 4,
-				4, 5, 1
-			}).Cache("player");
 		}
 	}
 
