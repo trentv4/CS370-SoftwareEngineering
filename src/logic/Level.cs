@@ -26,6 +26,8 @@ namespace Project.Levels {
 		public int Depth = 0;
 		/// <summary> Setting this to true causes GameLogic to regenerate the level. </summary>
 		public bool NeedsRegen = false;
+	 	private String backgroundMusicFile = "assets/sounds/music/AncientRuins.wav";
+		private float backgroundMusicGain = 0.5f;
 
 		/// <summary>Make a deep copy</summary>
 		public object Clone() {
@@ -85,6 +87,10 @@ namespace Project.Levels {
 			CheckIfPlayerEnteredDoorway();
             CheckIfPlayerOnItem();
 			CurrentRoom.Update(deltaTime, this);
+
+			//Start background music
+			if(!Sounds.IsSoundPlaying(backgroundMusicFile))
+				Sounds.PlaySound(backgroundMusicFile, true, backgroundMusicGain);
 		}
 
 		/// <summary> Moves the player to the next room if they collide with a doorway and it doesn't go to the previous room. </summary>
@@ -259,7 +265,7 @@ namespace Project.Levels {
 		public override void OnEnter(Level level, Room previousRoom) {
 			base.OnEnter(level, previousRoom);
 			if (!Sounds.IsSoundPlaying(windSoundEffect))
-				Sounds.PlaySound(windSoundEffect); //Start wind sound if it isn't already playing
+				Sounds.PlaySound(windSoundEffect, true, 3.0f); //Start wind sound if it isn't already playing
 		}
 
 		public override void OnExit(Level level, Room nextRoom) {

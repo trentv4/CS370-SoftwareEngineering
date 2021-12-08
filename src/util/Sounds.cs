@@ -66,7 +66,7 @@ namespace Project.Util {
 		}
 
 		/// <summary>Play sound. Loads it into memory the first time it's played and keeps it cached for future playback.</summary>
-		public static void PlaySound(string filePath, bool looping = false) {
+		public static void PlaySound(string filePath, bool looping = false, float gain = 1.0f) {
 			if (!IsAudioEnabled) return;
 
 			//Find or load sound
@@ -86,7 +86,9 @@ namespace Project.Util {
 				int source = _sources[i];
 				ALSourceState state = AL.GetSourceState(source);
 				if(state == ALSourceState.Initial || state == ALSourceState.Stopped) { //Source that's never been used or not playing
+					AL.Source(source, ALSourcef.Gain, gain);
 					sound.Play(source, looping);
+
 					_sourceSounds[source] = filePath; //Track which sound the source is playing
 					foundSource = true;
 					break;
@@ -101,11 +103,20 @@ namespace Project.Util {
 		/// <summary>Stop every source that's playing a sound.</summary>
 		public static void StopSound(string filePath) {
 			//Stop all sources that are playing this sound
-			foreach(var kv in _sourceSounds)
+			foreach (var kv in _sourceSounds)
 				if (kv.Value == filePath) {
 					AL.SourceStop(kv.Key);
 					_sourceSounds[kv.Key] = null; //Unmap sound from source
 					break;
+				}
+		}
+
+		/// <summary> Set loudness of an already playing sound. </summary>
+		public static void SetSoundGain(string filePath, float gain = 1.0f) {
+			foreach (var kv in _sourceSounds)
+				if (kv.Value == filePath) {
+					AL.Source(kv.Key, ALSourcef.Gain, gain);
+					return;
 				}
 		}
 
