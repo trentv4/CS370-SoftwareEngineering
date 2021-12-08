@@ -446,7 +446,7 @@ namespace Project.Levels {
 				int numSpikes = rand.Next(3, 10);
 				for (int i = 0; i < numSpikes; i++) {
 					Vector2 pos = rand.NextVec2(-6.0f, 6.0f, -6.0f, 6.0f);
-					var obj = new FloorSpike(pos, "spikes.png", 0.8f, 1);
+					var obj = new FloorSpike(pos, "assets/models/Spikes.obj", 0.8f, 1);
 					room.Objects.Add(obj);
 				}
 

@@ -310,8 +310,7 @@ namespace Project.Levels {
 	public class EndRoom : Room {
 		
 		public EndRoom(float x, float y) : base(x, y) {
-			//Note: Texture is likely a placeholder. Could probably make something that fits the aesthetic better with a model + volumetric fog
-			Objects.Add(new EndRoomDoor(new Vector2(0.0f, 6.0f), "EndRoomPortal.png", 4.0f));
+			Objects.Add(new EndRoomDoor(new Vector2(0.0f, 6.0f), "assets/models/EndRoomPortal.obj", 0.4f));
 		}
 
 		public override object Clone() {
@@ -336,17 +335,17 @@ namespace Project.Levels {
 	/// <summary> Interactable object found in rooms. </summary>
 	public class LevelObject : ICloneable {
 		public Vector2 Position;
-		public readonly string TextureName;
+		public readonly string ModelPath;
 		public float Scale = 1.0f;
 
-		public LevelObject(Vector2 position, string textureName, float scale = 1.0f) {
+		public LevelObject(Vector2 position, string modelPath, float scale = 1.0f) {
 			Position = position;
-			TextureName = textureName;
+			ModelPath = modelPath;
 			Scale = scale;
 		}
 
 		public virtual object Clone() {
-			var clone = new LevelObject(Position, TextureName);
+			var clone = new LevelObject(Position, ModelPath);
 			return clone;
 		}
 
@@ -363,13 +362,14 @@ namespace Project.Levels {
 		/// <summary> How much of the players health gets removed on collision </summary>
 		public int Damage;
 
-		public FloorSpike(Vector2 position, string textureName, float radius, int damage) : base(position, textureName) {
+		public FloorSpike(Vector2 position, string modelPath, float radius, int damage) : base(position, modelPath) {
 			Radius = radius;
 			Damage = damage;
+			Scale = 2.0f;
 		}
 
 		public override object Clone() {
-			var clone = new FloorSpike(Position, TextureName, Radius, Damage);
+			var clone = new FloorSpike(Position, ModelPath, Radius, Damage);
 			return clone;
 		}
 
@@ -396,12 +396,12 @@ namespace Project.Levels {
 		/// <summary> Time in seconds since last time the player was checked for end room keys. Used to prevent console spam. </summary>
 		private float _timeSinceLastKeyCheck = float.PositiveInfinity;
 
-		public EndRoomDoor(Vector2 position, string textureName, float scale = 1.0f) : base(position, textureName, scale) {
+		public EndRoomDoor(Vector2 position, string modelPath, float scale = 1.0f) : base(position, modelPath, scale) {
 
 		}
 
 		public override object Clone() {
-			var clone = new EndRoomDoor(Position, TextureName);
+			var clone = new EndRoomDoor(Position, ModelPath);
 			return clone;
 		}
 
