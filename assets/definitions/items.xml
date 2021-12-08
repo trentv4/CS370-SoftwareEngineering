@@ -1,12 +1,5 @@
 <root>
   <Item>
-    <Name>Sword</Name>
-    <Weight>2</Weight>
-    <Damage>4</Damage>
-    <Armor>0</Armor>
-    <TextureName>items/sword.png</TextureName>
-  </Item>
-  <Item>
     <Name>Health potion</Name>
     <Weight>1</Weight>
     <Damage>0</Damage>
