@@ -1,0 +1,31 @@
+Below are the sources of all assets used, including attribution if applicable:
+
+UI background textures. CC-BY-SA 3.0:
+	Link: https://opengameart.org/content/golden-ui-bigger-than-ever-edition
+
+Assets used by several items:
+	potions: https://opengameart.org/content/potion-bottles (modified)
+	keys: https://opengameart.org/content/key-icons (modified)
+
+Tool used to generate the SDF texture for font rendering: https://github.com/Chlumsky/msdf-atlas-gen
+
+Floor spike impact sound: https://freesound.org/people/Tritus/sounds/240990/
+Death sound: https://freesound.org/people/Replix/sounds/173126/
+Potion use sound: https://freesound.org/people/Jamius/sounds/41529/
+Floor spike textures: https://opengameart.org/content/animated-traps-and-obstacles
+Icy floor texture: https://www.wildtextures.com/free-textures/falling-snow-flakes-texture/
+End room floor texture: https://www.wildtextures.com/wp-content/uploads/wildtextures-zinc-galvanized-metal-sheet.jpg
+
+End room portal use sound effect: https://freesound.org/people/Owdeo/sounds/116505/
+End room portal missing keys sound effect: https://freesound.org/people/BloodPixelHero/sounds/572936/
+
+Special room icons. Modified to fit the minimap UI:
+Wind icon: 
+	Icons made by Freepik (https://www.freepik.com) from https://www.flaticon.com/" 
+	Link: https://www.flaticon.com/premium-icon/wind_2011448?term=wind&page=1&position=2&page=1&position=2&related_id=2011448&origin=search
+Snow icon:
+	Icons made by Kmg design (https://www.flaticon.com/authors/kmg-design) from https://www.flaticon.com/" 
+	Link: https://www.flaticon.com/premium-icon/snowflake_2530005?term=snowflake&page=1&position=4&page=1&position=4&related_id=2530005&origin=search
+Treasure chest icon:
+	Icons made by Freepik (https://www.freepik.com) from https://www.flaticon.com/" 
+	Link: https://www.flaticon.com/premium-icon/treasure-chest_2691234?term=treasure&page=1&position=7&page=1&position=7&related_id=2691234&origin=search
